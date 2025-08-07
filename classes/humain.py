@@ -3,20 +3,15 @@ import arcade
 from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
 
 class Humain:
-    def __init__(self, charisme, rigidite, intensite_boof, receptif_boof, x=0, y=0):
+    def __init__(self, charisme, rigidite, beauf, receptif_beauf, force=0.1, mathematique=0.1, x=0, y=0):
         self.charisme = charisme
         self.rigidite = rigidite
-        self.intensite_boof = intensite_boof
-        self.receptif_boof = receptif_boof
+        self.intensite_boof = beauf
+        self.receptif_boof = receptif_beauf
+        self.force = force
+        self.mathematique = mathematique
         self.x = x
-        self.y = y
-
-    def get_stat(self):
-        return(
-            f"Intensité de boofitude : {self.intensite_boof}\n"
-            f"Réceptivité à la boofitude : {self.receptif_boof}\n"
-            f"Charisme : {self.charisme}"
-        )
+        self.y = y    
     
     def get_intensite_boof(self):
         return(self.intensite_boof)
@@ -43,7 +38,14 @@ class PNJ(arcade.Sprite):
 class Player(arcade.Sprite):
     def __init__(self, humain, nom, image_file, scale=PLAYER_SCALING):
         super().__init__(image_file, scale)
+        self.humain = humain
         self.nom = nom
+
+        # Pour les augmentations
+        self.up = False
+        self.time_since_last_up_increase = 0.0
+        self.up_increase_interval = 2.0
+
         self.textures = {
             "up": arcade.load_texture("assets/images/player_u.png"),
             "down": arcade.load_texture("assets/images/player_d.png"),
@@ -71,12 +73,39 @@ class Player(arcade.Sprite):
         self.texture_switch_interval = 0.2             # timer pour changer de pas lors de la marche
         self.direction = "down"                        # direction de base du player
 
+    def get_stat(self):
+        print(
+            f"Nom: {self.nom}\n"
+            f"Force : {self.humain.force}\n"
+        )
+
+    def start_up(self):
+        """Démarre l’augmentation progressive de la force."""
+        self.up = True
+        self.time_since_last_up_increase = 0.0
+
+    def stop_up(self):
+        """Arrête l’augmentation de la force."""
+        self.up = False
+
     def update(self, delta_time: float = 1/60):
+        """ Augmentation de la force """
+        # Gestion de l'augmentation de force
+        if self.up:
+            self.time_since_last_up_increase += delta_time
+            if self.time_since_last_up_increase >= self.up_increase_interval:
+                self.humain.mathematique += 0.02
+                self.time_since_last_up_increase = 0.0
+                print(self.humain.mathematique)
+
         """ Move the player """
         # Move player.
         # Remove these lines if physics engine is moving player.
         self.center_x += self.change_x
         self.center_y += self.change_y
+
+        # Appelle l’update parent
+        super().update(delta_time)
 
         # Check for out-of-bounds
         if self.left < 0:

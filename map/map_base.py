@@ -25,15 +25,19 @@ class BaseGameView(arcade.View):
         self.camera_gui = arcade.Camera2D()
         self.camera_speed = 0.1
 
-        # Pour les jouers
+        # Pour le jouer
         self.player_sprite = None
-        self.pnj_sprite = []
-        self.strategique_sprite = []
 
         # Pour les PNJ
+        self.pnj_sprite = []
         self.current_pnj = None           # Pour le PNJ en face
 
+        # Pour les objets
+        self.objet_sprites = []
+        self.current_objet = None
+
         # Pour les strategiques
+        self.strategique_sprite = []
         self.current_strategique = None   # Pour le strategique en face
 
         # Pour le model et les discution
@@ -57,6 +61,7 @@ class BaseGameView(arcade.View):
         obstacles = arcade.SpriteList()                    # Creer la liste des obstacles
         obstacles.extend(self.pnj_sprite)                  # Ajoute la liste des pnj
         obstacles.extend(self.strategique_sprite)          # Ajoute la liste des strategique
+        obstacles.extend(self.objet_sprites)               # Ajoute la liste des objets
         obstacles.extend(self.scene["Meuble_H"])           # Ajoute les meubles de la map
         obstacles.extend(self.scene["Mur"])                # Ajoute les murs de la map
         return obstacles
@@ -97,6 +102,8 @@ class BaseGameView(arcade.View):
         elif key == arcade.key.RIGHT:
             self.player_sprite.change_x = MOVEMENT_SPEED
             self.player_sprite.direction = "right"
+        elif key == arcade.key.P:
+            self.player_sprite.get_stat() 
         else:
             return False
         self.player_sprite.toggle_texture()
@@ -129,7 +136,6 @@ class BaseGameView(arcade.View):
 
     """Pour parler entre PNJ"""
     def talk_model(self, message_joueur, pnj):
-        
         
         os.environ["REPLICATE_API_TOKEN"] = API_KEY
 
