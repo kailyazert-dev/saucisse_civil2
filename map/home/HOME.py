@@ -59,7 +59,7 @@ class GameView(BaseGameView):
                     arcade.draw_text("ENTER : utiliser", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)
                     arcade.draw_text(objet.get_nom(), self.player_sprite.center_x - 40, self.player_sprite.center_y + 40, arcade.color.ALLOY_ORANGE, 18) 
                 else:
-                    arcade.draw_text("Competence déja appris", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)    
+                    arcade.draw_text("Competence acquise", self.player_sprite.center_x - 100, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)    
                 break    
 
         # Pour interagir avec les strategiques
@@ -145,7 +145,6 @@ class GameView(BaseGameView):
 
         # pour upgrade les stats
         elif self.current_objet and key == arcade.key.ENTER:
-            print('Activation du progresseur :')
             self.current_objet.utiliser(self.player_sprite)
     
     def on_key_release(self, key, modifiers):
