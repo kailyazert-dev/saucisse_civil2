@@ -1,6 +1,7 @@
 import arcade
 import os
 from classes.humain import Player
+from classes.objet import Progresseur
 from map.map_base import BaseGameView
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT
 
@@ -25,6 +26,13 @@ class GameView(BaseGameView):
 
         # Creer les strategiques
 
+        # Creer les objets
+        livre = Progresseur("assets/images/bibliotheque.png", 1, "multiplication", "mathematique", 0, 0.15)
+        livre.center_x = 96
+        livre.center_y = 910
+        self.objet_sprites.append(livre)
+        self.scene.add_sprite("Livre", livre)
+
         # Creer les obstacles
         obstacles = self.create_obstacles()
 
@@ -39,6 +47,20 @@ class GameView(BaseGameView):
         self.clear()
         self.camera_sprites.use()
         self.scene.draw()
+
+        # Pour interagir avec les objets
+        for objet in self.objet_sprites:
+            distance = arcade.get_distance_between_sprites(self.player_sprite, objet)
+            if distance < 68:
+                self.current_objet = objet
+                stat_name = self.current_objet.stat_cible
+                player_level_stat = getattr(self.player_sprite.humain, stat_name)
+                if self.current_objet.stat_min < player_level_stat < self.current_objet.stat_max :
+                    arcade.draw_text("ENTER : utiliser", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)
+                    arcade.draw_text(objet.get_nom(), self.player_sprite.center_x - 40, self.player_sprite.center_y + 40, arcade.color.ALLOY_ORANGE, 18) 
+                else:
+                    arcade.draw_text("Competence déja appris", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)    
+                break    
 
         # Pour interagir avec les strategiques
         for strategique in self.strategique_sprite:
@@ -84,6 +106,11 @@ class GameView(BaseGameView):
         if self.current_strategique and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
             self.current_strategique = None
 
+        # Pour arreter l'augmentation des stats
+        if self.current_objet and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
+            self.current_objet = None   
+            self.player_sprite.stop_up() 
+
         # Déplacements généraux
         if self.handle_movement_keys(key):
             return
@@ -113,7 +140,13 @@ class GameView(BaseGameView):
 
         # Pour aller à PHL
         elif 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
+            self.player_sprite.save_player()
             self.manager.switch_map("phl")
+
+        # pour upgrade les stats
+        elif self.current_objet and key == arcade.key.ENTER:
+            print('Activation du progresseur :')
+            self.current_objet.utiliser(self.player_sprite)
     
     def on_key_release(self, key, modifiers):
         self.reset_movement_on_release(key, modifiers)

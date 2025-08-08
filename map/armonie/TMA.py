@@ -117,6 +117,7 @@ class GameView(BaseGameView):
             self.current_input = self.current_input[:-1]
 
         elif self.current_strategique and key == arcade.key.RALT:
+            self.player_sprite.save_player()
             self.manager.switch_map("phl")
     
     def on_key_release(self, key, modifiers):

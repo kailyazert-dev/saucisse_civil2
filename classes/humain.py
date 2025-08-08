@@ -28,6 +28,10 @@ class Humain:
             f"vitesse : {self.vitesse}\n"
             f"endurance : {self.endurance}\n"
             f"mathematique : {self.mathematique}\n"
+            f"logique : {self.logique}\n"
+            f"music : {self.music}\n"
+            f"langue : {self.langue}\n"
+            f"sociale : {self.sociale}\n"
         )   
 
 class PNJ(arcade.Sprite):
@@ -94,14 +98,15 @@ class Player(arcade.Sprite):
             f"Force : {self.humain.force}\n"
         )
 
-    def start_up(self, stat_cible):
+    def start_up(self, stat_cible, objet_progresseur=None):
         """Démarre l’augmentation progressive de la force."""
         self.up = True
         self.stat_to_up = stat_cible
         self.time_since_last_up_increase = 0.0
+        self.current_progresseur = objet_progresseur
 
     def stop_up(self):
-        """Arrête l’augmentation de la force."""
+        """Arrête l’augmentation des stats."""
         self.up = False
 
     def update(self, delta_time: float = 1/60):
@@ -112,9 +117,17 @@ class Player(arcade.Sprite):
                 if self.stat_to_up:
                     current_value = getattr(self.humain, self.stat_to_up, None)
                     if current_value is not None:
-                        new_value = current_value + 0.002
+                        new_value = round(current_value + 0.002, 3)
+                        if self.current_progresseur:
+                            max_value = self.current_progresseur.stat_max
+                            if new_value > max_value:
+                                print(f"🚫 {self.stat_to_up} a atteint la limite ({max_value:.3f})")
+                                self.stop_up()
+                                return
+
                         setattr(self.humain, self.stat_to_up, new_value)
-                        print(f"{self.nom} a gagné +0.02 en {self.stat_to_up} → {new_value:.2f}")
+                        print(f"{self.nom} a gagné +0.002 en {self.stat_to_up} → {new_value:.3f}")
+                        self.save_player()
                     else:
                         print(f"⚠️ La stat '{self.stat_to_up}' n'existe pas.")
                 self.time_since_last_up_increase = 0.0

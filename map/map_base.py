@@ -47,14 +47,6 @@ class BaseGameView(arcade.View):
 
     def set_manager(self, manager):
         self.manager = manager
-
-    """Pour creer le joueur"""
-    def create_player(self, x, y):
-        humain = Humain(0.2, 0.2, 0.2, 0.2)                                         # Initialise le player avec les states de base
-        player = Player(humain, "Joueur", "assets/images/player_d.png", PLAYER_SCALING)    # Initialise avec les paramêtre de base
-        player.center_x = x                                                         # Position sur la carte
-        player.center_y = y                                                         # Position sur la carte
-        return player
     
     """Pour creer les obstacles de la map"""
     def create_obstacles(self):
@@ -66,7 +58,7 @@ class BaseGameView(arcade.View):
         obstacles.extend(self.scene["Mur"])                # Ajoute les murs de la map
         return obstacles
     
-    """Pour dessiner les boites de dialogues"""
+    """Pour dessiner la boite de dialogues"""
     def draw_dialogue_box(self):
         arcade.get_window().use()
         if self.is_typing or self.last_response:

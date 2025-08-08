@@ -1,5 +1,5 @@
 {
-    "nom": "Joueur",
+    "nom": "CarlAI",
     "charisme": 0.2,
     "rigidite": 0.2,
     "intensite_boof": 0.2,
@@ -7,11 +7,11 @@
     "force": 0.1,
     "vitesse": 0.1,
     "endurance": 0.1,
-    "mathematique": 0.12000000000000002,
+    "mathematique": 0.15,
     "logique": 0.1,
     "music": 0.1,
     "langue": 0.1,
     "sociale": 0.1,
-    "x": 574,
+    "x": 720,
     "y": 50
 }

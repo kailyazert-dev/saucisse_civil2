@@ -2,7 +2,7 @@ import arcade
 import json
 import os
 from classes.humain import Humain, PNJ, Player
-from classes.objet import Objet, Progresseur
+from classes.objet import Progresseur
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT
@@ -137,7 +137,7 @@ class GameView(BaseGameView):
         if self.current_strategique and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
             self.current_strategique = None
 
-        # Pour arreter l'augmentation de la force
+        # Pour arreter l'augmentation des stats
         if self.current_objet and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
             self.current_objet = None   
             self.player_sprite.stop_up() 
@@ -180,7 +180,7 @@ class GameView(BaseGameView):
 
         # pour upgrade les stats
         elif self.current_objet and key == arcade.key.ENTER:
-            print('Niveau en mathématique :')
+            print('Activation du progresseur :')
             self.player_sprite.start_up(self.current_objet.stat_cible)    
     
     def on_key_release(self, key, modifiers):
