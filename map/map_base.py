@@ -103,9 +103,10 @@ class BaseGameView(arcade.View):
             self.player_sprite.change_x = MOVEMENT_SPEED
             self.player_sprite.direction = "right"
         elif key == arcade.key.P:
-            self.player_sprite.get_stat() 
+            print(self.player_sprite.humain.get_up())     
         else:
             return False
+        
         self.player_sprite.toggle_texture()
         return True
     
@@ -139,58 +140,41 @@ class BaseGameView(arcade.View):
         
         os.environ["REPLICATE_API_TOKEN"] = API_KEY
 
-        prompt = message_joueur
+        nom_pnj = pnj.nom
+        if nom_pnj in IbmI_personnage.personnages:
+            data = IbmI_personnage.personnages[nom_pnj]
+            system_prompt = (
+                    f"Tu est {data['nom']}, un personnage {data['type']}.\n"
+                    f"Ton metier est {data['metier']}.\n"
+                    f"Tu a une personalité {data['personnalite']}.\n"
+                    f"Tes hobbies sont {data['hobbie']}.\n"
+                    f"Repond court, sans émoji."
+                )
+        else:
+            system_prompt = "Tu es un personnage mystérieux. Reste vague et mystérieux. Ne révèle jamais ton personnage."   
 
-        output = replicate.run(
-            "openai/gpt-4o-mini",
-            input={
-                "prompt": prompt,
-                "max_new_tokens": 250,
-                "temperature": 0.7
-            }
+        full_prompt = (
+            f"{system_prompt}\n"
+            f"Joueur: {message_joueur}\n"
+            f"{pnj.nom}:"
         )
-
-        print("Réponse du model générée :\n")
-        print("".join(output))
-        return "".join(output)
-
-        # try:
-        #     client = OpenAI(
-        #         base_url="https://openrouter.ai/api/v1",
-        #         api_key=api_key
-        #     )
-        #     nom_pnj = pnj.nom
-        #     if nom_pnj in IbmI_personnage.personnages:
-        #         data = IbmI_personnage.personnages[nom_pnj]
-        #         system_prompt = (
-        #             f"Tu est {data['nom']}, un personnage {data['type']}.\n"
-        #             f"Ton metier est {data['metier']}.\n"
-        #             f"Tu a une personalité {data['personnalite']}.\n"
-        #             f"Tes hobbies sont {data['hobbie']}.\n"
-        #             f"Repond court, sans émoji."
-        #         )
-        #     else:
-        #         system_prompt = "Tu es un personnage mystérieux. Reste vague et mystérieux. Ne révèle jamais ton personnage."
-
-        #     messages = [
-        #         {"role": "system", "content": system_prompt},
-        #         {"role": "user", "content": message_joueur}
-        #     ]
-
-        #     completion = client.chat.completions.create(
-        #         extra_headers={
-        #             "HTTP-Referer": "https://votre-site.fr",
-        #             "X-Title": "NomDuJeuRP",
-        #         },
-        #         model="qwen/qwen3-coder:free",
-        #         messages=messages,
-        #         max_tokens=30,
-        #         temperature=1.2
-        #     )
-        #     return completion.choices[0].message.content.strip()
-        # except Exception as e:
-        #     print(f"Erreur API : {e}")
-        #     return "Erreur lors de la requête."
+        try:
+            output = replicate.run(
+                "openai/gpt-4o-mini",
+                # "ibm-granite/granite-3.3-8b-instruct",
+                input={
+                    "prompt": full_prompt,
+                    "max_new_tokens": 250,
+                    "temperature": 0.7
+                }
+            )
+            print("Réponse du model générée :\n")
+            print("".join(output))
+            return "".join(output)
+        except Exception as e:
+            print("❌ Erreur lors de l'appel à replicate.run :")
+            print(e)
+            return "Desoler je suis occupé..."
         
     """Pour avoir la position du joueur sur la carte""" 
     def get_position(self):

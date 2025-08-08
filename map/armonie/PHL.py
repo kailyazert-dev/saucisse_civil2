@@ -1,7 +1,8 @@
 import arcade
+import json
 import os
-from classes.humain import Humain, PNJ
-from classes.objet import Objet
+from classes.humain import Humain, PNJ, Player
+from classes.objet import Objet, Progresseur
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT
@@ -26,7 +27,8 @@ class GameView(BaseGameView):
         default_position = (72, 72)  # Position fallback si la map n'est pas trouvée
         x, y = entry_positions.get(last_map, default_position)
         
-        self.player_sprite = self.create_player(x, y)         # create_player est dans BaseGameView
+        # Pour creer le joueur
+        self.player_sprite = Player.load_player(x, y)
         self.scene.add_sprite("Player", self.player_sprite)   # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs
@@ -60,11 +62,11 @@ class GameView(BaseGameView):
         self.scene.add_sprite("Pnj", hotesse)
 
         # Creer les objets
-        livre = Objet("assets/images/livre.png", 0.7)
+        livre = Progresseur("assets/images/livre.png", 0.7, "Pythagore", "mathematique")
         livre.center_x = 448
         livre.center_y = 1030
         self.objet_sprites.append(livre)
-        self.scene.add_sprite("Player", livre) 
+        self.scene.add_sprite("Livre", livre)
 
         # Creer les obstacles
         obstacles = self.create_obstacles()
@@ -86,7 +88,7 @@ class GameView(BaseGameView):
             distance = arcade.get_distance_between_sprites(self.player_sprite, objet)
             if distance < 48:
                 self.current_objet = objet
-                arcade.draw_text("ENTER : apprendre les mathematique", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)
+                arcade.draw_text("ENTER : utiliser", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)
 
         # Pour interagir avec les strategiques
         for strategique in self.strategique_sprite:
@@ -141,13 +143,11 @@ class GameView(BaseGameView):
             self.player_sprite.stop_up() 
 
         # Déplacements généraux
-        if self.handle_movement_keys(key):
+        if self.handle_movement_keys(key):  # Fontion déclarer dans BaseGameView 
             return
 
         # Dialogue PNJ
         if key == arcade.key.LALT:
-            print('touche appuiyer')
-            
             for pnj in self.pnj_sprite:
                 if arcade.get_distance_between_sprites(self.player_sprite, pnj) < 50:
                     dx = self.player_sprite.center_x - pnj.center_x
@@ -169,15 +169,19 @@ class GameView(BaseGameView):
         elif self.is_typing and key == arcade.key.BACKSPACE:
             self.current_input = self.current_input[:-1]
 
+        # Pour changer de map
         elif self.current_strategique and key == arcade.key.RALT:
+            self.player_sprite.save_player()
             self.manager.switch_map("tma")
 
         elif 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600 and key == arcade.key.RALT:
+            self.player_sprite.save_player()
             self.manager.switch_map("home")   
 
+        # pour upgrade les stats
         elif self.current_objet and key == arcade.key.ENTER:
             print('Niveau en mathématique :')
-            self.player_sprite.start_up()     
+            self.player_sprite.start_up(self.current_objet.stat_cible)    
     
     def on_key_release(self, key, modifiers):
         self.reset_movement_on_release(key, modifiers)
@@ -186,5 +190,10 @@ class GameView(BaseGameView):
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.camera_sprites.match_window()
+
+    def charger_stats(chemin_fichier="save/stats.json"):
+        with open(chemin_fichier, "r") as f:
+            data = json.load(f)
+        return Humain.from_dict(data)    
     
 

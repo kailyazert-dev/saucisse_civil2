@@ -1,20 +1,34 @@
-import random
+import json
 import arcade
 from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
 
 class Humain:
-    def __init__(self, charisme, rigidite, beauf, receptif_beauf, force=0.1, mathematique=0.1, x=0, y=0):
+    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, music=0.1, langue=0.1, sociale=0.1, x=0, y=0):
         self.charisme = charisme
         self.rigidite = rigidite
         self.intensite_boof = beauf
         self.receptif_boof = receptif_beauf
         self.force = force
+        self.vitesse = vitesse
+        self.endurance = endurance
         self.mathematique = mathematique
+        self.logique = logique
+        self.music = music
+        self.langue = langue
+        self.sociale = sociale
         self.x = x
         self.y = y    
     
     def get_intensite_boof(self):
         return(self.intensite_boof)
+    
+    def get_up(self):
+        print(
+            f"Force : {self.force}\n"
+            f"vitesse : {self.vitesse}\n"
+            f"endurance : {self.endurance}\n"
+            f"mathematique : {self.mathematique}\n"
+        )   
 
 class PNJ(arcade.Sprite):
     def __init__(self, nom, humain, type, image_path, scale):
@@ -45,6 +59,7 @@ class Player(arcade.Sprite):
         self.up = False
         self.time_since_last_up_increase = 0.0
         self.up_increase_interval = 2.0
+        self.stat_to_up = None
 
         self.textures = {
             "up": arcade.load_texture("assets/images/player_u.png"),
@@ -79,9 +94,10 @@ class Player(arcade.Sprite):
             f"Force : {self.humain.force}\n"
         )
 
-    def start_up(self):
+    def start_up(self, stat_cible):
         """Démarre l’augmentation progressive de la force."""
         self.up = True
+        self.stat_to_up = stat_cible
         self.time_since_last_up_increase = 0.0
 
     def stop_up(self):
@@ -89,14 +105,19 @@ class Player(arcade.Sprite):
         self.up = False
 
     def update(self, delta_time: float = 1/60):
-        """ Augmentation de la force """
-        # Gestion de l'augmentation de force
+        """ Augmentation des stats """
         if self.up:
             self.time_since_last_up_increase += delta_time
             if self.time_since_last_up_increase >= self.up_increase_interval:
-                self.humain.mathematique += 0.02
+                if self.stat_to_up:
+                    current_value = getattr(self.humain, self.stat_to_up, None)
+                    if current_value is not None:
+                        new_value = current_value + 0.002
+                        setattr(self.humain, self.stat_to_up, new_value)
+                        print(f"{self.nom} a gagné +0.02 en {self.stat_to_up} → {new_value:.2f}")
+                    else:
+                        print(f"⚠️ La stat '{self.stat_to_up}' n'existe pas.")
                 self.time_since_last_up_increase = 0.0
-                print(self.humain.mathematique)
 
         """ Move the player """
         # Move player.
@@ -146,3 +167,53 @@ class Player(arcade.Sprite):
             self.texture = self.textures_left[self.current_texture_index]
         elif self.direction == "right":
             self.texture = self.textures_right[self.current_texture_index]        
+
+    def save_player(self):
+        stats = {
+            "nom": self.nom,
+            "charisme": self.humain.charisme,
+            "rigidite": self.humain.rigidite,
+            "intensite_boof": self.humain.intensite_boof,
+            "receptif_boof": self.humain.receptif_boof,
+            "force": self.humain.force,
+            "vitesse": self.humain.vitesse,
+            "endurance": self.humain.endurance,
+            "mathematique": self.humain.mathematique,
+            "logique": self.humain.logique,
+            "music": self.humain.music,
+            "langue": self.humain.langue,
+            "sociale": self.humain.sociale,
+            "x": self.humain.x,
+            "y": self.humain.y,
+        }
+        filename = 'save/stats.json'
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, ensure_ascii=False, indent=4)
+
+    @staticmethod
+    def load_player(x, y, scale=PLAYER_SCALING):
+        filename = 'save/stats.json'
+        with open(filename, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        humain = Humain(
+            charisme=data["charisme"],
+            rigidite=data["rigidite"],
+            beauf=data["intensite_boof"],
+            receptif_beauf=data["receptif_boof"],
+            force=data["force"],
+            vitesse=data["vitesse"],
+            endurance=data["endurance"],
+            mathematique=data["mathematique"],
+            logique=data["logique"],
+            music=data["music"],
+            langue=data["langue"],
+            sociale=data["sociale"],
+            x = x,                                                         
+            y = y
+        )
+        image_file = 'assets/images/player_d.png'
+        player = Player(humain, data["nom"], image_file, scale)
+        player.center_x = x
+        player.center_y = y
+        return player        

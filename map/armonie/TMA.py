@@ -1,6 +1,6 @@
 import arcade
 import os
-from classes.humain import Humain, PNJ
+from classes.humain import Humain, PNJ, Player
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
 
@@ -17,11 +17,11 @@ class GameView(BaseGameView):
         self.scene = arcade.Scene.from_tilemap(self.tile_map) # scene est dans BaseGameView
         
         # Créer le joueur
-        self.player_sprite = self.create_player(1300, 1225)      # create_player est dans BaseGameView
+        self.player_sprite = Player.load_player(1300, 1225)      # create_player est dans BaseGameView
         self.scene.add_sprite("Player", self.player_sprite)   # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs
-        pnj = Humain(charisme=0.3, rigidite=0.3, intensite_boof=0.3, receptif_boof=0.3)
+        pnj = Humain()
 
         # Creer les strategiques
         hotesse = PNJ("Hotesse", pnj, "Femelle", "assets/images/hotesse_d.png", PLAYER_SCALING)
