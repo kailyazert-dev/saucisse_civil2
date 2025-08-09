@@ -3,7 +3,6 @@ import os
 from classes.humain import Player
 from classes.objet import Progresseur
 from map.map_base import BaseGameView
-from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT
 
 class GameView(BaseGameView):
 
@@ -27,14 +26,14 @@ class GameView(BaseGameView):
         # Creer les strategiques
 
         # Creer les objets
-        livre = Progresseur("assets/images/bibliotheque.png", 1, "multiplication", "mathematique", 0, 0.15)
+        livre = Progresseur("assets/images/bibliotheque.png", 1, "Multiplication", "mathematique", 0, 0.15)
         livre.center_x = 96
         livre.center_y = 910
         self.objet_sprites.append(livre)
         self.scene.add_sprite("Livre", livre)
 
         # Creer les obstacles
-        obstacles = self.create_obstacles()
+        obstacles = self.interact.create_obstacles()
 
         # Moteur physique sur les element de la map
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -48,45 +47,33 @@ class GameView(BaseGameView):
         self.camera_sprites.use()
         self.scene.draw()
 
+        # Fonctions déclarées dans BaseGameView
+
         # Pour interagir avec les objets
-        for objet in self.objet_sprites:
-            distance = arcade.get_distance_between_sprites(self.player_sprite, objet)
-            if distance < 68:
-                self.current_objet = objet
-                stat_name = self.current_objet.stat_cible
-                player_level_stat = getattr(self.player_sprite.humain, stat_name)
-                if self.current_objet.stat_min < player_level_stat < self.current_objet.stat_max :
-                    arcade.draw_text("ENTER : utiliser", self.player_sprite.center_x - 40, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)
-                    arcade.draw_text(objet.get_nom(), self.player_sprite.center_x - 40, self.player_sprite.center_y + 40, arcade.color.ALLOY_ORANGE, 18) 
-                else:
-                    arcade.draw_text("Competence acquise", self.player_sprite.center_x - 100, self.player_sprite.center_y - 40, arcade.color.LIGHT_GREEN, 18)    
-                break    
+        self.interact.interact_obj_prg()
 
         # Pour interagir avec les strategiques
-        for strategique in self.strategique_sprite:
-            distance = arcade.get_distance_between_sprites(self.player_sprite, strategique)
-            if distance < 50:
-                self.current_strategique = strategique
-                arcade.draw_text("RALT : Aller à la PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 18) 
-                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 18) 
-                break
+        self.interact.interact_pnj_strateg()
             
         # Pour dialoguer avec les PNJ
-        for pnj in self.pnj_sprite:
-            distance = arcade.get_distance_between_sprites(self.player_sprite, pnj)
-            if distance < 50:
-               arcade.draw_text("LALT : Discuter", pnj.center_x - 40, pnj.center_y - 40, arcade.color.LIGHT_GREEN, 18) 
-               arcade.draw_text(pnj.get_nom(), pnj.center_x - 40, pnj.center_y + 40, arcade.color.ALLOY_ORANGE, 18) 
+        self.interact.interact_pnj()    
+
+        # Pour aller à une autre map
+        if 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 :
+            left, top = self.interact.draw_interact_box()
+            arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14) 
 
         # Déssine la camera
         self.camera_gui.use()    
 
         # Pour avoir la position du joueur sur la carte
-        self.get_position()        # Fonction déclarer dans BaseGameView   
+        self.get_position()      
 
-        if 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745:
-            arcade.draw_text("RALT : Armonie", WINDOW_WIDTH // 2 - 70 , WINDOW_HEIGHT // 2 - 60, arcade.color.LIGHT_GREEN, 18)    
-
+    """Fonction pour ecrire le dialogue"""
+    def on_text(self, text):
+        if self.is_typing:
+            self.talk.on_text(text)
+            
     """ Fonction qui met à jour la map """
     def on_update(self, delta_time):
         self.physics_engine.update()  # physics_engine déclarer dans BaseGameView
@@ -95,60 +82,17 @@ class GameView(BaseGameView):
 
     """ Fonction pour gérer les touches """
     def on_key_press(self, key, modifiers):
-        # Si on est en train de discuter et qu'on bouge → annuler
-        if self.is_typing and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
-            self.is_typing = False
-            self.last_response = ""
-            self.current_input = ""
-            self.current_pnj = None
 
-        # Idem pour les stratégiques
-        if self.current_strategique and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
-            self.current_strategique = None
-
-        # Pour arreter l'augmentation des stats
-        if self.current_objet and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
-            self.current_objet = None   
-            self.player_sprite.stop_up() 
-
-        # Déplacements généraux
-        if self.handle_movement_keys(key):
-            return
-
-        # Dialogue PNJ
-        if key == arcade.key.LALT:
-            for pnj in self.pnj_sprite:
-                if arcade.get_distance_between_sprites(self.player_sprite, pnj) < 50:
-                    dx = self.player_sprite.center_x - pnj.center_x
-                    dy = self.player_sprite.center_y - pnj.center_y
-                    if abs(dx) > abs(dy):
-                        pnj.texture = pnj.textures["right"] if dx > 0 else pnj.textures["left"]
-                    else:
-                        pnj.texture = pnj.textures["up"] if dy > 0 else pnj.textures["down"]
-                    self.current_pnj = pnj
-                    self.is_typing = True
-                    self.current_input = ""
-                    break
-
-        elif self.is_typing and key == arcade.key.ENTER:
-            if self.current_pnj:
-                self.last_response = self.talk_model(self.current_input, self.api_key, self.current_pnj)
-            self.current_input = ""
-
-        elif self.is_typing and key == arcade.key.BACKSPACE:
-            self.current_input = self.current_input[:-1]
+        # Apelle les fonctions de base
+        self.keycaps.handle_key_press(key, modifiers) 
 
         # Pour aller à PHL
-        elif 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
+        if 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
             self.player_sprite.save_player()
             self.manager.switch_map("phl")
-
-        # pour upgrade les stats
-        elif self.current_objet and key == arcade.key.ENTER:
-            self.current_objet.utiliser(self.player_sprite)
     
     def on_key_release(self, key, modifiers):
-        self.reset_movement_on_release(key, modifiers)
+        self.keycaps.reset_movement_on_release(key, modifiers)
 
     """ Fonction pour redimensionner la fenêtre """
     def on_resize(self, width: int, height: int):
