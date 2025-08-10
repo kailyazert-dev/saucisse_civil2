@@ -32,6 +32,8 @@ class BaseGameView(arcade.View):
         self.current_input = ""
         self.last_response = ""
         self.is_typing = False
+        # Pour les stat_box
+        self.show_stats = False
 
         # Ajout des gestionnaires séparés
         self.keycaps = Keycaps(self)
@@ -68,6 +70,29 @@ class Keycaps:
     def __init__(self, game_view):
         self.game_view = game_view
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            # Convertir pixels → coordonnées de la grille
+            tile_x = int(x // 48)
+            tile_y = int(y // 48)
+            print(f"📍 Clic sur la case ({tile_x}, {tile_y})")
+
+        # if button == arcade.MOUSE_BUTTON_LEFT:
+        #     world_pos = self.game_view.camera_sprites.unproject((x, y))
+        #     world_x, world_y = world_pos.x, world_pos.y
+        #     print(f"Clic écran: ({x}, {y}) -> monde: ({world_x:.2f}, {world_y:.2f})")
+
+        #     for element in self.game_view.objet_sprites:
+        #         left = element.left
+        #         right = element.right
+        #         bottom = element.bottom
+        #         top = element.top
+        #         if left <= world_x <= right and bottom <= world_y <= top:
+        #             print(f"💡 Tu as cliqué sur {element.get_nom()}, position: ({element.center_x}, {element.center_y}), "
+        #                 f"width: {element.width}, height: {element.height}")
+        #             self.game_view.current_objet = element
+        #             return
+
     def handle_key_press(self, key, modifiers):
         """Point d'entrée unique pour la gestion des touches pressées."""
         # 1. Réinitialisation si on bouge ou change de contexte
@@ -77,67 +102,72 @@ class Keycaps:
         if self.handle_movement_keys(key):
             return
 
-        # 3. Gestion des dialogues avec PNJ
+        # 3. Gestion des paneaux
+        self.to_show_stat(key)
+
+        # 4. Gestion des dialogues avec PNJ
         self.to_dialogue(key)
 
-        # 4. Gestion de l'upgrade de stats
+        # 5. Gestion de l'upgrade de stats
         self.up_stat(key) 
 
     # Pour les touches de direction
     def handle_movement_keys(self, key):
         player = self.game_view.player_sprite
-        if key == arcade.key.UP:
+        if key == arcade.key.Z:
             player.change_y = MOVEMENT_SPEED
             player.direction = "up"
-        elif key == arcade.key.DOWN:
+        elif key == arcade.key.S:
             player.change_y = -MOVEMENT_SPEED
             player.direction = "down"
-        elif key == arcade.key.LEFT:
+        elif key == arcade.key.Q:
             player.change_x = -MOVEMENT_SPEED
             player.direction = "left"
-        elif key == arcade.key.RIGHT:
+        elif key == arcade.key.D:
             player.change_x = MOVEMENT_SPEED
             player.direction = "right"
-        elif key == arcade.key.P:
-            print(player.humain.get_up())
         else:
-            return False
-
+            return False            
         player.toggle_texture()
         return True
 
     def reset_movement_on_release(self, key, modifiers):
         player = self.game_view.player_sprite
-        if key == arcade.key.UP:
+        if key == arcade.key.Z:
             player.change_y = 0
             player.texture = player.textures["up"]
-        elif key == arcade.key.DOWN:
+        elif key == arcade.key.S:
             player.change_y = 0
             player.texture = player.textures["down"]
-        elif key == arcade.key.LEFT:
+        elif key == arcade.key.Q:
             player.change_x = 0
             player.texture = player.textures["left"]
-        elif key == arcade.key.RIGHT:
+        elif key == arcade.key.D:
             player.change_x = 0
             player.texture = player.textures["right"]
 
     # Pour reinitialiser certains états si on bouge pendant une autre action
     def to_reinit(self, key):
         # Si on est en train de discuter et qu'on bouge → annuler
-        if self.game_view.is_typing and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
+        if self.game_view.is_typing and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
             self.game_view.is_typing = False
             self.game_view.last_response = ""
             self.game_view.current_input = ""
             self.game_view.current_pnj = None
 
         # Idem pour les stratégiques
-        if self.game_view.current_strategique and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
+        if self.game_view.current_strategique and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
             self.game_view.current_strategique = None
 
         # Pour arreter l'augmentation des stats
-        if self.game_view.current_objet and key in (arcade.key.UP, arcade.key.DOWN, arcade.key.LEFT, arcade.key.RIGHT):
+        if self.game_view.current_objet and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
             self.game_view.current_objet = None   
             self.game_view.player_sprite.stop_up()
+
+    # Pour les paneaux
+    def to_show_stat(self, key):
+        if key == arcade.key.P:
+            self.game_view.show_stats = not self.game_view.show_stats  
 
     # Pour les dialogues
     def to_dialogue(self, key):
@@ -178,6 +208,39 @@ class Keycaps:
 class Interact:
     def __init__(self, game_view):
         self.game_view = game_view
+        tmx_path = "map/box/stat_box.tmx"
+        self.mini_tile_map = arcade.load_tilemap(tmx_path, scaling=0.5)
+        self.mini_scene = arcade.Scene.from_tilemap(self.mini_tile_map)
+        self.mini_map_camera = arcade.Camera2D()
+
+    # Déssine la stat_box
+    def draw_stat_box(self):
+        if self.game_view.show_stats:
+
+            # Activer la caméra mini-map
+            self.mini_map_camera.use()
+
+            # Positionner la caméra
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+
+            # Dessiner la mini-scène
+            self.mini_scene.draw()
+
+            arcade.draw_text("Stats :", 175, 260, arcade.color.ORANGE, 14)
+            arcade.draw_text(f"Forcee : {self.game_view.player_sprite.humain.force}", 175, 240, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Vitesse : {self.game_view.player_sprite.humain.vitesse}", 175, 220, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Endurance : {self.game_view.player_sprite.humain.endurance}", 175, 200, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Mathe : {self.game_view.player_sprite.humain.mathematique}", 175, 180, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Logique : {self.game_view.player_sprite.humain.logique}", 175, 160, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Music : {self.game_view.player_sprite.humain.music}", 175, 140, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Langue : {self.game_view.player_sprite.humain.langue}", 175, 120, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Sociale : {self.game_view.player_sprite.humain.sociale}", 175, 100, arcade.color.BLACK, 14)
+
+            # Réactiver la caméra principale (celle qui suit le joueur)
+            self.game_view.camera_sprites.use()
+
+            # self.game_view.camera_gui.use()
+            
 
     def draw_interact_box(self):
         arcade.get_window().use()

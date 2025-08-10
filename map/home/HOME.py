@@ -18,7 +18,7 @@ class GameView(BaseGameView):
         self.scene = arcade.Scene.from_tilemap(self.tile_map) # scene est dans BaseGameView
         
         # Créer le joueur
-        self.player_sprite =  Player.load_player(720, 50)     # create_player est dans BaseGameView
+        self.player_sprite =  Player.load_player(745, 970)     # create_player est dans BaseGameView
         self.scene.add_sprite("Player", self.player_sprite)   # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs
@@ -27,10 +27,15 @@ class GameView(BaseGameView):
 
         # Creer les objets
         livre = Progresseur("assets/images/bibliotheque.png", 1, "Multiplication", "mathematique", 0, 0.15)
-        livre.center_x = 96
-        livre.center_y = 910
+        livre.center_x =  1104
+        livre.center_y =  627
         self.objet_sprites.append(livre)
         self.scene.add_sprite("Livre", livre)
+        ordinateur = Progresseur("assets/images/ordinateur.png", 1, "Jeu échec", "logique", 0, 0.18)
+        ordinateur.center_x =  73
+        ordinateur.center_y =  667
+        self.objet_sprites.append(ordinateur)
+        self.scene.add_sprite("Ordinateur", ordinateur)
 
         # Creer les obstacles
         obstacles = self.interact.create_obstacles()
@@ -56,15 +61,20 @@ class GameView(BaseGameView):
         self.interact.interact_pnj_strateg()
             
         # Pour dialoguer avec les PNJ
-        self.interact.interact_pnj()    
+        self.interact.interact_pnj()  
+
+        
 
         # Pour aller à une autre map
-        if 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 :
+        if 975 <= self.player_sprite.center_y <= 980 and 744 <= self.player_sprite.center_x <= 745 :
             left, top = self.interact.draw_interact_box()
             arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14) 
 
         # Déssine la camera
-        self.camera_gui.use()    
+        self.camera_gui.use()  
+
+        # Pour la stat_box
+        self.interact.draw_stat_box()  
 
         # Pour avoir la position du joueur sur la carte
         self.get_position()      
@@ -80,6 +90,10 @@ class GameView(BaseGameView):
         self.scene.update(delta_time) # scene déclarer dans BaseGameView
         self.follow_player()          # Fonction déclarer dans BaseGameView
 
+    """ Fonction pour gérer les clicks souris """
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.keycaps.on_mouse_press(x, y, button, modifiers)
+
     """ Fonction pour gérer les touches """
     def on_key_press(self, key, modifiers):
 
@@ -87,7 +101,7 @@ class GameView(BaseGameView):
         self.keycaps.handle_key_press(key, modifiers) 
 
         # Pour aller à PHL
-        if 0 <= self.player_sprite.center_y <= 55 and 695 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
+        if 975 <= self.player_sprite.center_y <= 980 and 744 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
             self.player_sprite.save_player()
             self.manager.switch_map("phl")
     

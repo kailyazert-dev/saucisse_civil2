@@ -22,8 +22,8 @@ class Humain:
     def get_intensite_boof(self):
         return(self.intensite_boof)
     
-    def get_up(self):
-        print(
+    def get_stat(self):
+        return(
             f"Force : {self.force}\n"
             f"vitesse : {self.vitesse}\n"
             f"endurance : {self.endurance}\n"

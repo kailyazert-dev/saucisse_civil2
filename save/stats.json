@@ -7,11 +7,11 @@
     "force": 0.1,
     "vitesse": 0.1,
     "endurance": 0.1,
-    "mathematique": 0.154,
-    "logique": 0.1,
+    "mathematique": 0.146,
+    "logique": 0.146,
     "music": 0.1,
     "langue": 0.1,
     "sociale": 0.1,
-    "x": 720,
-    "y": 50
+    "x": 745,
+    "y": 970
 }
