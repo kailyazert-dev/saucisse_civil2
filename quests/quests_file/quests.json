@@ -1,0 +1,171 @@
+[
+    {
+        "arc": 1,
+        "name": "Trouver un job de développeur.",
+        "description": "Vous debut votre aventure comme tous les chlingoses qui l'on fait avant vous. Commencé par avoir les compétences d'une bonne sous merde d'esclave de ce monde capitaliste, et n'oublie pas que tu vis dans un saucisse, et qu'ici ca dev !",
+        "status": "ec",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Formation autodidact.",
+                "description": "Commence par avoir les compétences necessaires pour un job de dév.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Atteindre le niveau 0.15 en mathématique",
+                        "description": "Lire le livre Pythagore.",
+                        "status": "na",
+                        "type": "stat",
+                        "stat_key": "mathematique",
+                        "validator": 0.15
+                    },
+                    {
+                        "name": "Atteindre le niveau 0.15 en logique",
+                        "description": "Jouer au jeu d'échec.",
+                        "status": "na",
+                        "type": "stat",
+                        "stat_key": "logique",
+                        "validator": 0.15
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "Postuler sur indead.",
+                "description": "Grace aux nouvelles compétences acquises, il est temps de chercher un job.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "rediger son cv",
+                        "description": "Utiliser son pc pour rédiger son cv.",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    },
+                    {
+                        "name": "",
+                        "description": "Envoyer son cv sur indead.",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Lire le retour des entreprises.",
+                "description": "Il est temps de vérifier le retour des entreprises.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Consulté tes mails.",
+                        "description": "Vous avez recus un mail. Vas le lire grosse larve!",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    },
+                    {
+                        "name": "Répondre à l'offre.",
+                        "description": "Une boite veut bien vous recruter malgré vos piètres compétences. S'agit t'il d'un tracnar ? seul l'histoire vous le dirat",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "arc": 2,
+        "name": "La super POEI",
+        "description": "Pour répondre au mieux aux exigences de ton nouveau job tu doit passer une formation qui te permettra d'avoir les compétences nécessaire.",
+        "status": "nc",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Aller a la formation.",
+                "description": "Bin vas la formation.",
+                "status": "Non commencé",
+                "objectives": [
+                    {
+                        "name": "Parle à sylvain.",
+                        "description": "Parle avec tes formateurs.",
+                        "status": "Non atteint",
+                        "type": "talk",
+                        "stat_key": "Sylvain",
+                        "validator": 1
+                    },
+                    {
+                        "name": "Parle à Jean christophe.",
+                        "description": "Parle avec tes formateurs.",
+                        "status": "Non atteint",
+                        "type": "talk",
+                        "stat_key": "Jean christophe",
+                        "validator": 1
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "Apprend le super language révolutionnaire du turfu.",
+                "description": "Acqui les compétences pour validé ta formation.",
+                "status": "Non commencé",
+                "objectives": [
+                    {
+                        "name": "Apprend le RPG.",
+                        "description": "Apprend le RPG.",
+                        "status": "Non atteint",
+                        "type": "stat",
+                        "stat_key": "RPG",
+                        "validator": 0.14
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Termine ta formation.",
+                "description": "Pour valider ta formation tu doit passer un test ultime d'algo digne de la NASA.",
+                "status": "Non commencé",
+                "objectives": [
+                    {
+                        "name": "Valide le test de la formation.",
+                        "description": "Réussit le test d'algo de la NASA.",
+                        "status": "Non atteint",
+                        "type": "test",
+                        "stat_key": "",
+                        "validator": 1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "arc": 3,
+        "name": "Bienvenu chez 'Armonie pas mutuelle'.",
+        "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
+        "status": "nc",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Aller au taf.",
+                "description": "Bin vas au taf.",
+                "status": "Non commencé",
+                "objectives": [
+                    {
+                        "name": "Rencontre Guy.",
+                        "description": "Guy est le directeur de l'entreprise. Ton patron. Choisit un secteur d'activité",
+                        "status": "Non atteint",
+                        "type": "stat",
+                        "stat_key": "secteur",
+                        "validator": 1
+                    }
+                ]
+            }
+        ]
+    }
+    
+]

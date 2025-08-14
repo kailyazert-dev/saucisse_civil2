@@ -6,20 +6,27 @@ from map.map_base import BaseGameView
 
 class GameView(BaseGameView):
 
+    def __init__(self, environnement, quest_manager):
+        super().__init__(environnement, quest_manager)
+        self.quest_manager = quest_manager
+
     """ Configuration de la map """
     def setup(self, last_map):
         # Chemin vers la carte TMX
-        home = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../home/HOME.tmx")
+        home = os.path.join(os.path.dirname(os.path.abspath(__file__)), "HOME.tmx")
 
         # Charger la carte TMX
         self.tile_map = arcade.load_tilemap(home, scaling=1.0) # tile_map est dans BaseGameView
 
         # Créer la scène à partir de la tilemap
         self.scene = arcade.Scene.from_tilemap(self.tile_map) # scene est dans BaseGameView
+
+        # Vérifie si l'arc 1 est terminer (renvoie true si oui)
+        self.arc1_t = self.quest_manager.arc.status == 't'
         
         # Créer le joueur
-        self.player_sprite =  Player.load_player(745, 970)     # create_player est dans BaseGameView
-        self.scene.add_sprite("Player", self.player_sprite)   # ajoute le joueur à la liste des éléments de la scene
+        self.player_sprite =  Player.load_player(745, 970, self.quest_manager)     # create_player est dans BaseGameView
+        self.scene.add_sprite("Player", self.player_sprite)    # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs
 
@@ -31,7 +38,7 @@ class GameView(BaseGameView):
         livre.center_y =  627
         self.objet_sprites.append(livre)
         self.scene.add_sprite("Livre", livre)
-        ordinateur = Progresseur("assets/images/ordinateur.png", 1, "Jeu échec", "logique", 0, 0.18)
+        ordinateur = Progresseur("assets/images/ordinateur.png", 1, "Jeu échec", "logique", 0, 0.16)
         ordinateur.center_x =  73
         ordinateur.center_y =  667
         self.objet_sprites.append(ordinateur)
@@ -63,18 +70,17 @@ class GameView(BaseGameView):
         # Pour dialoguer avec les PNJ
         self.interact.interact_pnj()  
 
-        
-
-        # Pour aller à une autre map
-        if 975 <= self.player_sprite.center_y <= 980 and 744 <= self.player_sprite.center_x <= 745 :
-            left, top = self.interact.draw_interact_box()
-            arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14) 
+        # Pour aller à PHL (à condition d'avoir reusit la premiere quête)
+        if self.arc1_t :
+            if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750 :
+                left, top = self.interact.draw_interact_box()
+                arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14) 
 
         # Déssine la camera
         self.camera_gui.use()  
 
         # Pour la stat_box
-        self.interact.draw_stat_box()  
+        self.interact.draw_box()  
 
         # Pour avoir la position du joueur sur la carte
         self.get_position()      
@@ -100,10 +106,11 @@ class GameView(BaseGameView):
         # Apelle les fonctions de base
         self.keycaps.handle_key_press(key, modifiers) 
 
-        # Pour aller à PHL
-        if 975 <= self.player_sprite.center_y <= 980 and 744 <= self.player_sprite.center_x <= 745 and key == arcade.key.RALT:
-            self.player_sprite.save_player()
-            self.manager.switch_map("phl")
+        # Pour aller à PHL (à condition d'avoir réussit la quête 1)
+        if self.arc1_t:
+            if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750 and key == arcade.key.RALT:
+                self.player_sprite.save_player()
+                self.manager.switch_map("phl")
     
     def on_key_release(self, key, modifiers):
         self.keycaps.reset_movement_on_release(key, modifiers)

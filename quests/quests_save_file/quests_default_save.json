@@ -1,0 +1,34 @@
+[
+    {
+        "arc": 1,
+        "name": "Trouver un job de développeur.",
+        "description": "Vous debut votre aventure comme tous les chlingoses qui l'on fait avant vous. Commencé par avoir les compétences d'une bonne sous merde d'esclave de ce monde capitaliste, et n'oublie pas que tu vis dans un saucisse, et qu'ici ca dev !",
+        "status": "ec",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Formation autodidact.",
+                "description": "Commence par avoir les compétences necessaires pour un job de dév.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Atteindre le niveau 0.15 en mathématique",
+                        "description": "Lire le livre Pythagore.",
+                        "status": "na",
+                        "type": "stat",
+                        "stat_key": "mathematique",
+                        "validator": 0.15
+                    },
+                    {
+                        "name": "Atteindre le niveau 0.15 en logique",
+                        "description": "Jouer au jeu d'échec.",
+                        "status": "na",
+                        "type": "stat",
+                        "stat_key": "logique",
+                        "validator": 0.15
+                    }
+                ]
+            }
+        ]
+    }
+]

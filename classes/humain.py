@@ -1,9 +1,10 @@
 import json
 import arcade
 from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
+from quests.quest_manager import QuestManager
 
 class Humain:
-    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, music=0.1, langue=0.1, sociale=0.1, x=0, y=0):
+    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, rpg=0.1, music=0.1, langue=0.1, sociale=0.1, x=0, y=0):
         self.charisme = charisme
         self.rigidite = rigidite
         self.intensite_boof = beauf
@@ -13,22 +14,35 @@ class Humain:
         self.endurance = endurance
         self.mathematique = mathematique
         self.logique = logique
+        self.rpg = rpg
         self.music = music
         self.langue = langue
         self.sociale = sociale
         self.x = x
         self.y = y    
     
-    def get_intensite_boof(self):
-        return(self.intensite_boof)
+    def get_stats_génétiques(self):
+        return(
+            f"charisme : {self.charisme}\n",
+            f"rigidite : {self.rigidite}\n",
+            f"intensite_boof : {self.intensite_boof}\n",
+            f"receptif_boof : {self.receptif_boof}\n"
+        )
     
-    def get_stat(self):
+    def get_stats_physique(self):
         return(
             f"Force : {self.force}\n"
             f"vitesse : {self.vitesse}\n"
             f"endurance : {self.endurance}\n"
+        )   
+    def get_stats_intelecte(self):
+        return(
             f"mathematique : {self.mathematique}\n"
             f"logique : {self.logique}\n"
+            f"rpg : {self.rpg}"
+        )   
+    def get_stats_sociale(self):
+        return(
             f"music : {self.music}\n"
             f"langue : {self.langue}\n"
             f"sociale : {self.sociale}\n"
@@ -54,10 +68,11 @@ class PNJ(arcade.Sprite):
         return(f"{self.nom}")    
 
 class Player(arcade.Sprite):
-    def __init__(self, humain, nom, image_file, scale=PLAYER_SCALING):
+    def __init__(self, humain, nom, image_file, quest_manager, scale=PLAYER_SCALING):
         super().__init__(image_file, scale)
         self.humain = humain
         self.nom = nom
+        self.quest_manager = quest_manager
 
         # Pour les augmentations
         self.up = False
@@ -99,7 +114,7 @@ class Player(arcade.Sprite):
         )
 
     def start_up(self, stat_cible, objet_progresseur=None):
-        """Démarre l’augmentation progressive de la force."""
+        """Démarre l’augmentation progressive des stats."""
         self.up = True
         self.stat_to_up = stat_cible
         self.time_since_last_up_increase = 0.0
@@ -118,6 +133,8 @@ class Player(arcade.Sprite):
                     current_value = getattr(self.humain, self.stat_to_up, None)
                     if current_value is not None:
                         new_value = round(current_value + 0.002, 3)
+                        stat = self.stat_to_up
+                        self.quest_manager.check_objective(stat, new_value)
                         if self.current_progresseur:
                             max_value = self.current_progresseur.stat_max
                             if new_value > max_value:
@@ -181,6 +198,7 @@ class Player(arcade.Sprite):
         elif self.direction == "right":
             self.texture = self.textures_right[self.current_texture_index]        
 
+    """ Pour sauvegarder les stats du player. """
     def save_player(self):
         stats = {
             "nom": self.nom,
@@ -202,9 +220,10 @@ class Player(arcade.Sprite):
         filename = 'save/stats.json'
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(stats, f, ensure_ascii=False, indent=4)
-
+            
+    """ Pour charger le player. """
     @staticmethod
-    def load_player(x, y, scale=PLAYER_SCALING):
+    def load_player(x, y, quest_manger, scale=PLAYER_SCALING):
         filename = 'save/stats.json'
         with open(filename, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -226,7 +245,7 @@ class Player(arcade.Sprite):
             y = y
         )
         image_file = 'assets/images/player_d.png'
-        player = Player(humain, data["nom"], image_file, scale)
+        player = Player(humain, data["nom"], image_file, quest_manger, scale)
         player.center_x = x
         player.center_y = y
         return player        

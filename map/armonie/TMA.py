@@ -6,6 +6,10 @@ from map.map_base import BaseGameView
 
 class GameView(BaseGameView):
 
+    def __init__(self, environnement, quest_manager):
+        super().__init__(environnement, quest_manager)
+        self.quest_manager = quest_manager
+
     """ Configuration de la map """
     def setup(self, last_map):
         # Chemin vers la carte TMX
@@ -18,7 +22,7 @@ class GameView(BaseGameView):
         self.scene = arcade.Scene.from_tilemap(self.tile_map) # scene est dans BaseGameView
         
         # Créer le joueur
-        self.player_sprite = Player.load_player(1300, 1225)      # create_player est dans BaseGameView
+        self.player_sprite = Player.load_player(1300, 1225, self.quest_manager)      # create_player est dans BaseGameView
         self.scene.add_sprite("Player", self.player_sprite)   # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs

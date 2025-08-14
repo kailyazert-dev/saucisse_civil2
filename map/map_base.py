@@ -10,7 +10,7 @@ load_dotenv()
 API_KEY = os.getenv("REPLICATE_API_TOKEN")
 
 class BaseGameView(arcade.View):
-    def __init__(self, environnement):
+    def __init__(self, environnement, quest_manager):
         super().__init__()
         # Pour les maps
         self.environnement = environnement
@@ -33,7 +33,9 @@ class BaseGameView(arcade.View):
         self.last_response = ""
         self.is_typing = False
         # Pour les stat_box
+        self.quest_manager = quest_manager
         self.show_stats = False
+        self.show_quests = False
 
         # Ajout des gestionnaires séparés
         self.keycaps = Keycaps(self)
@@ -104,6 +106,7 @@ class Keycaps:
 
         # 3. Gestion des paneaux
         self.to_show_stat(key)
+        self.to_show_quests(key)
 
         # 4. Gestion des dialogues avec PNJ
         self.to_dialogue(key)
@@ -168,6 +171,14 @@ class Keycaps:
     def to_show_stat(self, key):
         if key == arcade.key.P:
             self.game_view.show_stats = not self.game_view.show_stats  
+    def to_show_quests(self, key):
+        if key == arcade.key.O:
+            self.game_view.show_quests = not self.game_view.show_quests
+            quest_act = next((q for q in self.game_view.quest_manager.arc.quests if q.status == "ec"), None)
+            print(quest_act.title, quest_act.description, quest_act.status)
+            for obj in quest_act.objectives:
+                print(obj.name, obj.description, obj.status)
+                  
 
     # Pour les dialogues
     def to_dialogue(self, key):
@@ -208,26 +219,32 @@ class Keycaps:
 class Interact:
     def __init__(self, game_view):
         self.game_view = game_view
-        tmx_path = "map/box/stat_box.tmx"
-        self.mini_tile_map = arcade.load_tilemap(tmx_path, scaling=0.5)
-        self.mini_scene = arcade.Scene.from_tilemap(self.mini_tile_map)
+        # chemin vers les fichier TMX
+        box_stats_tmx_path = "map/box/stat_box.tmx"
+        box_quests_tmx_path = "map/box/stat_box.tmx"
+
+        # fichier TMX
+        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=0.5)
+        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=0.5)
+
+        self.box_stat = arcade.Scene.from_tilemap(self.stat_map)
+        self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
+
         self.mini_map_camera = arcade.Camera2D()
 
     # Déssine la stat_box
-    def draw_stat_box(self):
+    def draw_box(self):
         if self.game_view.show_stats:
-
+            
             # Activer la caméra mini-map
             self.mini_map_camera.use()
-
             # Positionner la caméra
             self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
 
-            # Dessiner la mini-scène
-            self.mini_scene.draw()
-
+            # Dessiner la box des stats + ecri les stats
+            self.box_stat.draw()
             arcade.draw_text("Stats :", 175, 260, arcade.color.ORANGE, 14)
-            arcade.draw_text(f"Forcee : {self.game_view.player_sprite.humain.force}", 175, 240, arcade.color.BLACK, 14)
+            arcade.draw_text(f"Force : {self.game_view.player_sprite.humain.force}", 175, 240, arcade.color.BLACK, 14)
             arcade.draw_text(f"Vitesse : {self.game_view.player_sprite.humain.vitesse}", 175, 220, arcade.color.BLACK, 14)
             arcade.draw_text(f"Endurance : {self.game_view.player_sprite.humain.endurance}", 175, 200, arcade.color.BLACK, 14)
             arcade.draw_text(f"Mathe : {self.game_view.player_sprite.humain.mathematique}", 175, 180, arcade.color.BLACK, 14)
@@ -238,8 +255,19 @@ class Interact:
 
             # Réactiver la caméra principale (celle qui suit le joueur)
             self.game_view.camera_sprites.use()
+        
+        if self.game_view.show_quests:
+            # Activer la caméra mini-map
+            self.mini_map_camera.use()
+            # Positionner la caméra
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+            
+            # Dessiner la box des quests + ecri les quêtes
+            self.box_quest.draw()
+            arcade.draw_text("Quêtes :", 175, 260, arcade.color.ORANGE, 14)
 
-            # self.game_view.camera_gui.use()
+            # Réactiver la caméra principale (celle qui suit le joueur)
+            self.game_view.camera_sprites.use()
             
 
     def draw_interact_box(self):
