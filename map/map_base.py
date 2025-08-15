@@ -73,27 +73,31 @@ class Keycaps:
         self.game_view = game_view
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Convertir pixels → coordonnées de la grille
-            tile_x = int(x // 48)
-            tile_y = int(y // 48)
-            print(f"📍 Clic sur la case ({tile_x}, {tile_y})")
 
-        # if button == arcade.MOUSE_BUTTON_LEFT:
-        #     world_pos = self.game_view.camera_sprites.unproject((x, y))
-        #     world_x, world_y = world_pos.x, world_pos.y
-        #     print(f"Clic écran: ({x}, {y}) -> monde: ({world_x:.2f}, {world_y:.2f})")
+        # --- 1️⃣ Détection dans le monde principal ---
+        world_pos = self.game_view.camera_sprites.unproject((x, y))
+        world_x, world_y = world_pos.x, world_pos.y
 
-        #     for element in self.game_view.objet_sprites:
-        #         left = element.left
-        #         right = element.right
-        #         bottom = element.bottom
-        #         top = element.top
-        #         if left <= world_x <= right and bottom <= world_y <= top:
-        #             print(f"💡 Tu as cliqué sur {element.get_nom()}, position: ({element.center_x}, {element.center_y}), "
-        #                 f"width: {element.width}, height: {element.height}")
-        #             self.game_view.current_objet = element
-        #             return
+        for element in self.game_view.objet_sprites:
+            if element.left <= world_x <= element.right and element.bottom <= world_y <= element.top:
+                print(f"💡 Tu as cliqué sur {element.get_nom()}")
+                self.game_view.current_objet = element
+                return  # on arrête ici si trouvé
+
+        # --- 2️⃣ Détection dans la box des stats ---
+        if self.game_view.show_stats:
+            # Conversion du clic avec la caméra mini-map
+            mini_world_pos = self.game_view.interact.mini_map_camera.unproject((x, y))
+            mini_x, mini_y = mini_world_pos.x, mini_world_pos.y
+
+            for tile in self.game_view.interact.choise_stat:
+                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
+                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Stats-base"]
+                    return
+            for tile in self.game_view.interact.choise_bag:
+                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
+                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Bag-base"]
+                    return
 
     def handle_key_press(self, key, modifiers):
         """Point d'entrée unique pour la gestion des touches pressées."""
@@ -221,13 +225,19 @@ class Interact:
         self.game_view = game_view
         # chemin vers les fichier TMX
         box_stats_tmx_path = "map/box/stat_box.tmx"
-        box_quests_tmx_path = "map/box/stat_box.tmx"
+        box_quests_tmx_path = "map/box/quests_box.tmx"
 
         # fichier TMX
-        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=0.5)
-        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=0.5)
+        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=1)
+        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=1)
 
+        # les claques de box_stat
         self.box_stat = arcade.Scene.from_tilemap(self.stat_map)
+        self.base = self.stat_map.sprite_lists["Base"]
+        self.top = self.stat_map.sprite_lists["Top-base"]
+        self.choise_stat = self.stat_map.sprite_lists["Choise_1"]
+        self.choise_bag = self.stat_map.sprite_lists["Choise_2"]
+        self.sous_box = self.stat_map.sprite_lists["Stats-base"]
         self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
 
         self.mini_map_camera = arcade.Camera2D()
@@ -239,19 +249,34 @@ class Interact:
             # Activer la caméra mini-map
             self.mini_map_camera.use()
             # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180, WINDOW_HEIGHT//2)
 
             # Dessiner la box des stats + ecri les stats
-            self.box_stat.draw()
-            arcade.draw_text("Stats :", 175, 260, arcade.color.ORANGE, 14)
-            arcade.draw_text(f"Force : {self.game_view.player_sprite.humain.force}", 175, 240, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Vitesse : {self.game_view.player_sprite.humain.vitesse}", 175, 220, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Endurance : {self.game_view.player_sprite.humain.endurance}", 175, 200, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Mathe : {self.game_view.player_sprite.humain.mathematique}", 175, 180, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Logique : {self.game_view.player_sprite.humain.logique}", 175, 160, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Music : {self.game_view.player_sprite.humain.music}", 175, 140, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Langue : {self.game_view.player_sprite.humain.langue}", 175, 120, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Sociale : {self.game_view.player_sprite.humain.sociale}", 175, 100, arcade.color.BLACK, 14)
+            # self.box_stat.draw()
+            self.base.draw()
+            self.top.draw()
+            self.choise_stat.draw()
+            self.choise_bag.draw()
+            self.sous_box.draw()
+            arcade.draw_text("Physique ", 230, 640, arcade.color.ORANGE, 18)
+            arcade.draw_text("Intellect ", 230, 592, arcade.color.ORANGE, 18)
+            arcade.draw_text("Sociale ", 230, 544, arcade.color.ORANGE, 18)
+            if self.sous_box == self.stat_map.sprite_lists["Stats-base"]:
+                y = 325
+                arcade.draw_text("Stats physique :", 105, 350, arcade.color.ORANGE, 18)
+                for key, value in self.game_view.player_sprite.humain.get_stats_physique():
+                    arcade.draw_text(f"{key} : {value}", 105, y, arcade.color.BLACK, 18)
+                    y -= 25    
+                arcade.draw_text("Stats intellectuel :", 305, 350, arcade.color.ORANGE, 18)
+                y = 325
+                for key, value in self.game_view.player_sprite.humain.get_stats_intellect():
+                    arcade.draw_text(f"{key} : {value}", 305, y, arcade.color.BLACK, 18)
+                    y -= 25    
+                arcade.draw_text("Stats sociale :", 505, 350, arcade.color.ORANGE, 18)
+                y = 325
+                for key, value in self.game_view.player_sprite.humain.get_stats_sociale():
+                    arcade.draw_text(f"{key} : {value}", 505, y, arcade.color.BLACK, 18)
+                    y -= 25    
 
             # Réactiver la caméra principale (celle qui suit le joueur)
             self.game_view.camera_sprites.use()
@@ -260,11 +285,10 @@ class Interact:
             # Activer la caméra mini-map
             self.mini_map_camera.use()
             # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180, WINDOW_HEIGHT//2)
             
             # Dessiner la box des quests + ecri les quêtes
             self.box_quest.draw()
-            arcade.draw_text("Quêtes :", 175, 260, arcade.color.ORANGE, 14)
 
             # Réactiver la caméra principale (celle qui suit le joueur)
             self.game_view.camera_sprites.use()

@@ -4,7 +4,7 @@ from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
 from quests.quest_manager import QuestManager
 
 class Humain:
-    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, rpg=0.1, music=0.1, langue=0.1, sociale=0.1, x=0, y=0):
+    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, rpg=0.1, music=0.1, langue=0.1, sociabilité=0.1, x=0, y=0):
         self.charisme = charisme
         self.rigidite = rigidite
         self.intensite_boof = beauf
@@ -17,7 +17,7 @@ class Humain:
         self.rpg = rpg
         self.music = music
         self.langue = langue
-        self.sociale = sociale
+        self.sociabilité = sociabilité
         self.x = x
         self.y = y    
     
@@ -30,23 +30,23 @@ class Humain:
         )
     
     def get_stats_physique(self):
-        return(
-            f"Force : {self.force}\n"
-            f"vitesse : {self.vitesse}\n"
-            f"endurance : {self.endurance}\n"
-        )   
-    def get_stats_intelecte(self):
-        return(
-            f"mathematique : {self.mathematique}\n"
-            f"logique : {self.logique}\n"
-            f"rpg : {self.rpg}"
-        )   
+        return [
+            ("Force", self.force),
+            ("Vitesse", self.vitesse),
+            ("Endurance", self.endurance),
+        ]  
+    def get_stats_intellect(self):
+        return[
+            ("Math", self.mathematique),
+            ("Logique", self.logique),
+            ("RPG", self.rpg),
+        ]
     def get_stats_sociale(self):
-        return(
-            f"music : {self.music}\n"
-            f"langue : {self.langue}\n"
-            f"sociale : {self.sociale}\n"
-        )   
+        return[
+            ("Musique", self.music),
+            ("Langue", self.langue),
+            ("Sociabilité", self.sociabilité),
+        ]
 
 class PNJ(arcade.Sprite):
     def __init__(self, nom, humain, type, image_path, scale):
@@ -238,9 +238,10 @@ class Player(arcade.Sprite):
             endurance=data["endurance"],
             mathematique=data["mathematique"],
             logique=data["logique"],
+            rpg=data["rpg"], 
             music=data["music"],
             langue=data["langue"],
-            sociale=data["sociale"],
+            sociabilité=data["sociabilité"],
             x = x,                                                         
             y = y
         )
