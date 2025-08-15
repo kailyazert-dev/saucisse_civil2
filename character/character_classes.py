@@ -1,7 +1,6 @@
 import json
 import arcade
 from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
-from quests.quest_manager import QuestManager
 
 class Humain:
     def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, rpg=0.1, music=0.1, langue=0.1, sociabilité=0.1, x=0, y=0):
@@ -68,17 +67,12 @@ class PNJ(arcade.Sprite):
         return(f"{self.nom}")    
 
 class Player(arcade.Sprite):
-    def __init__(self, humain, nom, image_file, quest_manager, scale=PLAYER_SCALING):
+    def __init__(self, humain, nom, image_file, quest_manager, character_manager, scale=PLAYER_SCALING):
         super().__init__(image_file, scale)
         self.humain = humain
         self.nom = nom
         self.quest_manager = quest_manager
-
-        # Pour les augmentations
-        self.up = False
-        self.time_since_last_up_increase = 0.0
-        self.up_increase_interval = 2.0
-        self.stat_to_up = None
+        self.character_manager = character_manager
 
         self.textures = {
             "up": arcade.load_texture("assets/images/player_u.png"),
@@ -113,41 +107,9 @@ class Player(arcade.Sprite):
             f"Force : {self.humain.force}\n"
         )
 
-    def start_up(self, stat_cible, objet_progresseur=None):
-        """Démarre l’augmentation progressive des stats."""
-        self.up = True
-        self.stat_to_up = stat_cible
-        self.time_since_last_up_increase = 0.0
-        self.current_progresseur = objet_progresseur
-
-    def stop_up(self):
-        """Arrête l’augmentation des stats."""
-        self.up = False
-
     def update(self, delta_time: float = 1/60):
-        """ Augmentation des stats """
-        if self.up:
-            self.time_since_last_up_increase += delta_time
-            if self.time_since_last_up_increase >= self.up_increase_interval:
-                if self.stat_to_up:
-                    current_value = getattr(self.humain, self.stat_to_up, None)
-                    if current_value is not None:
-                        new_value = round(current_value + 0.002, 3)
-                        stat = self.stat_to_up
-                        self.quest_manager.check_objective(stat, new_value)
-                        if self.current_progresseur:
-                            max_value = self.current_progresseur.stat_max
-                            if new_value > max_value:
-                                print(f"🚫 {self.stat_to_up} a atteint la limite ({max_value:.3f})")
-                                self.stop_up()
-                                return
 
-                        setattr(self.humain, self.stat_to_up, new_value)
-                        print(f"{self.nom} a gagné +0.002 en {self.stat_to_up} → {new_value:.3f}")
-                        self.save_player()
-                    else:
-                        print(f"⚠️ La stat '{self.stat_to_up}' n'existe pas.")
-                self.time_since_last_up_increase = 0.0
+        self.character_manager.update_player_stats(delta_time)
 
         """ Move the player """
         # Move player.
@@ -184,7 +146,7 @@ class Player(arcade.Sprite):
             elif self.direction == "left":
                 self.texture = self.textures["left"]
             elif self.direction == "right":
-                self.texture = self.textures["right"]    
+                self.texture = self.textures["right"]        
 
     def toggle_texture(self):
         self.current_texture_index = 1 - self.current_texture_index  # Alterne 0 <-> 1
@@ -198,55 +160,4 @@ class Player(arcade.Sprite):
         elif self.direction == "right":
             self.texture = self.textures_right[self.current_texture_index]        
 
-    """ Pour sauvegarder les stats du player. """
-    def save_player(self):
-        stats = {
-            "nom": self.nom,
-            "charisme": self.humain.charisme,
-            "rigidite": self.humain.rigidite,
-            "intensite_boof": self.humain.intensite_boof,
-            "receptif_boof": self.humain.receptif_boof,
-            "force": self.humain.force,
-            "vitesse": self.humain.vitesse,
-            "endurance": self.humain.endurance,
-            "mathematique": self.humain.mathematique,
-            "logique": self.humain.logique,
-            "music": self.humain.music,
-            "langue": self.humain.langue,
-            "sociale": self.humain.sociale,
-            "x": self.humain.x,
-            "y": self.humain.y,
-        }
-        filename = 'save/stats.json'
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(stats, f, ensure_ascii=False, indent=4)
-            
-    """ Pour charger le player. """
-    @staticmethod
-    def load_player(x, y, quest_manger, scale=PLAYER_SCALING):
-        filename = 'save/stats.json'
-        with open(filename, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
-        humain = Humain(
-            charisme=data["charisme"],
-            rigidite=data["rigidite"],
-            beauf=data["intensite_boof"],
-            receptif_beauf=data["receptif_boof"],
-            force=data["force"],
-            vitesse=data["vitesse"],
-            endurance=data["endurance"],
-            mathematique=data["mathematique"],
-            logique=data["logique"],
-            rpg=data["rpg"], 
-            music=data["music"],
-            langue=data["langue"],
-            sociabilité=data["sociabilité"],
-            x = x,                                                         
-            y = y
-        )
-        image_file = 'assets/images/player_d.png'
-        player = Player(humain, data["nom"], image_file, quest_manger, scale)
-        player.center_x = x
-        player.center_y = y
-        return player        
+      

@@ -2,7 +2,6 @@ import arcade
 import replicate
 import os
 from dotenv import load_dotenv
-from classes.humain import Humain, PNJ, Player
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, PLAYER_SCALING
 from assets.param_humain import IbmI_personnage
 
@@ -10,7 +9,7 @@ load_dotenv()
 API_KEY = os.getenv("REPLICATE_API_TOKEN")
 
 class BaseGameView(arcade.View):
-    def __init__(self, environnement, quest_manager):
+    def __init__(self, environnement, quest_manager, character_manager):
         super().__init__()
         # Pour les maps
         self.environnement = environnement
@@ -20,10 +19,12 @@ class BaseGameView(arcade.View):
         self.camera_sprites = arcade.Camera2D()
         self.camera_gui = arcade.Camera2D()
         self.camera_speed = 0.1
-        # Pour les elements de la map
+        # Pour les characteres
+        self.character_manager = character_manager
         self.player_sprite = None
         self.pnj_sprite = []
         self.current_pnj = None
+        # pour les objets
         self.objet_sprites = []
         self.current_objet = None
         self.strategique_sprite = []
@@ -78,11 +79,11 @@ class Keycaps:
         world_pos = self.game_view.camera_sprites.unproject((x, y))
         world_x, world_y = world_pos.x, world_pos.y
 
-        for element in self.game_view.objet_sprites:
-            if element.left <= world_x <= element.right and element.bottom <= world_y <= element.top:
-                print(f"💡 Tu as cliqué sur {element.get_nom()}")
-                self.game_view.current_objet = element
-                return  # on arrête ici si trouvé
+        # for element in self.game_view.objet_sprites:
+        #     if element.left <= world_x <= element.right and element.bottom <= world_y <= element.top:
+        #         print(f"💡 Tu as cliqué sur {element.get_nom()}")
+        #         self.game_view.current_objet = element
+        #         return  # on arrête ici si trouvé
 
         # --- 2️⃣ Détection dans la box des stats ---
         if self.game_view.show_stats:
@@ -169,7 +170,12 @@ class Keycaps:
         # Pour arreter l'augmentation des stats
         if self.game_view.current_objet and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
             self.game_view.current_objet = None   
-            self.game_view.player_sprite.stop_up()
+            # self.character_manager.stop_up()
+
+    # Augmente une statistique si un objet progresseur et ENTER est pressé.
+    def up_stat(self, key):
+        if self.game_view.current_objet and key == arcade.key.ENTER:
+            self.game_view.current_objet.utiliser(self.game_view.player_sprite, self.game_view.character_manager)   
 
     # Pour les paneaux
     def to_show_stat(self, key):
@@ -210,10 +216,7 @@ class Keycaps:
         elif self.game_view.is_typing and key == arcade.key.BACKSPACE:
             self.game_view.current_input = self.game_view.current_input[:-1]    
 
-    # Augmente une statistique si un objet progresseur et ENTER est pressé.
-    def up_stat(self, key):
-        if self.game_view.current_objet and key == arcade.key.ENTER:
-            self.game_view.current_objet.utiliser(self.game_view.player_sprite)           
+            
 
 
 
@@ -313,6 +316,7 @@ class Interact:
         obstacles.extend(self.game_view.scene["Mur"])
         return obstacles
 
+    # Pour les object progresseur
     def interact_obj_prg(self):
         player = self.game_view.player_sprite
         for objet in self.game_view.objet_sprites:

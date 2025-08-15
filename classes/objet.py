@@ -12,10 +12,10 @@ class Progresseur(Objet):
         self.stat_min = stat_min
         self.stat_max = stat_max
 
-    def utiliser(self, player):
+    def utiliser(self, player, character_manager):
         player_level_stat = getattr(player.humain, self.stat_cible)
         if self.stat_min <= player_level_stat < self.stat_max:
-            player.start_up(self.stat_cible, self)
+            character_manager.start_up(self)
 
     def get_nom(self):
         return(f"{self.nom}")   

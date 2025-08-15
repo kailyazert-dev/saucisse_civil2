@@ -1,14 +1,15 @@
 import arcade
 import os
-from classes.humain import Player
 from classes.objet import Progresseur
 from map.map_base import BaseGameView
+# from character.character_manager import CharacterManager
 
 class GameView(BaseGameView):
 
-    def __init__(self, environnement, quest_manager):
-        super().__init__(environnement, quest_manager)
+    def __init__(self, environnement, quest_manager, character_manager):
+        super().__init__(environnement, quest_manager, character_manager)
         self.quest_manager = quest_manager
+        self.character_manager = character_manager
 
     """ Configuration de la map """
     def setup(self, last_map):
@@ -25,7 +26,11 @@ class GameView(BaseGameView):
         self.arc1_t = self.quest_manager.arc.status == 't'
         
         # Créer le joueur
-        self.player_sprite =  Player.load_player(745, 970, self.quest_manager)     # create_player est dans BaseGameView
+        self.player_sprite = self.character_manager.player
+        self.player_sprite.center_x = 745
+        self.player_sprite.center_y = 970
+
+        # self.player_sprite = self.character_manager.load_player(745, 970, self.quest_manager)     # create_player est dans BaseGameView
         self.scene.add_sprite("Player", self.player_sprite)    # ajoute le joueur à la liste des éléments de la scene
 
         # Creer les PNJs

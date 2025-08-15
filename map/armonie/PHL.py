@@ -1,7 +1,7 @@
 import arcade
 import json
 import os
-from classes.humain import Humain, PNJ, Player
+from character.character_classes import Humain, PNJ, Player
 from classes.objet import Progresseur
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
