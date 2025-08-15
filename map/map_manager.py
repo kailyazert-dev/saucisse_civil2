@@ -1,4 +1,6 @@
 import arcade
+from map.map_classes.environnement import Environnement
+from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE
 from map.map_classes.HOME import GameView as homeview
 from map.map_classes.PHL import GameView as phlview
 from map.map_classes.TMA import GameView as tmaview
@@ -8,15 +10,23 @@ maps = {
     "phl" : phlview,
     "tma" : tmaview
 }
+# Création d'une instance d'Environnement
+travaille = Environnement("Bureau", tension_sociale=0.7, densite_sociale=0.5, regles_sociale="formelles")
+bar = Environnement("Bar", tension_sociale=0.2, densite_sociale=0.8, regles_sociale="informelles")
+
+window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, resizable=False)
+
 class MapManager:
-    def __init__(self, window, environnement_instance, quest_manager, character_manager):
+
+    def __init__(self, quest_manager, character_manager):
         self.window = window
-        self.environnement = environnement_instance
+        self.environnement = travaille
         self.quest_manager = quest_manager
         self.character_manager = character_manager
         self.last_map = None
         self.current_map = "home"
         self.view = None
+        self.load_initial_map()
 
     def load_initial_map(self):
         self.view = homeview(self.environnement, self.quest_manager, self.character_manager)

@@ -2,7 +2,7 @@ import arcade
 import replicate
 import os
 from dotenv import load_dotenv
-from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, PLAYER_SCALING
+from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED
 from assets.param_humain import IbmI_personnage
 
 load_dotenv()
