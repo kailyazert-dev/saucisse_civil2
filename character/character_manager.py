@@ -2,7 +2,7 @@ import random
 import os
 import json
 from itertools import combinations
-from assets.param_map import PLAYER_SCALING
+from assets.param_map import PLAYER_SCALING, MAP_WIDTH, MAP_HEIGHT
 from character.character_classes import Player, PNJ, Humain
 
 class CharacterManager:
@@ -33,6 +33,8 @@ class CharacterManager:
 
         # Chargement du player
         self.load_player(self.x, self.y, self.quest_manger)
+
+        self.mouve = Mouve(self)
 
     """ Pour charger le player. """
     def load_player(self, x, y, quest_manger, scale=PLAYER_SCALING):
@@ -126,8 +128,55 @@ class CharacterManager:
                         print(f"⚠️ La stat '{self.stat_to_up}' n'existe pas.")
                 self.time_since_last_up_increase = 0.0        
 
+class Mouve:
+    def __init__(self, CharacterManager, delta_time: float = 1/60):
+        self.manager = CharacterManager
+        self.delta_time = delta_time
 
+    def mouve(self, delta_time: float = 1/60):
+        player = self.manager.player
+        """ Move the player """
+        
+        # Déplacement
+        player.center_x += player.change_x
+        player.center_y += player.change_y
 
+        # Appelle l’update parent d'arcade.Sprite via player
+        super(Player, player).update(self.delta_time)
+
+        # Limites de la carte
+        if player.left < 0:
+            player.left = 0
+        elif player.right > MAP_WIDTH - 1:
+            player.right = MAP_WIDTH - 1
+
+        if player.bottom < 0:
+            player.bottom = 0
+        elif player.top > MAP_HEIGHT - 1:
+            player.top = MAP_HEIGHT - 1
+
+        # Animation : alterne la texture toutes les 0.2s si le joueur bouge
+        if player.change_x != 0 or player.change_y != 0:
+            player.time_since_last_texture_change += self.delta_time
+            if player.time_since_last_texture_change >= player.texture_switch_interval:
+                self.toggle_texture(player)
+                player.time_since_last_texture_change = 0.0
+        else:
+            # Si le joueur ne bouge pas, remettre la texture fixe correspondant à la direction
+            player.texture = player.textures[player.direction]    
+
+    # Animation : pour changer d'image pendant la marche
+    def toggle_texture(self, player):
+        player.current_texture_index = 1 - player.current_texture_index 
+
+        if player.direction == "up":
+            player.texture = player.textures_up[player.current_texture_index]
+        elif player.direction == "down":
+            player.texture = player.textures_down[player.current_texture_index]
+        elif player.direction == "left":
+            player.texture = player.textures_left[player.current_texture_index]
+        elif player.direction == "right":
+            player.texture = player.textures_right[player.current_texture_index]
 
 
 class Interaction:

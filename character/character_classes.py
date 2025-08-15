@@ -108,56 +108,9 @@ class Player(arcade.Sprite):
         )
 
     def update(self, delta_time: float = 1/60):
-
+        # pour update les stats
         self.character_manager.update_player_stats(delta_time)
-
-        """ Move the player """
-        # Move player.
-        # Remove these lines if physics engine is moving player.
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        # Appelle l’update parent
-        super().update(delta_time)
-
-        # Check for out-of-bounds
-        if self.left < 0:
-            self.left = 0
-        elif self.right > MAP_WIDTH - 1:
-            self.right = MAP_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > MAP_HEIGHT - 1:
-            self.top = MAP_HEIGHT - 1
-
-        # Animation : alterne la texture toutes les 0.2s si le joueur bouge
-        if self.change_x != 0 or self.change_y != 0:
-            self.time_since_last_texture_change += delta_time
-            if self.time_since_last_texture_change >= self.texture_switch_interval:
-                self.toggle_texture()
-                self.time_since_last_texture_change = 0.0
-        else:
-            # Si le joueur ne bouge pas, remettre la texture fixe correspondant à la direction
-            if self.direction == "up":
-                self.texture = self.textures["up"]
-            elif self.direction == "down":
-                self.texture = self.textures["down"]
-            elif self.direction == "left":
-                self.texture = self.textures["left"]
-            elif self.direction == "right":
-                self.texture = self.textures["right"]        
-
-    def toggle_texture(self):
-        self.current_texture_index = 1 - self.current_texture_index  # Alterne 0 <-> 1
-
-        if self.direction == "up":
-            self.texture = self.textures_up[self.current_texture_index]
-        elif self.direction == "down":
-            self.texture = self.textures_down[self.current_texture_index]
-        elif self.direction == "left":
-            self.texture = self.textures_left[self.current_texture_index]
-        elif self.direction == "right":
-            self.texture = self.textures_right[self.current_texture_index]        
+        # pour les animations de déplacement
+        self.character_manager.mouve.mouve(delta_time)    
 
       

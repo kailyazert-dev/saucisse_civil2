@@ -136,7 +136,7 @@ class Keycaps:
             player.direction = "right"
         else:
             return False            
-        player.toggle_texture()
+        self.game_view.character_manager.mouve.mouve()
         return True
 
     def reset_movement_on_release(self, key, modifiers):
