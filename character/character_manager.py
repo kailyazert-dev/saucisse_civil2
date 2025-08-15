@@ -75,6 +75,7 @@ class CharacterManager:
             "vitesse": p.humain.vitesse,
             "endurance": p.humain.endurance,
             "mathematique": p.humain.mathematique,
+            "rpg": p.humain.rpg, 
             "logique": p.humain.logique,
             "music": p.humain.music,
             "langue": p.humain.langue,

@@ -2,9 +2,9 @@ import arcade
 import json
 import os
 from character.character_classes import Humain, PNJ, Player
-from classes.objet import Progresseur
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
+from map.map_classes.objet import Progresseur
 
 class GameView(BaseGameView):
 

@@ -1,7 +1,7 @@
 import arcade
-from map.home.HOME import GameView as homeview
-from map.armonie.PHL import GameView as phlview
-from map.armonie.TMA import GameView as tmaview
+from map.map_classes.HOME import GameView as homeview
+from map.map_classes.PHL import GameView as phlview
+from map.map_classes.TMA import GameView as tmaview
 
 maps = {
     "home" : homeview,

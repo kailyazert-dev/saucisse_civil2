@@ -227,8 +227,8 @@ class Interact:
     def __init__(self, game_view):
         self.game_view = game_view
         # chemin vers les fichier TMX
-        box_stats_tmx_path = "map/box/stat_box.tmx"
-        box_quests_tmx_path = "map/box/quests_box.tmx"
+        box_stats_tmx_path = "map/map_tmx/stat_box.tmx"
+        box_quests_tmx_path = "map/map_tmx/quests_box.tmx"
 
         # fichier TMX
         self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=1)

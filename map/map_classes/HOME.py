@@ -1,6 +1,6 @@
 import arcade
 import os
-from classes.objet import Progresseur
+from map.map_classes.objet import Progresseur
 from map.map_base import BaseGameView
 # from character.character_manager import CharacterManager
 
@@ -13,11 +13,15 @@ class GameView(BaseGameView):
 
     """ Configuration de la map """
     def setup(self, last_map):
-        # Chemin vers la carte TMX
-        home = os.path.join(os.path.dirname(os.path.abspath(__file__)), "HOME.tmx")
+        # Chemin du fichier
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Chemin pour arriver au dosssier ou est situer le fichier home
+        self.home_file_dir = os.path.join(self.base_dir, "../map_tmx")
+        # Chemin pour acceder au fichier home
+        self.map_home = os.path.join(self.home_file_dir, "HOME.tmx")
 
         # Charger la carte TMX
-        self.tile_map = arcade.load_tilemap(home, scaling=1.0) # tile_map est dans BaseGameView
+        self.tile_map = arcade.load_tilemap(self.map_home, scaling=1.0) # tile_map est dans BaseGameView
 
         # Créer la scène à partir de la tilemap
         self.scene = arcade.Scene.from_tilemap(self.tile_map) # scene est dans BaseGameView

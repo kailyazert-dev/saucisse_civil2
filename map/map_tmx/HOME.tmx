@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="27" height="22" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="1">
- <tileset firstgid="1" source="../tuile/tuile_exterieur.tsx"/>
- <tileset firstgid="392" source="../tuile/tuile_interieur.tsx"/>
- <tileset firstgid="1816" source="../tuile/bureau.tsx"/>
- <tileset firstgid="2664" source="../tuile/salle de bain.tsx"/>
- <tileset firstgid="3560" source="../tuile/cuisine.tsx"/>
- <tileset firstgid="4344" source="../tuile/base.tsx"/>
- <tileset firstgid="5144" source="../tuile/chambre.tsx"/>
+ <tileset firstgid="1" source="tuile/tuile_exterieur.tsx"/>
+ <tileset firstgid="392" source="tuile/tuile_interieur.tsx"/>
+ <tileset firstgid="1816" source="tuile/bureau.tsx"/>
+ <tileset firstgid="2664" source="tuile/salle de bain.tsx"/>
+ <tileset firstgid="3560" source="tuile/cuisine.tsx"/>
+ <tileset firstgid="4344" source="tuile/base.tsx"/>
+ <tileset firstgid="5144" source="tuile/chambre.tsx"/>
  <layer id="2" name="Sol" width="27" height="22">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

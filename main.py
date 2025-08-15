@@ -1,6 +1,6 @@
 import arcade
 from map.map_manager import MapManager
-from classes import environnement
+from map.map_classes import environnement
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE
 from quests.quest_manager import QuestManager
 from character.character_manager import CharacterManager
