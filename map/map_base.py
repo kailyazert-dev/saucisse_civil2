@@ -37,10 +37,17 @@ class BaseGameView(arcade.View):
         self.current_input = ""
         self.last_response = ""
         self.is_typing = False
-        # Pour les stat_box
+        # Pour les quest/quest_box
         self.quest_manager = quest_manager
-        self.show_stats = False
         self.show_quests = False
+        self.quest_texture = arcade.load_texture("map/map_tmx/bottom1.png")
+        self.quest_width = self.quest_texture.width * 0.5
+        self.quest_height = self.quest_texture.height * 0.5
+        self.quest_x = 30 + self.quest_width / 2
+        self.quest_y = WINDOW_HEIGHT - 30 - self.quest_height / 2
+
+        # Pour les stats
+        self.show_stats = False
 
         # Ajout des gestionnaires séparés
         self.keycaps = Keycaps(self)
@@ -59,6 +66,11 @@ class BaseGameView(arcade.View):
     def follow_player(self):
         position = (self.player_sprite.center_x, self.player_sprite.center_y)
         self.camera_sprites.position = arcade.math.lerp_2d(self.camera_sprites.position, position, self.camera_speed)
+
+    """Pour afficher la side-bar"""
+    def get_quests(self):
+        arcade.draw_texture_rect(self.quest_texture, arcade.XYWH(30, WINDOW_HEIGHT-30, self.quest_texture.width, self.quest_texture.height).scale(0.5))
+        arcade.draw_text("Quests:", 50, self.height - 36, arcade.color.WHITE, 14)
 
     """Pour avoir la position du player. rectangle enn bas de la carte"""
     def get_position(self):
@@ -79,15 +91,13 @@ class Keycaps:
 
     def on_mouse_press(self, x, y, button, modifiers):
 
-        # --- 1️⃣ Détection dans le monde principal ---
-        world_pos = self.game_view.camera_sprites.unproject((x, y))
-        world_x, world_y = world_pos.x, world_pos.y
+        left = self.game_view.quest_x - self.game_view.quest_width 
+        right = self.game_view.quest_x + self.game_view.quest_width 
+        bottom = self.game_view.quest_y - self.game_view.quest_height / 2
+        top = self.game_view.quest_y + self.game_view.quest_height 
 
-        # for element in self.game_view.objet_sprites:
-        #     if element.left <= world_x <= element.right and element.bottom <= world_y <= element.top:
-        #         print(f"💡 Tu as cliqué sur {element.get_nom()}")
-        #         self.game_view.current_objet = element
-        #         return  # on arrête ici si trouvé
+        if left <= x <= right and bottom <= y <= top:
+            print("yes")
 
         # --- 2️⃣ Détection dans la box des stats ---
         if self.game_view.show_stats:

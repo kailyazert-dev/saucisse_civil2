@@ -99,6 +99,7 @@ class GameView(BaseGameView):
         # Pour la stat_box
         self.interact.draw_box()  
 
+        self.get_quests()
         # Pour avoir position du joueur sur la carte
         self.get_position()      
 
