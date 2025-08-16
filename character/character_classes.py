@@ -71,6 +71,7 @@ class Player(arcade.Sprite):
         super().__init__(image_file, scale)
         self.humain = humain
         self.nom = nom
+        self.reading = False
         self.quest_manager = quest_manager
         self.character_manager = character_manager
 
@@ -79,6 +80,7 @@ class Player(arcade.Sprite):
             "down": arcade.load_texture("assets/images/player_d.png"),
             "left": arcade.load_texture("assets/images/player_l.png"),
             "right": arcade.load_texture("assets/images/player_r.png"),
+            "read": arcade.load_texture("assets/images/player_read1.png")
         }
         self.textures_up = [
             arcade.load_texture("assets/images/player_u1.png"),
@@ -96,10 +98,21 @@ class Player(arcade.Sprite):
             arcade.load_texture("assets/images/player_r1.png"),
             arcade.load_texture("assets/images/player_r2.png")
         ]
-        self.current_texture_index = 0                 
+        self.textures_read = [
+            arcade.load_texture("assets/images/player_read1.png"),
+            arcade.load_texture("assets/images/player_read1.png"),
+            arcade.load_texture("assets/images/player_read2.png"),
+            arcade.load_texture("assets/images/player_read3.png"),
+            arcade.load_texture("assets/images/player_read4.png"),
+            arcade.load_texture("assets/images/player_read1.png"),
+            arcade.load_texture("assets/images/player_read1.png")
+        ]    
+        self.walk_texture_index = 0                    # index pour les animations de marche 
+        self.read_texture_index = 0                    # index pour les animations de lecture
         self.time_since_last_texture_change = 0.0      # timer initiale
-        self.texture_switch_interval = 0.2             # timer pour changer de pas lors de la marche
+        self.walking_texture_switch_interval = 0.2     # timer pour changer de pas lors de la marche
         self.direction = "down"                        # direction de base du player
+        self.reading_texture_switch_interval = 0.5     # timer pour changer de page lors de la lecture
 
     def get_stat(self):
         print(
@@ -111,6 +124,6 @@ class Player(arcade.Sprite):
         # pour update les stats
         self.character_manager.update_player_stats(delta_time)
         # pour les animations de déplacement
-        self.character_manager.mouve.mouve(delta_time)    
+        self.character_manager.animation.update(delta_time)
 
       

@@ -4,7 +4,7 @@ import os
 from character.character_classes import Humain, PNJ, Player
 from assets.param_map import PLAYER_SCALING
 from map.map_base import BaseGameView
-from map.map_classes.objet import Progresseur
+from map.map_classes.objet import UpStat
 
 class GameView(BaseGameView):
 
@@ -66,7 +66,7 @@ class GameView(BaseGameView):
         self.scene.add_sprite("Pnj", hotesse)
 
         # Creer les objets
-        livre = Progresseur("assets/images/livre.png", 0.7, "Pythagore", "mathematique")
+        livre = UpStat("assets/images/livre.png", 0.7, "Pythagore", "mathematique")
         livre.center_x = 448
         livre.center_y = 1030
         self.objet_sprites.append(livre)

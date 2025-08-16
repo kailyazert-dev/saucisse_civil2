@@ -34,7 +34,7 @@ class CharacterManager:
         # Chargement du player
         self.load_player(self.x, self.y, self.quest_manger)
 
-        self.mouve = Mouve(self)
+        self.animation = AnimationManager(self)
 
     """ Pour charger le player. """
     def load_player(self, x, y, quest_manger, scale=PLAYER_SCALING):
@@ -113,7 +113,6 @@ class CharacterManager:
                     if current_value is not None:
                         new_value = round(current_value + 0.002, 3)
                         player.quest_manager.check_objective(self.stat_to_up, new_value)
-
                         if self.current_progresseur:
                             max_value = self.current_progresseur.stat_max
                             if new_value > max_value:
@@ -128,20 +127,18 @@ class CharacterManager:
                         print(f"⚠️ La stat '{self.stat_to_up}' n'existe pas.")
                 self.time_since_last_up_increase = 0.0        
 
-class Mouve:
-    def __init__(self, CharacterManager, delta_time: float = 1/60):
-        self.manager = CharacterManager
+class AnimationManager:
+    def __init__(self, character_manager, delta_time: float = 1/60):
+        self.manager = character_manager
         self.delta_time = delta_time
 
-    def mouve(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1/60):
         player = self.manager.player
-        """ Move the player """
-        
-        # Déplacement
+
+        # --- Déplacement ---
         player.center_x += player.change_x
         player.center_y += player.change_y
 
-        # Appelle l’update parent d'arcade.Sprite via player
         super(Player, player).update(self.delta_time)
 
         # Limites de la carte
@@ -155,28 +152,39 @@ class Mouve:
         elif player.top > MAP_HEIGHT - 1:
             player.top = MAP_HEIGHT - 1
 
-        # Animation : alterne la texture toutes les 0.2s si le joueur bouge
-        if player.change_x != 0 or player.change_y != 0:
-            player.time_since_last_texture_change += self.delta_time
-            if player.time_since_last_texture_change >= player.texture_switch_interval:
-                self.toggle_texture(player)
+        # --- Animation ---
+        if player.reading:
+            # Animation de lecture
+            player.time_since_last_texture_change += delta_time
+            if player.time_since_last_texture_change >= player.reading_texture_switch_interval:
+                self.toggle_read_texture(player)
+                player.time_since_last_texture_change = 0.0
+        elif player.change_x != 0 or player.change_y != 0:
+            # Animation de marche
+            player.time_since_last_texture_change += delta_time
+            if player.time_since_last_texture_change >= player.walking_texture_switch_interval:
+                self.toggle_walk_texture(player)
                 player.time_since_last_texture_change = 0.0
         else:
-            # Si le joueur ne bouge pas, remettre la texture fixe correspondant à la direction
-            player.texture = player.textures[player.direction]    
+            # Joueur immobile (ni marche ni lecture)
+            player.texture = player.textures[player.direction]
 
-    # Animation : pour changer d'image pendant la marche
-    def toggle_texture(self, player):
-        player.current_texture_index = 1 - player.current_texture_index 
-
+    # --- Animation marche ---
+    def toggle_walk_texture(self, player):
+        player.walk_texture_index = 1 - player.walk_texture_index
         if player.direction == "up":
-            player.texture = player.textures_up[player.current_texture_index]
+            player.texture = player.textures_up[player.walk_texture_index]
         elif player.direction == "down":
-            player.texture = player.textures_down[player.current_texture_index]
+            player.texture = player.textures_down[player.walk_texture_index]
         elif player.direction == "left":
-            player.texture = player.textures_left[player.current_texture_index]
+            player.texture = player.textures_left[player.walk_texture_index]
         elif player.direction == "right":
-            player.texture = player.textures_right[player.current_texture_index]
+            player.texture = player.textures_right[player.walk_texture_index]
+
+    # --- Animation lecture ---
+    def toggle_read_texture(self, player):
+        player.read_texture_index = (player.read_texture_index + 1) % len(player.textures_read)
+        player.texture = player.textures_read[player.read_texture_index]       
 
 
 class Interaction:

@@ -1,6 +1,6 @@
 import arcade
 import os
-from map.map_classes.objet import Progresseur
+from map.map_classes.objet import UpStat, UpStatCollection
 from map.map_base import BaseGameView
 # from character.character_manager import CharacterManager
 
@@ -29,7 +29,7 @@ class GameView(BaseGameView):
         # Vérifie si l'arc 1 est terminer (renvoie true si oui)
         self.arc1_t = self.quest_manager.arc.status == 't'
         
-        # Créer le joueur
+        # récupère le joueur
         self.player_sprite = self.character_manager.player
         self.player_sprite.center_x = 745
         self.player_sprite.center_y = 970
@@ -42,12 +42,20 @@ class GameView(BaseGameView):
         # Creer les strategiques
 
         # Creer les objets
-        livre = Progresseur("assets/images/bibliotheque.png", 1, "Multiplication", "mathematique", 0, 0.15)
-        livre.center_x =  1104
-        livre.center_y =  627
-        self.objet_sprites.append(livre)
-        self.scene.add_sprite("Livre", livre)
-        ordinateur = Progresseur("assets/images/ordinateur.png", 1, "Jeu échec", "logique", 0, 0.16)
+        livre1 = UpStat("assets/images/bibliotheque.png", 1, "Multiplication", "mathematique", 0, 0.15)
+        livre2 = UpStat("assets/images/bibliotheque.png", 1, "Addition", "mathematique", 0, 0.11)
+        self.objet_sprites.append(livre1)
+        self.objet_sprites.append(livre2)
+
+        bibliothèque = UpStatCollection("assets/images/bibliotheque.png", 1, "Bibliothèque")
+        bibliothèque.add_upStats(livre1)
+        bibliothèque.add_upStats(livre2)
+        bibliothèque.center_x = 1104
+        bibliothèque.center_y = 627
+        self.objet_sprites.append(bibliothèque)
+        self.scene.add_sprite("Bibliothèque", bibliothèque)
+
+        ordinateur = UpStat("assets/images/ordinateur.png", 1, "Jeu échec", "logique", 0, 0.16)
         ordinateur.center_x =  73
         ordinateur.center_y =  667
         self.objet_sprites.append(ordinateur)
@@ -91,7 +99,7 @@ class GameView(BaseGameView):
         # Pour la stat_box
         self.interact.draw_box()  
 
-        # Pour avoir la position du joueur sur la carte
+        # Pour avoir position du joueur sur la carte
         self.get_position()      
 
     """Fonction pour ecrire le dialogue"""

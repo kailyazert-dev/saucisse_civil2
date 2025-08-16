@@ -4,10 +4,10 @@ class Objet(arcade.Sprite):
     def __init__(self, image_path, scale):
         super().__init__(image_path, scale)
 
-class Progresseur(Objet):
-    def __init__(self, image_path, scale, nom, stat_cible, stat_min=0, stat_max=100):
+class UpStat(Objet):
+    def __init__(self, image_path, scale, name, stat_cible, stat_min=0, stat_max=100):
         super().__init__(image_path, scale)
-        self.nom = nom
+        self.name = name
         self.stat_cible = stat_cible
         self.stat_min = stat_min
         self.stat_max = stat_max
@@ -17,9 +17,35 @@ class Progresseur(Objet):
         if self.stat_min <= player_level_stat < self.stat_max:
             character_manager.start_up(self)
 
-    def get_nom(self):
-        return(f"{self.nom}")   
+    def get_name(self):
+        return(f"{self.name}")   
           
+class UpStatCollection(arcade.Sprite):
+    def __init__(self, image_path, scale, name):
+        super().__init__(image_path, scale)
+        self.name = name
+        self.upStats = []
+
+    def get_name(self):
+        return(f"{self.name}")  
+    
+    def add_upStats(self, upstat):
+        self.upStats.append(upstat)
+
+    def remove_upStats(self, upstat):
+        self.upStats.remove(upstat)
+
+    def get_all_upStats(self):
+        return self.upStats 
+
+
+
+
+
+
+
+
+
 
 class Item(Objet):
     def __init__(self, image_path, scale, stat_cible, valeur, slot):
