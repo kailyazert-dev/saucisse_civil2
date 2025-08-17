@@ -1,8 +1,8 @@
 import arcade
 import os
+from assets.param_map import KENNY
 from map.map_classes.objet import UpStat, UpStatCollection
 from map.map_base import BaseGameView
-# from character.character_manager import CharacterManager
 
 class GameView(BaseGameView):
 
@@ -42,8 +42,8 @@ class GameView(BaseGameView):
         # Creer les strategiques
 
         # Creer les objets
-        livre1 = UpStat("assets/images/bibliotheque.png", 1, "Multiplication", "mathematique", 0, 0.15)
-        livre2 = UpStat("assets/images/bibliotheque.png", 1, "Addition", "mathematique", 0, 0.11)
+        livre1 = UpStat("map/map_tmx/livre.png", 1, "Multiplication", "mathematique", 0.14, 0.19)
+        livre2 = UpStat("map/map_tmx/livre.png", 1, "Addition", "mathematique", 0, 0.14)
         self.objet_sprites.append(livre1)
         self.objet_sprites.append(livre2)
 
@@ -91,7 +91,7 @@ class GameView(BaseGameView):
         if self.arc1_t :
             if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750 :
                 left, top = self.interact.draw_interact_box()
-                arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14) 
+                arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14, font_name=KENNY) 
 
         # Déssine la camera
         self.camera_gui.use()  
@@ -102,7 +102,7 @@ class GameView(BaseGameView):
         self.get_quests()
         self.interact.draw_side_bar()
         # Pour avoir position du joueur sur la carte
-        self.get_position()      
+        # self.get_position()      
 
     """Fonction pour ecrire le dialogue"""
     def on_text(self, text):

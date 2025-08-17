@@ -70,8 +70,9 @@ class BaseGameView(arcade.View):
 
     """Pour afficher la side-bar"""
     def get_quests(self):
-        arcade.draw_texture_rect(self.quest_texture, arcade.XYWH(30, WINDOW_HEIGHT-28, self.quest_texture.width, self.quest_texture.height).scale(0.5))
-        arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
+        if not self.show_stats and not self.show_quests:
+            arcade.draw_texture_rect(self.quest_texture, arcade.XYWH(30, WINDOW_HEIGHT-28, self.quest_texture.width, self.quest_texture.height).scale(0.5))
+            arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
 
     """Pour avoir la position du player. rectangle enn bas de la carte"""
     def get_position(self):
@@ -289,7 +290,7 @@ class Interact:
 
     # Affiche les quêtes à gauche de l'ecrran
     def draw_side_bar(self):
-        if self.game_view.show_side_bar:
+        if not self.game_view.show_stats and not self.game_view.show_quests and self.game_view.show_side_bar:
             y = WINDOW_HEIGHT - 67
             quest = next((q for q in self.game_view.quest_manager.arc.quests if q.status == "ec"), None)
             arcade.draw_text(f"{quest.title}", 20, y, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
@@ -301,52 +302,39 @@ class Interact:
                
 
     # Déssine la stat_box
-    def draw_box(self):
-
-        def activ_cam():
-            # Activer la caméra mini-map
-            self.mini_map_camera.use()
-            # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 170, WINDOW_HEIGHT//2)
-
-        def desac_cam():
-            # Réactiver la caméra principale (celle qui suit le joueur)
-            self.game_view.camera_sprites.use()      
+    def draw_box(self):     
 
         # Dessiner la box des stats + ecri les stats
         if self.game_view.show_stats:
-            activ_cam()
             self.base.draw()
             self.top.draw()
             self.choise_stat.draw()
             self.choise_bag.draw()
             self.sous_box.draw()
-            arcade.draw_text("Physique ", 230, 640, arcade.color.ORANGE, 18)
-            arcade.draw_text("Intellect ", 230, 592, arcade.color.ORANGE, 18)
-            arcade.draw_text("Sociale ", 230, 544, arcade.color.ORANGE, 18)
+            arcade.draw_text("Physique", 360, 640, arcade.color.ORANGE, 12, font_name=KENNY)
+            arcade.draw_text("Intellect", 360, 592, arcade.color.ORANGE, 12, font_name=KENNY)
+            arcade.draw_text("Sociale", 360, 544, arcade.color.ORANGE, 12, font_name=KENNY)
             if self.sous_box == self.stat_map.sprite_lists["Stats-base"]:
                 y = 325
-                arcade.draw_text("Stats physique :", 105, 350, arcade.color.ORANGE, 18)
+                arcade.draw_text("Stats physique", 247, 350, arcade.color.ORANGE, 12, font_name=KENNY)
                 for key, value in self.game_view.player_sprite.humain.get_stats_physique():
-                    arcade.draw_text(f"{key} : {value}", 105, y, arcade.color.BLACK, 18)
+                    arcade.draw_text(f"{key} : {value}", 247, y, arcade.color.BLACK, 12, font_name=KENNY)
                     y -= 25    
-                arcade.draw_text("Stats intellectuel :", 305, 350, arcade.color.ORANGE, 18)
+                arcade.draw_text("Stats intellect", 447, 350, arcade.color.ORANGE, 12, font_name=KENNY)
                 y = 325
                 for key, value in self.game_view.player_sprite.humain.get_stats_intellect():
-                    arcade.draw_text(f"{key} : {value}", 305, y, arcade.color.BLACK, 18)
-                    y -= 25    
-                arcade.draw_text("Stats sociale :", 505, 350, arcade.color.ORANGE, 18)
+                    arcade.draw_text(f"{key} : {value}", 447, y, arcade.color.BLACK, 12, font_name=KENNY)
+                    y -= 25 
+                arcade.draw_text("Stats sociale", 647, 350, arcade.color.ORANGE, 12, font_name=KENNY)
                 y = 325
                 for key, value in self.game_view.player_sprite.humain.get_stats_sociale():
-                    arcade.draw_text(f"{key} : {value}", 505, y, arcade.color.BLACK, 18)
+                    arcade.draw_text(f"{key} : {value}", 647, y, arcade.color.BLACK, 12, font_name=KENNY)
                     y -= 25   
-            desac_cam()         
+            # desac_cam()         
         
         # Dessiner la box des quêtes
         if self.game_view.show_quests:
-            activ_cam()
             self.box_quest.draw()  
-            desac_cam()
 
     def create_obstacles(self):
         obstacles = arcade.SpriteList()
@@ -360,13 +348,18 @@ class Interact:
     def get_r_corner_cord(self):
         arcade.get_window().use()
         player = self.game_view.player_sprite
-        left = player.center_x + 110
-        top = player.center_y - 50
+        left = player.center_x + 20
+        top = player.center_y - 55
         return left, top
     
-    # Pour les object progresseur
+    # Pour les objects progresseur
     def interact_obj_prg(self):
-        self.box_use_texture = arcade.load_texture("map/map_tmx/use_box.png")
+        self.box_text = arcade.load_texture("map/map_tmx/use_box.png")
+        self.box_text_t = arcade.load_texture("map/map_tmx/use_box_t.png")
+        self.box_text_c = arcade.load_texture("map/map_tmx/use_box_c.png")
+        self.box_text_b = arcade.load_texture("map/map_tmx/use_box_b.png")
+        box_width = self.box_text.width - 10
+        box_height = self.box_text.height - 40
         player = self.game_view.player_sprite
 
         for objet in self.game_view.objet_sprites:
@@ -378,27 +371,45 @@ class Interact:
                     self.game_view.current_objet = objet
                     stat_name = objet.stat_cible
                     player_level_stat = getattr(player.humain, stat_name)
-                    arcade.draw_texture_rect(self.box_use_texture, arcade.XYWH(left, top, 250, 75))
-                    color = arcade.color.GRAY_BLUE if player_level_stat >= objet.stat_max else arcade.color.JADE
-                    arcade.draw_text(f"{objet.get_name()}", left-75, top-4, color, 14)
+                    arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width /2, top, box_width, box_height))
+                    color = (
+                        arcade.color.GRAY_BLUE if player_level_stat >= objet.stat_max
+                        else arcade.color.RED if player_level_stat < objet.stat_min
+                        else arcade.color.JADE
+                    )
+                    arcade.draw_text(f"{objet.get_name()}", left, top-7, color, 12, box_width, "center", font_name=KENNY)
+
                 # si c'est une collection d'upstat
                 if type(objet).__name__ == "UpStatCollection": 
                     self.game_view.current_collection = objet
-                    arcade.draw_texture_rect(self.box_use_texture, arcade.XYWH(left, top, 250, 75))
-                    arcade.draw_text(f"ENTER : {objet.get_name()}", left-75, top-4, arcade.color.JADE, 14)
+                    box_width += 10
+                    arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width /2, top, box_width, box_height))
+                    arcade.draw_text(f"{objet.get_name()}", left, top-7, arcade.color.JADE, 12, box_width, "center", font_name=KENNY)
                     # Si le joueur appuie sur ENTER
                     if self.game_view.current_collection and self.game_view.open_collection:
                         upstats = objet.get_all_upStats()
-                        arcade.draw_texture_rect(self.box_use_texture, arcade.XYWH(left, top, 250, 150))
-                        y_pos = top + 10
+                        box_t_height = self.box_text_t.height - 8
+                        box_c_height = self.box_text_c.height - 13
+                        y_cursor = top - box_height / 2 - 4
+                        arcade.draw_texture_rect(self.box_text_t, arcade.XYWH(left + box_width /2, y_cursor, box_width, box_t_height))
+                        y_cursor -= box_c_height / 2 + 3
+                        y_pos = y_cursor + box_t_height / 2 - 4
                         for i, upstat in enumerate(upstats):
-                            stat_name = upstat.stat_cible                                                             # Récupère la stat-cible          
-                            player_level_stat = getattr(player.humain, stat_name)                                     # Récupère le niveau du perso/stat-cible
-                            prefix = "→ " if i == self.game_view.current_index_upstat else "  "                       
-                            color = arcade.color.GRAY_BLUE if player_level_stat >= upstat.stat_max else arcade.color.JADE
-                            arcade.draw_text(f"{prefix}", left-75, y_pos, arcade.color.BLACK, 14)
-                            arcade.draw_text(f"{upstat.get_name()}", left-55, y_pos, color, 14)
-                            y_pos -= 30
+                            stat_name = upstat.stat_cible  
+                            color = (
+                                arcade.color.GRAY_BLUE if player_level_stat >= upstat.stat_max
+                                else arcade.color.RED if player_level_stat < upstat.stat_min
+                                else arcade.color.JADE
+                            )                                                                     
+                            player_level_stat = getattr(player.humain, stat_name)                                     
+                            arcade.draw_texture_rect(self.box_text_c, arcade.XYWH(left + box_width /2, y_cursor, box_width, box_c_height))
+                            prefix = "→ " if i == self.game_view.current_index_upstat else "  "        
+                            arcade.draw_text(f"{prefix}", left+7, y_pos, arcade.color.BLACK, 10)
+                            arcade.draw_text(f"{upstat.get_name()}", left+26, y_pos, color, 10, font_name=KENNY)
+                            y_cursor -= box_c_height
+                            y_pos -= 35
+                        y_cursor += box_c_height / 2   
+                        arcade.draw_texture_rect(self.box_text_b, arcade.XYWH(left + box_width /2 , y_cursor, box_width, box_t_height))    
                     break
 
     def interact_pnj_strateg(self):
@@ -407,8 +418,8 @@ class Interact:
             distance = arcade.get_distance_between_sprites(player, strategique)
             if distance < 50:
                 self.game_view.current_strategique = strategique
-                arcade.draw_text("RALT : Aller à PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 18)
-                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 18)
+                arcade.draw_text("RALT : Aller à PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
+                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 14, font_name=KENNY)
                 break
 
     def interact_pnj(self):
@@ -417,8 +428,8 @@ class Interact:
             distance = arcade.get_distance_between_sprites(player, pnj)
             if distance < 50:
                 left, top = self.draw_interact_box()
-                arcade.draw_text(pnj.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14)
-                arcade.draw_text("LALT : Discuter", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14)
+                arcade.draw_text(pnj.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14, font_name=KENNY)
+                arcade.draw_text("LALT : Discuter", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
         if self.game_view.is_typing and self.game_view.current_pnj:
             self.game_view.talk.draw_dialogue_box()
 
