@@ -1,3 +1,5 @@
+import arcade
+
 # Taille de la map
 MAP_WIDTH = 2976
 MAP_HEIGHT = 2400 
@@ -15,3 +17,7 @@ PLAYER_SCALING = 0.85
 
 # Vitesse de déplacement des personnage
 MOVEMENT_SPEED = 1.5
+
+# Font
+arcade.resources.load_kenney_fonts()
+KENNY = "Kenney Future"

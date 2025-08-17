@@ -2,7 +2,7 @@ import arcade
 import replicate
 import os
 from dotenv import load_dotenv
-from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED
+from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, KENNY
 from assets.param_humain import IbmI_personnage
 
 load_dotenv()
@@ -45,6 +45,7 @@ class BaseGameView(arcade.View):
         self.quest_height = self.quest_texture.height * 0.5
         self.quest_x = 30 + self.quest_width / 2
         self.quest_y = WINDOW_HEIGHT - 30 - self.quest_height / 2
+        self.show_side_bar = False
 
         # Pour les stats
         self.show_stats = False
@@ -69,8 +70,8 @@ class BaseGameView(arcade.View):
 
     """Pour afficher la side-bar"""
     def get_quests(self):
-        arcade.draw_texture_rect(self.quest_texture, arcade.XYWH(30, WINDOW_HEIGHT-30, self.quest_texture.width, self.quest_texture.height).scale(0.5))
-        arcade.draw_text("Quests:", 50, self.height - 36, arcade.color.WHITE, 14)
+        arcade.draw_texture_rect(self.quest_texture, arcade.XYWH(30, WINDOW_HEIGHT-28, self.quest_texture.width, self.quest_texture.height).scale(0.5))
+        arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
 
     """Pour avoir la position du player. rectangle enn bas de la carte"""
     def get_position(self):
@@ -97,7 +98,7 @@ class Keycaps:
         top = self.game_view.quest_y + self.game_view.quest_height 
 
         if left <= x <= right and bottom <= y <= top:
-            print("yes")
+            self.game_view.show_side_bar = not self.game_view.show_side_bar
 
         # --- 2️⃣ Détection dans la box des stats ---
         if self.game_view.show_stats:
@@ -285,6 +286,19 @@ class Interact:
         self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
 
         self.mini_map_camera = arcade.Camera2D()
+
+    # Affiche les quêtes à gauche de l'ecrran
+    def draw_side_bar(self):
+        if self.game_view.show_side_bar:
+            y = WINDOW_HEIGHT - 67
+            quest = next((q for q in self.game_view.quest_manager.arc.quests if q.status == "ec"), None)
+            arcade.draw_text(f"{quest.title}", 20, y, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
+            y -= 20
+            for obj in quest.objectives:
+                color = arcade.color.JADE if obj.status=="t" else arcade.color.WHITE
+                arcade.draw_text(f"{obj.name}", 30, y, color, 12, bold=True, font_name=KENNY)
+                y -= 20
+               
 
     # Déssine la stat_box
     def draw_box(self):

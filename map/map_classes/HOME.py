@@ -29,7 +29,7 @@ class GameView(BaseGameView):
         # Vérifie si l'arc 1 est terminer (renvoie true si oui)
         self.arc1_t = self.quest_manager.arc.status == 't'
         
-        # récupère le joueur
+        # récupère le joueur et le place
         self.player_sprite = self.character_manager.player
         self.player_sprite.center_x = 745
         self.player_sprite.center_y = 970
@@ -100,6 +100,7 @@ class GameView(BaseGameView):
         self.interact.draw_box()  
 
         self.get_quests()
+        self.interact.draw_side_bar()
         # Pour avoir position du joueur sur la carte
         self.get_position()      
 
