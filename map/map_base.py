@@ -224,8 +224,8 @@ class Interact:
         box_quests_tmx_path = "map/box/stat_box.tmx"
 
         # fichier TMX
-        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=0.5)
-        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=0.5)
+        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=1)
+        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=1)
 
         self.box_stat = arcade.Scene.from_tilemap(self.stat_map)
         self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
@@ -239,7 +239,7 @@ class Interact:
             # Activer la caméra mini-map
             self.mini_map_camera.use()
             # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180 , WINDOW_HEIGHT //2)
 
             # Dessiner la box des stats + ecri les stats
             self.box_stat.draw()
@@ -260,7 +260,7 @@ class Interact:
             # Activer la caméra mini-map
             self.mini_map_camera.use()
             # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 , 10)
+            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180 , WINDOW_HEIGHT //2)
             
             # Dessiner la box des quests + ecri les quêtes
             self.box_quest.draw()

@@ -14,8 +14,8 @@ class QuestManager:
         self.quests_save_dir = os.path.join(self.base_dir, "quests_save_file")
 
         # 📄 Chemins des fichiers
-        self.quest_file = os.path.join(self.quests_file_dir, quest_file)  # Liste de toutes les quêtes
-        self.quest_save_file = os.path.join(self.quests_save_dir, quests_save_file)  # Sauvegarde en cours
+        self.quest_file = os.path.join(self.quests_file_dir, quest_file)                        # Liste de toutes les quêtes
+        self.quest_save_file = os.path.join(self.quests_save_dir, quests_save_file)             # Sauvegarde en cours
         self.quest_default_save_file = os.path.join(self.quests_save_dir, quests_default_file)  # Sauvegarde par défaut
 
         # Arc et quête en cours
