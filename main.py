@@ -1,23 +1,17 @@
 import arcade
 from map.map_manager import MapManager
-from classes import environnement
-from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE
 from quests.quest_manager import QuestManager
+from character.character_manager import CharacterManager
 
 def main():
-
-    # Création d'une instance d'Environnement
-    travaille = environnement.Environnement("Bureau", tension_sociale=0.7, densite_sociale=0.5, regles_sociale="formelles")
-    bar = environnement.Environnement("Bar", tension_sociale=0.2, densite_sociale=0.8, regles_sociale="informelles")
-
     # Création du gestionnaire de quêtes
     quest_manager = QuestManager()
 
-    # Crée la fenêtre arcade
-    window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, resizable=False)
+    # Création du gestionnaire des character
+    character_manager = CharacterManager(quest_manager)
 
-    manager = MapManager(window, travaille, quest_manager)
-    manager.load_initial_map()
+    # Création du gestionnaire de maps
+    MapManager(quest_manager, character_manager)
 
     # Lance la boucle de jeu arcade
     arcade.run()

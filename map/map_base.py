@@ -1,18 +1,28 @@
+﻿from __future__ import annotations
 import arcade
-import replicate
 import os
+import threading
+import time
 from dotenv import load_dotenv
-from classes.humain import Humain, PNJ, Player
-from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, PLAYER_SCALING
+from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, KENNY
 from assets.param_humain import IbmI_personnage
 
+try:
+    import replicate as _replicate
+    _REPLICATE_AVAILABLE = True
+except ImportError:
+    _replicate = None
+    _REPLICATE_AVAILABLE = False
+
 load_dotenv()
-API_KEY = os.getenv("REPLICATE_API_TOKEN")
+_API_KEY: str = os.getenv("REPLICATE_API_TOKEN", "")
+
+_DIALOGUE_MAX_CHARS = 200  # longueur max d'un message joueur
+
 
 class BaseGameView(arcade.View):
-    def __init__(self, environnement, quest_manager):
+    def __init__(self, environnement, quest_manager, character_manager):
         super().__init__()
-        # Pour les maps
         self.environnement = environnement
         self.tile_map = None
         self.scene = None
@@ -20,102 +30,109 @@ class BaseGameView(arcade.View):
         self.camera_sprites = arcade.Camera2D()
         self.camera_gui = arcade.Camera2D()
         self.camera_speed = 0.1
-        # Pour les elements de la map
+
+        self.character_manager = character_manager
         self.player_sprite = None
         self.pnj_sprite = []
         self.current_pnj = None
+
         self.objet_sprites = []
         self.current_objet = None
+        self.current_collection = None
+        self.open_collection = False
+        self.current_index_upstat = 0
+        self.current_select_upstat = 0
         self.strategique_sprite = []
         self.current_strategique = None
-        # Pour les dialogue
+
         self.current_input = ""
         self.last_response = ""
         self.is_typing = False
-        # Pour les stat_box
-        self.quest_manager = quest_manager
-        self.show_stats = False
-        self.show_quests = False
+        self.waiting_response = False  # True pendant l'appel API
 
-        # Ajout des gestionnaires séparés
+        self.quest_manager = quest_manager
+        self.show_quests = False
+        self.show_side_bar = False
+        self.show_stats = False
+
+        try:
+            self.quest_texture = arcade.load_texture("map/map_tmx/bottom1.png")
+        except Exception as e:
+            raise RuntimeError(f"Texture requise manquante : 'map/map_tmx/bottom1.png' — {e}") from e
+
+        self.quest_width = self.quest_texture.width * 0.5
+        self.quest_height = self.quest_texture.height * 0.5
+        self.quest_x = 30 + self.quest_width / 2
+        self.quest_y = WINDOW_HEIGHT - 30 - self.quest_height / 2
+
         self.keycaps = Keycaps(self)
         self.interact = Interact(self)
         self.talk = Talk(self)
 
-    """Permet de lier le manager à la vue."""
-    def set_manager(self, manager):
+    def set_manager(self, manager) -> None:
         self.manager = manager
 
-    """Creer les obstacle dans la carte"""
     def create_obstacles(self):
         return self.interact.create_obstacles()
 
-    """Pour que la camera suit le player"""     
-    def follow_player(self):
+    def follow_player(self) -> None:
         position = (self.player_sprite.center_x, self.player_sprite.center_y)
-        self.camera_sprites.position = arcade.math.lerp_2d(self.camera_sprites.position, position, self.camera_speed)
+        self.camera_sprites.position = arcade.math.lerp_2d(
+            self.camera_sprites.position, position, self.camera_speed
+        )
 
-    """Pour avoir la position du player. rectangle enn bas de la carte"""
-    def get_position(self):
+    def get_quests(self) -> None:
+        if not self.show_stats and not self.show_quests:
+            arcade.draw_texture_rect(
+                self.quest_texture,
+                arcade.XYWH(30, WINDOW_HEIGHT - 28, self.quest_texture.width, self.quest_texture.height).scale(0.5),
+            )
+            arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
+
+    def get_position(self) -> None:
         arcade.draw_rect_filled(arcade.rect.XYWH(self.width // 2, 20, self.width, 40), arcade.color.ALMOND)
-        text = f"Scroll value: ({self.camera_sprites.position[0]:5.1f}, " \
-               f"{self.camera_sprites.position[1]:5.1f})"
+        text = (
+            f"Scroll value: ({self.camera_sprites.position[0]:5.1f}, "
+            f"{self.camera_sprites.position[1]:5.1f})"
+        )
         arcade.draw_text(text, 10, 10, arcade.color.BLACK_BEAN, 20)
 
 
-
-
-
-
-"""Class pour les touches de claviers"""
+# ---------------------------------------------------------------------------
 class Keycaps:
-    def __init__(self, game_view):
+    def __init__(self, game_view: BaseGameView):
         self.game_view = game_view
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Convertir pixels → coordonnées de la grille
-            tile_x = int(x // 48)
-            tile_y = int(y // 48)
-            print(f"📍 Clic sur la case ({tile_x}, {tile_y})")
+    def on_mouse_press(self, x: float, y: float, button, modifiers) -> None:
+        left = self.game_view.quest_x - self.game_view.quest_width
+        right = self.game_view.quest_x + self.game_view.quest_width
+        bottom = self.game_view.quest_y - self.game_view.quest_height / 2
+        top = self.game_view.quest_y + self.game_view.quest_height
+        if left <= x <= right and bottom <= y <= top:
+            self.game_view.show_side_bar = not self.game_view.show_side_bar
 
-        # if button == arcade.MOUSE_BUTTON_LEFT:
-        #     world_pos = self.game_view.camera_sprites.unproject((x, y))
-        #     world_x, world_y = world_pos.x, world_pos.y
-        #     print(f"Clic écran: ({x}, {y}) -> monde: ({world_x:.2f}, {world_y:.2f})")
+        if self.game_view.show_stats:
+            mini_world_pos = self.game_view.interact.mini_map_camera.unproject((x, y))
+            mini_x, mini_y = mini_world_pos.x, mini_world_pos.y
+            for tile in self.game_view.interact.choise_stat:
+                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
+                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Stats-base"]
+                    return
+            for tile in self.game_view.interact.choise_bag:
+                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
+                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Bag-base"]
+                    return
 
-        #     for element in self.game_view.objet_sprites:
-        #         left = element.left
-        #         right = element.right
-        #         bottom = element.bottom
-        #         top = element.top
-        #         if left <= world_x <= right and bottom <= world_y <= top:
-        #             print(f"💡 Tu as cliqué sur {element.get_nom()}, position: ({element.center_x}, {element.center_y}), "
-        #                 f"width: {element.width}, height: {element.height}")
-        #             self.game_view.current_objet = element
-        #             return
-
-    def handle_key_press(self, key, modifiers):
-        """Point d'entrée unique pour la gestion des touches pressées."""
-        # 1. Réinitialisation si on bouge ou change de contexte
-        self.to_reinit(key)
-
-        # 2. Gestion du mouvement (retourne True si mouvement actif)
-        if self.handle_movement_keys(key):
+    def handle_key_press(self, key, modifiers) -> None:
+        self._to_reinit(key)
+        if self._handle_movement_keys(key):
             return
+        self._to_show_stat(key)
+        self._to_show_quests(key)
+        self._to_dialogue(key)
+        self._up_stat(key)
 
-        # 3. Gestion des paneaux
-        self.to_show_stat(key)
-        self.to_show_quests(key)
-
-        # 4. Gestion des dialogues avec PNJ
-        self.to_dialogue(key)
-
-        # 5. Gestion de l'upgrade de stats
-        self.up_stat(key) 
-
-    # Pour les touches de direction
-    def handle_movement_keys(self, key):
+    def _handle_movement_keys(self, key) -> bool:
         player = self.game_view.player_sprite
         if key == arcade.key.Z:
             player.change_y = MOVEMENT_SPEED
@@ -130,11 +147,10 @@ class Keycaps:
             player.change_x = MOVEMENT_SPEED
             player.direction = "right"
         else:
-            return False            
-        player.toggle_texture()
+            return False
         return True
 
-    def reset_movement_on_release(self, key, modifiers):
+    def reset_movement_on_release(self, key, modifiers) -> None:
         player = self.game_view.player_sprite
         if key == arcade.key.Z:
             player.change_y = 0
@@ -149,39 +165,64 @@ class Keycaps:
             player.change_x = 0
             player.texture = player.textures["right"]
 
-    # Pour reinitialiser certains états si on bouge pendant une autre action
-    def to_reinit(self, key):
-        # Si on est en train de discuter et qu'on bouge → annuler
-        if self.game_view.is_typing and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
+    def _to_reinit(self, key) -> None:
+        is_moving = key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D)
+        if not is_moving:
+            return
+        if self.game_view.is_typing:
             self.game_view.is_typing = False
             self.game_view.last_response = ""
             self.game_view.current_input = ""
             self.game_view.current_pnj = None
-
-        # Idem pour les stratégiques
-        if self.game_view.current_strategique and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
+        if self.game_view.current_strategique:
             self.game_view.current_strategique = None
+        if self.game_view.current_objet:
+            self.game_view.current_objet = None
+            self.game_view.character_manager.stop_up()
+            self.game_view.character_manager.player.reading = False
+        if self.game_view.current_collection:
+            self.game_view.current_collection = None
+            self.game_view.open_collection = False
+            self.game_view.character_manager.stop_up()
+            self.game_view.character_manager.player.reading = False
 
-        # Pour arreter l'augmentation des stats
-        if self.game_view.current_objet and key in (arcade.key.Z, arcade.key.S, arcade.key.Q, arcade.key.D):
-            self.game_view.current_objet = None   
-            self.game_view.player_sprite.stop_up()
+    def _up_stat(self, key) -> None:
+        if self.game_view.current_objet and key == arcade.key.ENTER:
+            self.game_view.current_objet.utiliser(self.game_view.player_sprite, self.game_view.character_manager)
+        elif self.game_view.current_collection:
+            if key == arcade.key.ENTER:
+                if self.game_view.open_collection:
+                    livre = self.game_view.current_collection.upStats[self.game_view.current_index_upstat]
+                    self.game_view.character_manager.player.reading = True
+                    livre.utiliser(self.game_view.player_sprite, self.game_view.character_manager)
+                else:
+                    self.game_view.open_collection = True
+            elif self.game_view.open_collection:
+                nb = len(self.game_view.current_collection.upStats)
+                if key == arcade.key.UP:
+                    self.game_view.current_index_upstat = (self.game_view.current_index_upstat - 1) % nb
+                elif key == arcade.key.DOWN:
+                    self.game_view.current_index_upstat = (self.game_view.current_index_upstat + 1) % nb
 
-    # Pour les paneaux
-    def to_show_stat(self, key):
+    def _to_show_stat(self, key) -> None:
         if key == arcade.key.P:
-            self.game_view.show_stats = not self.game_view.show_stats  
-    def to_show_quests(self, key):
-        if key == arcade.key.O:
-            self.game_view.show_quests = not self.game_view.show_quests
-            quest_act = next((q for q in self.game_view.quest_manager.arc.quests if q.status == "ec"), None)
-            print(quest_act.title, quest_act.description, quest_act.status)
-            for obj in quest_act.objectives:
-                print(obj.name, obj.description, obj.status)
-                  
+            self.game_view.show_stats = not self.game_view.show_stats
 
-    # Pour les dialogues
-    def to_dialogue(self, key):
+    def _to_show_quests(self, key) -> None:
+        if key != arcade.key.O:
+            return
+        self.game_view.show_quests = not self.game_view.show_quests
+        arc = self.game_view.quest_manager.arc
+        if arc is None:
+            return
+        quest = next((q for q in arc.quests if q.status == "ec"), None)
+        if quest is None:
+            return
+        print(quest.title, quest.description, quest.status)
+        for obj in quest.objectives:
+            print(obj.name, obj.description, obj.status)
+
+    def _to_dialogue(self, key) -> None:
         player = self.game_view.player_sprite
         pnjs = self.game_view.pnj_sprite
         if key == arcade.key.LALT:
@@ -197,78 +238,89 @@ class Keycaps:
                     self.game_view.is_typing = True
                     self.game_view.current_input = ""
                     break
-
         elif self.game_view.is_typing and key == arcade.key.ENTER:
-            if self.game_view.current_pnj:
-                self.game_view.last_response = self.game_view.talk.talk_model(self.game_view.current_input, self.game_view.current_pnj)
+            if self.game_view.current_pnj and not self.game_view.waiting_response:
+                self.game_view.talk.request_response(
+                    self.game_view.current_input, self.game_view.current_pnj
+                )
             self.game_view.current_input = ""
-
         elif self.game_view.is_typing and key == arcade.key.BACKSPACE:
-            self.game_view.current_input = self.game_view.current_input[:-1]    
-
-    # Augmente une statistique si un objet progresseur et ENTER est pressé.
-    def up_stat(self, key):
-        if self.game_view.current_objet and key == arcade.key.ENTER:
-            self.game_view.current_objet.utiliser(self.game_view.player_sprite)           
+            self.game_view.current_input = self.game_view.current_input[:-1]
 
 
-
-
-
-"""Classe pour les interactions"""
+# ---------------------------------------------------------------------------
 class Interact:
-    def __init__(self, game_view):
+    def __init__(self, game_view: BaseGameView):
         self.game_view = game_view
-        # chemin vers les fichier TMX
-        box_stats_tmx_path = "map/box/stat_box.tmx"
-        box_quests_tmx_path = "map/box/stat_box.tmx"
 
-        # fichier TMX
-        self.stat_map = arcade.load_tilemap(box_stats_tmx_path, scaling=1)
-        self.quest_map = arcade.load_tilemap(box_quests_tmx_path, scaling=1)
+        try:
+            self.stat_map = arcade.load_tilemap("map/map_tmx/stat_box.tmx", scaling=1)
+            self.quest_map = arcade.load_tilemap("map/map_tmx/quests_box.tmx", scaling=1)
+        except Exception as e:
+            raise RuntimeError(f"Impossible de charger les UI boxes : {e}") from e
 
         self.box_stat = arcade.Scene.from_tilemap(self.stat_map)
+        self.base = self.stat_map.sprite_lists["Base"]
+        self.top = self.stat_map.sprite_lists["Top-base"]
+        self.choise_stat = self.stat_map.sprite_lists["Choise_1"]
+        self.choise_bag = self.stat_map.sprite_lists["Choise_2"]
+        self.sous_box = self.stat_map.sprite_lists["Stats-base"]
         self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
-
         self.mini_map_camera = arcade.Camera2D()
 
-    # Déssine la stat_box
-    def draw_box(self):
+        try:
+            self.box_text = arcade.load_texture("map/map_tmx/use_box.png")
+            self.box_text_t = arcade.load_texture("map/map_tmx/use_box_t.png")
+            self.box_text_c = arcade.load_texture("map/map_tmx/use_box_c.png")
+            self.box_text_b = arcade.load_texture("map/map_tmx/use_box_b.png")
+        except Exception as e:
+            raise RuntimeError(f"Texture d'interaction manquante : {e}") from e
+
+    def draw_side_bar(self) -> None:
+        if self.game_view.show_stats or self.game_view.show_quests or not self.game_view.show_side_bar:
+            return
+        arc = self.game_view.quest_manager.arc
+        if arc is None:
+            return
+        quest = next((q for q in arc.quests if q.status == "ec"), None)
+        if quest is None:
+            return
+        y = WINDOW_HEIGHT - 67
+        arcade.draw_text(quest.title, 20, y, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
+        y -= 20
+        for obj in quest.objectives:
+            color = arcade.color.JADE if obj.status == "t" else arcade.color.WHITE
+            arcade.draw_text(obj.name, 30, y, color, 12, bold=True, font_name=KENNY)
+            y -= 20
+
+    def draw_box(self) -> None:
         if self.game_view.show_stats:
-            
-            # Activer la caméra mini-map
-            self.mini_map_camera.use()
-            # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180 , WINDOW_HEIGHT //2)
-
-            # Dessiner la box des stats + ecri les stats
-            self.box_stat.draw()
-            arcade.draw_text("Stats :", 175, 260, arcade.color.ORANGE, 14)
-            arcade.draw_text(f"Force : {self.game_view.player_sprite.humain.force}", 175, 240, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Vitesse : {self.game_view.player_sprite.humain.vitesse}", 175, 220, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Endurance : {self.game_view.player_sprite.humain.endurance}", 175, 200, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Mathe : {self.game_view.player_sprite.humain.mathematique}", 175, 180, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Logique : {self.game_view.player_sprite.humain.logique}", 175, 160, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Music : {self.game_view.player_sprite.humain.music}", 175, 140, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Langue : {self.game_view.player_sprite.humain.langue}", 175, 120, arcade.color.BLACK, 14)
-            arcade.draw_text(f"Sociale : {self.game_view.player_sprite.humain.sociale}", 175, 100, arcade.color.BLACK, 14)
-
-            # Réactiver la caméra principale (celle qui suit le joueur)
-            self.game_view.camera_sprites.use()
-        
+            self.base.draw()
+            self.top.draw()
+            self.choise_stat.draw()
+            self.choise_bag.draw()
+            self.sous_box.draw()
+            arcade.draw_text("Physique", 360, 640, arcade.color.ORANGE, 12, font_name=KENNY)
+            arcade.draw_text("Intellect", 360, 592, arcade.color.ORANGE, 12, font_name=KENNY)
+            arcade.draw_text("Sociale", 360, 544, arcade.color.ORANGE, 12, font_name=KENNY)
+            if self.sous_box == self.stat_map.sprite_lists["Stats-base"]:
+                y = 325
+                arcade.draw_text("Stats physique", 247, 350, arcade.color.ORANGE, 12, font_name=KENNY)
+                for key, value in self.game_view.player_sprite.humain.get_stats_physique():
+                    arcade.draw_text(f"{key} : {value}", 247, y, arcade.color.BLACK, 12, font_name=KENNY)
+                    y -= 25
+                arcade.draw_text("Stats intellect", 447, 350, arcade.color.ORANGE, 12, font_name=KENNY)
+                y = 325
+                for key, value in self.game_view.player_sprite.humain.get_stats_intellect():
+                    arcade.draw_text(f"{key} : {value}", 447, y, arcade.color.BLACK, 12, font_name=KENNY)
+                    y -= 25
+                arcade.draw_text("Stats sociale", 647, 350, arcade.color.ORANGE, 12, font_name=KENNY)
+                y = 325
+                for key, value in self.game_view.player_sprite.humain.get_stats_sociale():
+                    arcade.draw_text(f"{key} : {value}", 647, y, arcade.color.BLACK, 12, font_name=KENNY)
+                    y -= 25
         if self.game_view.show_quests:
-            # Activer la caméra mini-map
-            self.mini_map_camera.use()
-            # Positionner la caméra
-            self.mini_map_camera.position = (WINDOW_WIDTH//2 - 180 , WINDOW_HEIGHT //2)
-            
-            # Dessiner la box des quests + ecri les quêtes
             self.box_quest.draw()
-            arcade.draw_text("Quêtes :", 175, 260, arcade.color.ORANGE, 14)
-
-            # Réactiver la caméra principale (celle qui suit le joueur)
-            self.game_view.camera_sprites.use()
-            
 
     def draw_interact_box(self):
         arcade.get_window().use()
@@ -289,108 +341,188 @@ class Interact:
         obstacles.extend(self.game_view.scene["Mur"])
         return obstacles
 
-    def interact_obj_prg(self):
+    def get_r_corner_cord(self):
+        arcade.get_window().use()
         player = self.game_view.player_sprite
+        return player.center_x + 20, player.center_y - 55
+
+    def interact_obj_prg(self) -> None:
+        box_width = self.box_text.width - 10
+        box_height = self.box_text.height - 40
+        player = self.game_view.player_sprite
+
         for objet in self.game_view.objet_sprites:
-            distance = arcade.get_distance_between_sprites(player, objet)
-            if distance < 68:
-                left, top = self.draw_interact_box()
+            if arcade.get_distance_between_sprites(player, objet) >= 68:
+                continue
+            left, top = self.get_r_corner_cord()
+
+            if type(objet).__name__ == "UpStat":
                 self.game_view.current_objet = objet
                 stat_name = objet.stat_cible
                 player_level_stat = getattr(player.humain, stat_name)
-                if objet.stat_min < player_level_stat < objet.stat_max:
-                    arcade.draw_text(objet.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14)
-                    arcade.draw_text("ENTER : utiliser", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14)
-                else:
-                    arcade.draw_text("Competence acquise", left + 15, top - 30, arcade.color.BLACK, 14)
+                arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
+                color = (
+                    arcade.color.GRAY_BLUE if player_level_stat >= objet.stat_max
+                    else arcade.color.RED if player_level_stat < objet.stat_min
+                    else arcade.color.JADE
+                )
+                arcade.draw_text(objet.get_name(), left, top - 7, color, 12, box_width, "center", font_name=KENNY)
+
+            if type(objet).__name__ == "UpStatCollection":
+                self.game_view.current_collection = objet
+                box_width += 10
+                arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
+                arcade.draw_text(objet.get_name(), left, top - 7, arcade.color.JADE, 12, box_width, "center", font_name=KENNY)
+                if self.game_view.current_collection and self.game_view.open_collection:
+                    upstats = objet.get_all_upStats()
+                    box_t_height = self.box_text_t.height - 8
+                    box_c_height = self.box_text_c.height - 13
+                    y_cursor = top - box_height / 2 - 4
+                    arcade.draw_texture_rect(self.box_text_t, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_t_height))
+                    y_cursor -= box_c_height / 2 + 3
+                    y_pos = y_cursor + box_t_height / 2 - 4
+                    for i, upstat in enumerate(upstats):
+                        stat_name = upstat.stat_cible
+                        player_level_stat = getattr(player.humain, stat_name)
+                        color = (
+                            arcade.color.GRAY_BLUE if player_level_stat >= upstat.stat_max
+                            else arcade.color.RED if player_level_stat < upstat.stat_min
+                            else arcade.color.JADE
+                        )
+                        arcade.draw_texture_rect(self.box_text_c, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_c_height))
+                        prefix = "→ " if i == self.game_view.current_index_upstat else "  "
+                        arcade.draw_text(prefix, left + 7, y_pos, arcade.color.BLACK, 10)
+                        arcade.draw_text(upstat.get_name(), left + 26, y_pos, color, 10, font_name=KENNY)
+                        y_cursor -= box_c_height
+                        y_pos -= 35
+                    y_cursor += box_c_height / 2
+                    arcade.draw_texture_rect(self.box_text_b, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_t_height))
                 break
 
-    def interact_pnj_strateg(self):
+    def interact_pnj_strateg(self) -> None:
         player = self.game_view.player_sprite
         for strategique in self.game_view.strategique_sprite:
-            distance = arcade.get_distance_between_sprites(player, strategique)
-            if distance < 50:
+            if arcade.get_distance_between_sprites(player, strategique) < 50:
                 self.game_view.current_strategique = strategique
-                arcade.draw_text("RALT : Aller à PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 18)
-                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 18)
+                arcade.draw_text("RALT : Aller à PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
+                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 14, font_name=KENNY)
                 break
 
-    def interact_pnj(self):
+    def interact_pnj(self) -> None:
         player = self.game_view.player_sprite
         for pnj in self.game_view.pnj_sprite:
-            distance = arcade.get_distance_between_sprites(player, pnj)
-            if distance < 50:
+            if arcade.get_distance_between_sprites(player, pnj) < 50:
                 left, top = self.draw_interact_box()
-                arcade.draw_text(pnj.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14)
-                arcade.draw_text("LALT : Discuter", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14)
+                arcade.draw_text(pnj.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14, font_name=KENNY)
+                arcade.draw_text("LALT : Discuter", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
         if self.game_view.is_typing and self.game_view.current_pnj:
             self.game_view.talk.draw_dialogue_box()
 
 
-
-
-
-"""Class pour les discutions"""
+# ---------------------------------------------------------------------------
 class Talk:
-    def __init__(self, game_view):
+    _MAX_CALLS = 3
+    _PERIOD = 30.0  # 3 messages max par 30 secondes
+
+    def __init__(self, game_view: BaseGameView):
         self.game_view = game_view
+        self._rate_calls: list[float] = []
+        self._lock = threading.Lock()
 
-    def draw_dialogue_box(self):
+    # ------------------------------------------------------------------ public
+
+    def on_text(self, text: str) -> None:
+        if self.game_view.is_typing and not self.game_view.waiting_response:
+            if len(self.game_view.current_input) < _DIALOGUE_MAX_CHARS:
+                self.game_view.current_input += text
+
+    def request_response(self, message: str, pnj) -> None:
+        """Lance l'appel API dans un thread séparé pour ne pas bloquer le jeu."""
+        if self.game_view.waiting_response:
+            return
+        if self._is_rate_limited():
+            self.game_view.last_response = "Je parle trop souvent. Attends un moment..."
+            return
+        clean = message.strip()
+        if not clean:
+            return
+        self.game_view.waiting_response = True
+        thread = threading.Thread(target=self._fetch_response, args=(clean, pnj), daemon=True)
+        thread.start()
+
+    def draw_dialogue_box(self) -> None:
         arcade.get_window().use()
-        if self.game_view.is_typing or self.game_view.last_response:
-            margin = 15
-            left = self.game_view.player_sprite.center_x - WINDOW_WIDTH // 2
-            right = self.game_view.player_sprite.center_x + WINDOW_WIDTH // 2
-            top = self.game_view.player_sprite.center_y - 100
-            bottom = self.game_view.player_sprite.center_y - (WINDOW_HEIGHT // 2) - 10
-            arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, arcade.color.WHITE)
+        if not (self.game_view.is_typing or self.game_view.last_response):
+            return
+        margin = 15
+        dialog_w = WINDOW_WIDTH - 2 * margin
+        left = self.game_view.player_sprite.center_x - WINDOW_WIDTH // 2 + margin
+        right = self.game_view.player_sprite.center_x + WINDOW_WIDTH // 2 - margin
+        top = self.game_view.player_sprite.center_y - 100
+        bottom = self.game_view.player_sprite.center_y - WINDOW_HEIGHT // 2 - 10
+        arcade.draw_lrbt_rectangle_filled(left - margin, right + margin, bottom, top, arcade.color.WHITE)
 
         if self.game_view.is_typing:
             arcade.draw_text(
-                f"{self.game_view.player_sprite.nom} : " + self.game_view.current_input,
-                left + margin, top - margin - 15, arcade.color.BLACK, 14
+                f"{self.game_view.player_sprite.nom} : {self.game_view.current_input}",
+                left, top - margin - 15,
+                arcade.color.BLACK, 14,
+                width=int(dialog_w), multiline=True,
             )
 
-        if self.game_view.last_response:
+        if self.game_view.waiting_response:
+            arcade.draw_text("...", left, top - margin - 45, arcade.color.GRAY, 14)
+        elif self.game_view.last_response and self.game_view.current_pnj:
             arcade.draw_text(
-                f"{self.game_view.current_pnj.nom} : " + self.game_view.last_response,
-                left + margin, top - margin - 40, arcade.color.LIGHT_GREEN, 14
+                f"{self.game_view.current_pnj.nom} : {self.game_view.last_response}",
+                left, top - margin - 45,
+                arcade.color.LIGHT_GREEN, 14,
+                width=int(dialog_w), multiline=True,
             )
 
-    def on_text(self, text):
-        if self.game_view.is_typing:
-            self.game_view.current_input += text
+    # ------------------------------------------------------------------ private
 
-    def talk_model(self, message_joueur, pnj):
-        os.environ["REPLICATE_API_TOKEN"] = API_KEY
-        nom_pnj = pnj.nom
-        if nom_pnj in IbmI_personnage.personnages:
-            data = IbmI_personnage.personnages[nom_pnj]
+    def _is_rate_limited(self) -> bool:
+        now = time.monotonic()
+        with self._lock:
+            self._rate_calls = [t for t in self._rate_calls if now - t < self._PERIOD]
+            if len(self._rate_calls) >= self._MAX_CALLS:
+                return True
+            self._rate_calls.append(now)
+            return False
+
+    def _fetch_response(self, message: str, pnj) -> None:
+        try:
+            response = self._call_api(message, pnj)
+        except Exception as e:
+            print(f"[Talk] Erreur API : {e}")
+            response = "Désolé, je suis occupé en ce moment..."
+        self.game_view.last_response = response
+        self.game_view.waiting_response = False
+
+    def _call_api(self, message: str, pnj) -> str:
+        if not _REPLICATE_AVAILABLE:
+            return "[module replicate non installé]"
+        if not _API_KEY:
+            return "[clé API REPLICATE_API_TOKEN manquante dans .env]"
+
+        os.environ["REPLICATE_API_TOKEN"] = _API_KEY
+        nom = pnj.nom
+        if nom in IbmI_personnage.personnages:
+            d = IbmI_personnage.personnages[nom]
             system_prompt = (
-                f"Tu est {data['nom']}, un personnage {data['type']}.\n"
-                f"Ton metier est {data['metier']}.\n"
-                f"Tu a une personalité {data['personnalite']}.\n"
-                f"Tes hobbies sont {data['hobbie']}.\n"
-                f"Repond court, sans émoji."
+                f"Tu es {d['nom']}, un personnage {d.get('type', 'mystérieux')}.\n"
+                f"Ton métier est {d.get('metier', 'inconnu')}.\n"
+                f"Tu as une personnalité {d.get('personnalite', 'mystérieuse')}.\n"
+                f"Tes hobbies sont {d.get('hobbie', 'inconnus')}.\n"
+                f"Réponds en 1-2 phrases, sans émoji."
             )
         else:
-            system_prompt = "Tu es un personnage mystérieux. Reste vague et mystérieux."
+            system_prompt = "Tu es un personnage mystérieux. Reste vague et bref."
 
-        full_prompt = (
-            f"{system_prompt}\n"
-            f"Joueur: {message_joueur}\n"
-            f"{pnj.nom}:"
+        full_prompt = f"{system_prompt}\nJoueur: {message}\n{nom}:"
+        output = _replicate.run(
+            "openai/gpt-4o-mini",
+            input={"prompt": full_prompt, "max_new_tokens": 250, "temperature": 0.7},
         )
-        try:
-            output = replicate.run(
-                "openai/gpt-4o-mini",
-                input={
-                    "prompt": full_prompt,
-                    "max_new_tokens": 250,
-                    "temperature": 0.7
-                }
-            )
-            return "".join(output)
-        except Exception as e:
-            print("❌ Erreur lors de l'appel à replicate.run :", e)
-            return "Désolé je suis occupé..."
+        return "".join(output)

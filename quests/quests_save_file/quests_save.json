@@ -7,7 +7,7 @@
         "quests": [
             {
                 "id": 1,
-                "title": "Formation autodidact.",
+                "title": "Formation autodidact",
                 "description": "Commence par avoir les compétences necessaires pour un job de dév.",
                 "status": "t",
                 "objectives": [

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List
 
 class Objective:
-    def __init__(self, name: str, description: str, status = str, type = str, stat_key = str, validator = int):
+    def __init__(self, name: str, description: str, status: str = "na", type: str = "", stat_key: str = "", validator: float = 0):
         self.name = name
         self.description = description
         self.status = status
@@ -27,7 +27,7 @@ class Objective:
 
 
 class Quest:
-    def __init__(self, id: int, title: str, description: str, status = str):
+    def __init__(self, id: int, title: str, description: str, status: str = "nc"):
         self.id = id
         self.title = title
         self.description = description
