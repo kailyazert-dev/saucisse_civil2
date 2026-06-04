@@ -1,0 +1,90 @@
+{
+    "activeFile": "PHL.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "HOME.tmx": {
+            "scale": 0.5289772727272727,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 648.421052631579,
+                "y": 527.4328678839956
+            }
+        },
+        "PHL.tmx": {
+            "scale": 1,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 966,
+                "y": 2052.5
+            }
+        },
+        "TMA.tmx": {
+            "scale": 0.3422794117647059,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 1026.938775510204,
+                "y": 392.95381310418907
+            }
+        },
+        "quests_box.tmx": {
+            "scale": 0.72734375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 527.9484425349087,
+                "y": 383.5875402792696
+            }
+        },
+        "stat_box.tmx": {
+            "scale": 0.72734375,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 527.9484425349087,
+                "y": 383.5875402792696
+            }
+        },
+        "tuile/base.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/bureau.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/chambre.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/cuisine.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/personnage.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/salle de bain.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/tuile_exterieur.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/tuile_interieur.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/ui2.tsx": {
+            "scaleInDock": 1
+        }
+    },
+    "openFiles": [
+        "TMA.tmx",
+        "HOME.tmx",
+        "PHL.tmx",
+        "quests_box.tmx",
+        "stat_box.tmx"
+    ],
+    "project": "sans titre.tiled-project",
+    "recentFiles": [
+        "TMA.tmx",
+        "HOME.tmx",
+        "stat_box.tmx",
+        "quests_box.tmx",
+        "PHL.tmx"
+    ]
+}

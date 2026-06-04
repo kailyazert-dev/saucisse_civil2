@@ -1,4 +1,6 @@
+from __future__ import annotations
 import arcade
+
 
 class Objet(arcade.Sprite):
     def __init__(self, image_path, scale):
@@ -45,6 +47,31 @@ class UpStatCollection(arcade.Sprite):
 
 
 
+
+
+class MapActionObject(Objet):
+    """Objet lié à un objectif de type map_action.
+    Affiche son nom uniquement quand l'objectif est actif, et le complète à ENTER."""
+
+    def __init__(self, image_path, scale, name: str, objective_name: str):
+        super().__init__(image_path, scale)
+        self.name = name
+        self.objective_name = objective_name  # Doit correspondre à obj.name dans quests.json
+
+    def get_name(self) -> str:
+        return self.name
+
+    def is_available(self, quest_manager) -> bool:
+        """Retourne True si l'objectif lié est en cours et non terminé."""
+        if quest_manager is None or quest_manager.arc is None:
+            return False
+        for quest in quest_manager.arc.quests:
+            if quest.status != "ec":
+                continue
+            for obj in quest.objectives:
+                if obj.type in ("map_action", "test") and obj.name == self.objective_name and obj.status != "t":
+                    return True
+        return False
 
 
 class Item(Objet):

@@ -1,10 +1,11 @@
 from __future__ import annotations
 import arcade
-import os
 from character.character_classes import Humain, PNJ
 from assets.param_map import PLAYER_SCALING
 from assets.param_humain import IbmI_personnage
 from map.map_base import BaseGameView
+from map.map_classes.objet import UpStat
+import utils.paths as paths
 
 
 class GameView(BaseGameView):
@@ -15,9 +16,8 @@ class GameView(BaseGameView):
         self.character_manager = character_manager
 
     def setup(self, last_map: str | None) -> None:
-        map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../map_tmx/TMA.tmx")
         try:
-            self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
+            self.tile_map = arcade.load_tilemap(paths.asset("map/map_tmx/TMA.tmx"), scaling=1.0)
         except Exception as e:
             raise RuntimeError(f"Impossible de charger la carte TMA : {e}") from e
 
@@ -29,15 +29,21 @@ class GameView(BaseGameView):
         self.scene.add_sprite("Player", self.player_sprite)
 
         d = IbmI_personnage.personnages.get("Hotesse", {})
-        hotesse_humain = Humain(
-            charisme=d.get("charisme", 0.5),
-            rigidite=d.get("rigidite", 0.8),
-        )
-        hotesse = PNJ("Hotesse", hotesse_humain, "Femelle", "assets/images/hotesse_d.png", PLAYER_SCALING)
+        hotesse_humain = Humain(charisme=d.get("charisme", 0.5), rigidite=d.get("rigidite", 0.8))
+        hotesse = PNJ("Hotesse", hotesse_humain, "Femelle", paths.asset("assets/images/hotesse_d.png"), PLAYER_SCALING)
         hotesse.center_x = 1360
         hotesse.center_y = 1220
         self.strategique_sprite.append(hotesse)
         self.scene.add_sprite("Pnj", hotesse)
+
+        # Directeur (arc 3, quest 1 : parler à Guy)
+        d_guy = IbmI_personnage.personnages.get("Guy", {})
+        guy_humain = Humain(charisme=d_guy.get("charisme", 0.9), rigidite=d_guy.get("rigidite", 0.9))
+        guy = PNJ("Guy", guy_humain, "Male", paths.asset("assets/images/player_d.png"), PLAYER_SCALING)
+        guy.center_x = 2830
+        guy.center_y = 660
+        self.pnj_sprite.append(guy)
+        self.scene.add_sprite("Pnj", guy)
 
         obstacles = self.interact.create_obstacles()
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
@@ -53,6 +59,9 @@ class GameView(BaseGameView):
         self.interact.draw_box()
         self.get_quests()
         self.interact.draw_side_bar()
+        self.get_position()
+        self.draw_notif()
+        self.menu.draw()
 
     def on_text(self, text: str) -> None:
         if self.is_typing:
@@ -62,6 +71,7 @@ class GameView(BaseGameView):
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
+        self.update_notif(delta_time)
 
     def on_key_press(self, key, modifiers) -> None:
         self.keycaps.handle_key_press(key, modifiers)

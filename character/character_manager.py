@@ -17,12 +17,12 @@ _CHARACTER_DEFAULTS: dict = {
     "force": 0.1,
     "vitesse": 0.1,
     "endurance": 0.1,
-    "mathematique": 0.0,
-    "logique": 0.0,
+    "mathematique": 0.14,
+    "logique": 0.14,
     "rpg": 0.1,
     "music": 0.1,
     "langue": 0.1,
-    "sociabilité": 0.1,
+    "sociabilite": 0.1,
     "x": 0,
     "y": 0,
 }
@@ -100,14 +100,27 @@ class CharacterManager:
             rpg=data["rpg"],
             music=data["music"],
             langue=data["langue"],
-            sociabilité=data["sociabilité"],
+            sociabilite=data["sociabilite"],
             x=data["x"],
             y=data["y"],
         )
-        player = Player(humain, data["nom"], "assets/images/player_d.png", quest_manager, self, scale)
+        player = Player(humain, data["nom"], paths.asset("assets/images/player_d.png"), quest_manager, self, scale)
         player.center_x = x
         player.center_y = y
         self.player = player
+
+    def reset(self) -> None:
+        if self.player is None:
+            return
+        h = self.player.humain
+        for key in ("charisme", "rigidite", "intensite_boof", "receptif_boof",
+                    "force", "vitesse", "endurance", "mathematique", "logique",
+                    "rpg", "music", "langue", "sociabilite"):
+            setattr(h, key, _CHARACTER_DEFAULTS[key])
+        self.player.center_x = 745
+        self.player.center_y = 970
+        self._write_json(self.character_file, _CHARACTER_DEFAULTS)
+        print("[RESET] Personnage réinitialisé.")
 
     def save_player(self) -> None:
         if self.player is None:
@@ -130,7 +143,7 @@ class CharacterManager:
             "logique": p.humain.logique,
             "music": p.humain.music,
             "langue": p.humain.langue,
-            "sociabilité": p.humain.sociabilité,
+            "sociabilite": p.humain.sociabilite,
             "x": p.humain.x,
             "y": p.humain.y,
         }

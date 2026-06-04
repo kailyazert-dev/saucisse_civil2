@@ -1,9 +1,14 @@
-import json
 import arcade
 from assets.param_map import MAP_WIDTH, MAP_HEIGHT, PLAYER_SCALING
+import utils.paths as paths
+
+
+def _img(filename: str) -> str:
+    return paths.asset(f"assets/images/{filename}")
+
 
 class Humain:
-    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.1, logique=0.1, rpg=0.1, music=0.1, langue=0.1, sociabilité=0.1, x=0, y=0):
+    def __init__(self, charisme=0.1, rigidite=0.1, beauf=0.1, receptif_beauf=0.1, force=0.1, vitesse=0.1, endurance=0.1, mathematique=0.14, logique=0.14, rpg=0.1, music=0.1, langue=0.1, sociabilite=0.1, x=0, y=0):
         self.charisme = charisme
         self.rigidite = rigidite
         self.intensite_boof = beauf
@@ -16,10 +21,10 @@ class Humain:
         self.rpg = rpg
         self.music = music
         self.langue = langue
-        self.sociabilité = sociabilité
+        self.sociabilite = sociabilite
         self.x = x
-        self.y = y    
-    
+        self.y = y
+
     def get_stats_génétiques(self):
         return(
             f"charisme : {self.charisme}\n",
@@ -27,25 +32,28 @@ class Humain:
             f"intensite_boof : {self.intensite_boof}\n",
             f"receptif_boof : {self.receptif_boof}\n"
         )
-    
+
     def get_stats_physique(self):
         return [
             ("Force", self.force),
             ("Vitesse", self.vitesse),
             ("Endurance", self.endurance),
-        ]  
+        ]
+
     def get_stats_intellect(self):
-        return[
+        return [
             ("Math", self.mathematique),
             ("Logique", self.logique),
             ("RPG", self.rpg),
         ]
+
     def get_stats_sociale(self):
-        return[
+        return [
             ("Musique", self.music),
             ("Langue", self.langue),
-            ("Sociabilité", self.sociabilité),
+            ("Sociabilite", self.sociabilite),
         ]
+
 
 class PNJ(arcade.Sprite):
     def __init__(self, nom, humain, type, image_path, scale):
@@ -57,14 +65,15 @@ class PNJ(arcade.Sprite):
         self.center_y = humain.y
         self.image_path = image_path
         self.textures = {
-            "up": arcade.load_texture("assets/images/player_u.png"),
-            "down": arcade.load_texture("assets/images/player_d.png"),
-            "left": arcade.load_texture("assets/images/player_l.png"),
-            "right": arcade.load_texture("assets/images/player_r.png"),
+            "up":    arcade.load_texture(_img("player_u.png")),
+            "down":  arcade.load_texture(_img("player_d.png")),
+            "left":  arcade.load_texture(_img("player_l.png")),
+            "right": arcade.load_texture(_img("player_r.png")),
         }
 
     def get_nom(self):
-        return(f"{self.nom}")    
+        return f"{self.nom}"
+
 
 class Player(arcade.Sprite):
     def __init__(self, humain, nom, image_file, quest_manager, character_manager, scale=PLAYER_SCALING):
@@ -76,43 +85,43 @@ class Player(arcade.Sprite):
         self.character_manager = character_manager
 
         self.textures = {
-            "up": arcade.load_texture("assets/images/player_u.png"),
-            "down": arcade.load_texture("assets/images/player_d.png"),
-            "left": arcade.load_texture("assets/images/player_l.png"),
-            "right": arcade.load_texture("assets/images/player_r.png"),
-            "read": arcade.load_texture("assets/images/player_read1.png")
+            "up":    arcade.load_texture(_img("player_u.png")),
+            "down":  arcade.load_texture(_img("player_d.png")),
+            "left":  arcade.load_texture(_img("player_l.png")),
+            "right": arcade.load_texture(_img("player_r.png")),
+            "read":  arcade.load_texture(_img("player_read1.png")),
         }
         self.textures_up = [
-            arcade.load_texture("assets/images/player_u1.png"),
-            arcade.load_texture("assets/images/player_u2.png")
+            arcade.load_texture(_img("player_u1.png")),
+            arcade.load_texture(_img("player_u2.png")),
         ]
         self.textures_down = [
-            arcade.load_texture("assets/images/player_d1.png"),
-            arcade.load_texture("assets/images/player_d2.png")
+            arcade.load_texture(_img("player_d1.png")),
+            arcade.load_texture(_img("player_d2.png")),
         ]
         self.textures_left = [
-            arcade.load_texture("assets/images/player_l1.png"),
-            arcade.load_texture("assets/images/player_l2.png")
+            arcade.load_texture(_img("player_l1.png")),
+            arcade.load_texture(_img("player_l2.png")),
         ]
         self.textures_right = [
-            arcade.load_texture("assets/images/player_r1.png"),
-            arcade.load_texture("assets/images/player_r2.png")
+            arcade.load_texture(_img("player_r1.png")),
+            arcade.load_texture(_img("player_r2.png")),
         ]
         self.textures_read = [
-            arcade.load_texture("assets/images/player_read1.png"),
-            arcade.load_texture("assets/images/player_read1.png"),
-            arcade.load_texture("assets/images/player_read2.png"),
-            arcade.load_texture("assets/images/player_read3.png"),
-            arcade.load_texture("assets/images/player_read4.png"),
-            arcade.load_texture("assets/images/player_read1.png"),
-            arcade.load_texture("assets/images/player_read1.png")
-        ]    
-        self.walk_texture_index = 0                    # index pour les animations de marche 
-        self.read_texture_index = 0                    # index pour les animations de lecture
-        self.time_since_last_texture_change = 0.0      # timer initiale
-        self.walking_texture_switch_interval = 0.2     # timer pour changer de pas lors de la marche
-        self.direction = "down"                        # direction de base du player
-        self.reading_texture_switch_interval = 0.5     # timer pour changer de page lors de la lecture
+            arcade.load_texture(_img("player_read1.png")),
+            arcade.load_texture(_img("player_read1.png")),
+            arcade.load_texture(_img("player_read2.png")),
+            arcade.load_texture(_img("player_read3.png")),
+            arcade.load_texture(_img("player_read4.png")),
+            arcade.load_texture(_img("player_read1.png")),
+            arcade.load_texture(_img("player_read1.png")),
+        ]
+        self.walk_texture_index = 0
+        self.read_texture_index = 0
+        self.time_since_last_texture_change = 0.0
+        self.walking_texture_switch_interval = 0.2
+        self.direction = "down"
+        self.reading_texture_switch_interval = 0.5
 
     def get_stat(self):
         print(
@@ -120,10 +129,6 @@ class Player(arcade.Sprite):
             f"Force : {self.humain.force}\n"
         )
 
-    def update(self, delta_time: float = 1/60):
-        # pour update les stats
+    def update(self, delta_time: float = 1 / 60):
         self.character_manager.update_player_stats(delta_time)
-        # pour les animations de déplacement
         self.character_manager.animation.update(delta_time)
-
-      

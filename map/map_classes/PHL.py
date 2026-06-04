@@ -1,11 +1,11 @@
 from __future__ import annotations
 import arcade
-import os
 from character.character_classes import Humain, PNJ
 from assets.param_map import PLAYER_SCALING
 from assets.param_humain import IbmI_personnage
 from map.map_base import BaseGameView
-from map.map_classes.objet import UpStat
+from map.map_classes.objet import UpStat, MapActionObject
+import utils.paths as paths
 
 
 def _humain_from_data(name: str) -> Humain:
@@ -26,7 +26,7 @@ def _humain_from_data(name: str) -> Humain:
         rpg=0.1,
         music=intel.get("musique", 0.1),
         langue=intel.get("langage", 0.1),
-        sociabilité=intel.get("sociale", 0.1),
+        sociabilite=intel.get("sociale", 0.1),
     )
 
 
@@ -38,9 +38,8 @@ class GameView(BaseGameView):
         self.character_manager = character_manager
 
     def setup(self, last_map: str | None) -> None:
-        map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../map_tmx/PHL.tmx")
         try:
-            self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
+            self.tile_map = arcade.load_tilemap(paths.asset("map/map_tmx/PHL.tmx"), scaling=1.0)
         except Exception as e:
             raise RuntimeError(f"Impossible de charger la carte PHL : {e}") from e
 
@@ -59,28 +58,44 @@ class GameView(BaseGameView):
 
         # PNJs — chacun avec ses propres stats
         for nom, cx, cy in [
-            ("Mael",  694, 940),
-            ("Louis", 556, 940),
+            ("Mael",   694, 940),
+            ("Louis",  556, 940),
             ("Thomas", 556, 790),
-            ("Kyle",  694, 790),
+            ("Kyle",   694, 790),
+            ("Sylvain",       264, 529),
+            ("Jean christophe", 165, 529),
         ]:
-            pnj = PNJ(nom, _humain_from_data(nom), "Male", "assets/images/player_d.png", PLAYER_SCALING)
+            pnj = PNJ(nom, _humain_from_data(nom), "Male", paths.asset("assets/images/player_d.png"), PLAYER_SCALING)
             pnj.center_x = cx
             pnj.center_y = cy
             self.pnj_sprite.append(pnj)
             self.scene.add_sprite("Pnj", pnj)
 
-        hotesse = PNJ("Hotesse", _humain_from_data("Hotesse"), "Femelle", "assets/images/hotesse_l.png", PLAYER_SCALING)
+        hotesse = PNJ("Hotesse", _humain_from_data("Hotesse"), "Femelle", paths.asset("assets/images/hotesse_l.png"), PLAYER_SCALING)
         hotesse.center_x = 2850
         hotesse.center_y = 1848
         self.strategique_sprite.append(hotesse)
         self.scene.add_sprite("Pnj", hotesse)
 
-        livre = UpStat("assets/images/livre.png", 0.7, "Pythagore", "mathematique", 0, 0.3)
+        livre = UpStat(paths.asset("assets/images/livre.png"), 0.7, "Pythagore", "mathematique", 0, 0.3)
         livre.center_x = 448
         livre.center_y = 1030
         self.objet_sprites.append(livre)
         self.scene.add_sprite("Livre", livre)
+
+        # Ordinateur RPG (arc 2, quest 2 : rpg 0 → 0.14)
+        ordi_rpg = UpStat(paths.asset("assets/images/ordinateur.png"), 1, "Intro RPG", "rpg", 0, 0.14)
+        ordi_rpg.center_x = 265
+        ordi_rpg.center_y = 991
+        self.objet_sprites.append(ordi_rpg)
+        self.scene.add_sprite("OrdiRPG", ordi_rpg)
+
+        # Même ordinateur — test de formation (arc 2, quest 3)
+        pc_test = MapActionObject(paths.asset("assets/images/ordinateur.png"), 1, "Test de formation", "Valide le test de la formation.")
+        pc_test.center_x = 265
+        pc_test.center_y = 991
+        self.objet_sprites.append(pc_test)
+        self.scene.add_sprite("PcTest", pc_test)
 
         obstacles = self.interact.create_obstacles()
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
@@ -102,6 +117,9 @@ class GameView(BaseGameView):
         self.interact.draw_box()
         self.get_quests()
         self.interact.draw_side_bar()
+        self.get_position()
+        self.draw_notif()
+        self.menu.draw()
 
     def on_text(self, text: str) -> None:
         if self.is_typing:
@@ -111,6 +129,7 @@ class GameView(BaseGameView):
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
+        self.update_notif(delta_time)
 
     def on_key_press(self, key, modifiers) -> None:
         self.keycaps.handle_key_press(key, modifiers)

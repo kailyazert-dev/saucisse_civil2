@@ -1,0 +1,114 @@
+[
+    {
+        "arc": 1,
+        "name": "Trouver un job de développeur.",
+        "description": "Vous debut votre aventure comme tous les chlingoses qui l'on fait avant vous. Commencé par avoir les compétences d'une bonne sous merde d'esclave de ce monde capitaliste, et n'oublie pas que tu vis dans un saucisse, et qu'ici ca dev !",
+        "status": "t",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Formation autodidact.",
+                "description": "Commence par avoir les compétences necessaires pour un job de dév.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Atteindre le niveau 0.15 en mathématique",
+                        "description": "Lire le livre Pythagore.",
+                        "status": "t",
+                        "type": "stat",
+                        "stat_key": "mathematique",
+                        "validator": 0.15
+                    },
+                    {
+                        "name": "Atteindre le niveau 0.15 en logique",
+                        "description": "Jouer au jeu d'échec.",
+                        "status": "t",
+                        "type": "stat",
+                        "stat_key": "logique",
+                        "validator": 0.15
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "Postuler sur indead.",
+                "description": "Grace aux nouvelles compétences acquises, il est temps de chercher un job.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "rediger son cv",
+                        "description": "Utiliser son pc pour rédiger son cv.",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    },
+                    {
+                        "name": "envoyer son cv sur indead",
+                        "description": "Envoyer son cv sur indead.",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Lire le retour des entreprises.",
+                "description": "Il est temps de vérifier le retour des entreprises.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Consulté tes mails.",
+                        "description": "Vous avez recus un mail. Vas le lire grosse larve!",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    },
+                    {
+                        "name": "Répondre à l'offre.",
+                        "description": "Une boite veut bien vous recruter malgré vos piètres compétences. S'agit t'il d'un tracnar ? seul l'histoire vous le dirat",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "",
+                        "validator": 0
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "arc": 2,
+        "name": "La super POEI",
+        "description": "Pour répondre au mieux aux exigences de ton nouveau job tu doit passer une formation qui te permettra d'avoir les compétences nécessaire.",
+        "status": "ec",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Aller a la formation.",
+                "description": "Bin vas la formation.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Parle à Sylvain.",
+                        "description": "Parle avec tes formateurs.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Sylvain",
+                        "validator": 1
+                    },
+                    {
+                        "name": "Parle à Jean christophe.",
+                        "description": "Parle avec tes formateurs.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Jean christophe",
+                        "validator": 1
+                    }
+                ]
+            }
+        ]
+    }
+]

@@ -269,6 +269,51 @@ class IbmI_personnage :
                 }
             }
         },
+        'Guy': {
+            'nom': 'Guy',
+            'charisme': 0.9,
+            'intensite_boof': 0.1,
+            'receptif_boof': 0.2,
+            'rigidite': 0.9,
+            'type': 'Masculin',
+            'metier': 'Directeur général Armonie',
+            'hobbie': 'Golf, management, optimisation des coûts',
+            'personnalite': "Autoritaire et exigeant. Parle toujours de ROI et de deliverables.",
+            'competences': {
+                'physique': {'force': 0.2, 'vitesse': 0.2, 'endurance': 0.4, 'recuperation': 0.3},
+                'intelecte': {'mathematique': 0.6, 'logique': 0.7, 'musique': 0.1, 'langage': 0.9, 'sociale': 0.8}
+            }
+        },
+        'Sylvain': {
+            'nom': 'Sylvain',
+            'charisme': 0.7,
+            'intensite_boof': 0.2,
+            'receptif_boof': 0.3,
+            'rigidite': 0.6,
+            'type': 'Masculin',
+            'metier': 'Formateur RPG',
+            'hobbie': 'Enseigner, lire des specs',
+            'personnalite': "Pédagogue, passionné par RPG et les langages de programmation IBM",
+            'competences': {
+                'physique': {'force': 0.1, 'vitesse': 0.1, 'endurance': 0.3, 'recuperation': 0.2},
+                'intelecte': {'mathematique': 0.8, 'logique': 0.9, 'musique': 0.2, 'langage': 0.7, 'sociale': 0.6}
+            }
+        },
+        'Jean christophe': {
+            'nom': 'Jean christophe',
+            'charisme': 0.5,
+            'intensite_boof': 0.3,
+            'receptif_boof': 0.4,
+            'rigidite': 0.7,
+            'type': 'Masculin',
+            'metier': 'Formateur senior',
+            'hobbie': 'Golf, management',
+            'personnalite': "Sérieux et exigeant, peu de tolérance pour les erreurs",
+            'competences': {
+                'physique': {'force': 0.1, 'vitesse': 0.1, 'endurance': 0.2, 'recuperation': 0.2},
+                'intelecte': {'mathematique': 0.7, 'logique': 0.8, 'musique': 0.1, 'langage': 0.8, 'sociale': 0.5}
+            }
+        },
         'Hotesse': {
             'nom': 'Hotesse',
             'charisme': 0.5,

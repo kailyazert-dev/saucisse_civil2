@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, MOVEMENT_SPEED, KENNY
 from assets.param_humain import IbmI_personnage
+import utils.paths as paths
 
 try:
     import replicate as _replicate
@@ -49,6 +50,7 @@ class BaseGameView(arcade.View):
         self.last_response = ""
         self.is_typing = False
         self.waiting_response = False  # True pendant l'appel API
+        self.current_map_action = None
 
         self.quest_manager = quest_manager
         self.show_quests = False
@@ -56,7 +58,7 @@ class BaseGameView(arcade.View):
         self.show_stats = False
 
         try:
-            self.quest_texture = arcade.load_texture("map/map_tmx/bottom1.png")
+            self.quest_texture = arcade.load_texture(paths.asset("map/map_tmx/bottom1.png"))
         except Exception as e:
             raise RuntimeError(f"Texture requise manquante : 'map/map_tmx/bottom1.png' — {e}") from e
 
@@ -65,9 +67,13 @@ class BaseGameView(arcade.View):
         self.quest_x = 30 + self.quest_width / 2
         self.quest_y = WINDOW_HEIGHT - 30 - self.quest_height / 2
 
+        self.show_menu = False
+
         self.keycaps = Keycaps(self)
         self.interact = Interact(self)
         self.talk = Talk(self)
+        self.menu = Menu(self)
+        self.quest_notif = QuestNotif()
 
     def set_manager(self, manager) -> None:
         self.manager = manager
@@ -89,13 +95,19 @@ class BaseGameView(arcade.View):
             )
             arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
 
+    def update_notif(self, delta_time: float) -> None:
+        self.quest_notif.update(delta_time, self.quest_manager.pending_notifications)
+
+    def draw_notif(self) -> None:
+        self.quest_notif.draw()
+
     def get_position(self) -> None:
-        arcade.draw_rect_filled(arcade.rect.XYWH(self.width // 2, 20, self.width, 40), arcade.color.ALMOND)
-        text = (
-            f"Scroll value: ({self.camera_sprites.position[0]:5.1f}, "
-            f"{self.camera_sprites.position[1]:5.1f})"
-        )
-        arcade.draw_text(text, 10, 10, arcade.color.BLACK_BEAN, 20)
+        if self.player_sprite is None:
+            return
+        x = int(self.player_sprite.center_x)
+        y = int(self.player_sprite.center_y)
+        text = f"x: {x}   y: {y}"
+        arcade.draw_text(text, 10, 10, arcade.color.WHITE, 14, font_name=KENNY)
 
 
 # ---------------------------------------------------------------------------
@@ -124,6 +136,13 @@ class Keycaps:
                     return
 
     def handle_key_press(self, key, modifiers) -> None:
+        if key == arcade.key.ESCAPE:
+            self.game_view.show_menu = not self.game_view.show_menu
+            self.game_view.menu.selected = 0
+            return
+        if self.game_view.show_menu:
+            self.game_view.menu.handle_key(key)
+            return
         self._to_reinit(key)
         if self._handle_movement_keys(key):
             return
@@ -176,6 +195,8 @@ class Keycaps:
             self.game_view.current_pnj = None
         if self.game_view.current_strategique:
             self.game_view.current_strategique = None
+        if self.game_view.current_map_action:
+            self.game_view.current_map_action = None
         if self.game_view.current_objet:
             self.game_view.current_objet = None
             self.game_view.character_manager.stop_up()
@@ -187,6 +208,12 @@ class Keycaps:
             self.game_view.character_manager.player.reading = False
 
     def _up_stat(self, key) -> None:
+        if self.game_view.current_map_action and key == arcade.key.ENTER:
+            self.game_view.quest_manager.complete_map_action_objective(
+                self.game_view.current_map_action.objective_name
+            )
+            self.game_view.current_map_action = None
+            return
         if self.game_view.current_objet and key == arcade.key.ENTER:
             self.game_view.current_objet.utiliser(self.game_view.player_sprite, self.game_view.character_manager)
         elif self.game_view.current_collection:
@@ -237,6 +264,7 @@ class Keycaps:
                     self.game_view.current_pnj = pnj
                     self.game_view.is_typing = True
                     self.game_view.current_input = ""
+                    self.game_view.quest_manager.complete_talk_objective(pnj.nom)
                     break
         elif self.game_view.is_typing and key == arcade.key.ENTER:
             if self.game_view.current_pnj and not self.game_view.waiting_response:
@@ -254,8 +282,8 @@ class Interact:
         self.game_view = game_view
 
         try:
-            self.stat_map = arcade.load_tilemap("map/map_tmx/stat_box.tmx", scaling=1)
-            self.quest_map = arcade.load_tilemap("map/map_tmx/quests_box.tmx", scaling=1)
+            self.stat_map = arcade.load_tilemap(paths.asset("map/map_tmx/stat_box.tmx"), scaling=1)
+            self.quest_map = arcade.load_tilemap(paths.asset("map/map_tmx/quests_box.tmx"), scaling=1)
         except Exception as e:
             raise RuntimeError(f"Impossible de charger les UI boxes : {e}") from e
 
@@ -269,10 +297,10 @@ class Interact:
         self.mini_map_camera = arcade.Camera2D()
 
         try:
-            self.box_text = arcade.load_texture("map/map_tmx/use_box.png")
-            self.box_text_t = arcade.load_texture("map/map_tmx/use_box_t.png")
-            self.box_text_c = arcade.load_texture("map/map_tmx/use_box_c.png")
-            self.box_text_b = arcade.load_texture("map/map_tmx/use_box_b.png")
+            self.box_text = arcade.load_texture(paths.asset("map/map_tmx/use_box.png"))
+            self.box_text_t = arcade.load_texture(paths.asset("map/map_tmx/use_box_t.png"))
+            self.box_text_c = arcade.load_texture(paths.asset("map/map_tmx/use_box_c.png"))
+            self.box_text_b = arcade.load_texture(paths.asset("map/map_tmx/use_box_b.png"))
         except Exception as e:
             raise RuntimeError(f"Texture d'interaction manquante : {e}") from e
 
@@ -350,7 +378,23 @@ class Interact:
         box_width = self.box_text.width - 10
         box_height = self.box_text.height - 40
         player = self.game_view.player_sprite
+        qm = self.game_view.quest_manager
 
+        # Passe 1 : MapActionObject — priorité sur les UpStats quand un objectif est actif
+        for objet in self.game_view.objet_sprites:
+            if type(objet).__name__ != "MapActionObject":
+                continue
+            if arcade.get_distance_between_sprites(player, objet) >= 68:
+                continue
+            if not objet.is_available(qm):
+                continue
+            left, top = self.get_r_corner_cord()
+            self.game_view.current_map_action = objet
+            arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
+            arcade.draw_text(objet.get_name(), left, top - 7, arcade.color.JADE, 12, box_width, "center", font_name=KENNY)
+            return  # Un seul objet affiché à la fois
+
+        # Passe 2 : UpStat / UpStatCollection
         for objet in self.game_view.objet_sprites:
             if arcade.get_distance_between_sprites(player, objet) >= 68:
                 continue
@@ -367,6 +411,7 @@ class Interact:
                     else arcade.color.JADE
                 )
                 arcade.draw_text(objet.get_name(), left, top - 7, color, 12, box_width, "center", font_name=KENNY)
+                return
 
             if type(objet).__name__ == "UpStatCollection":
                 self.game_view.current_collection = objet
@@ -390,14 +435,14 @@ class Interact:
                             else arcade.color.JADE
                         )
                         arcade.draw_texture_rect(self.box_text_c, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_c_height))
-                        prefix = "→ " if i == self.game_view.current_index_upstat else "  "
+                        prefix = "-> " if i == self.game_view.current_index_upstat else "   "
                         arcade.draw_text(prefix, left + 7, y_pos, arcade.color.BLACK, 10)
                         arcade.draw_text(upstat.get_name(), left + 26, y_pos, color, 10, font_name=KENNY)
                         y_cursor -= box_c_height
                         y_pos -= 35
                     y_cursor += box_c_height / 2
                     arcade.draw_texture_rect(self.box_text_b, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_t_height))
-                break
+                return
 
     def interact_pnj_strateg(self) -> None:
         player = self.game_view.player_sprite
@@ -526,3 +571,139 @@ class Talk:
             input={"prompt": full_prompt, "max_new_tokens": 250, "temperature": 0.7},
         )
         return "".join(output)
+
+
+# ---------------------------------------------------------------------------
+class Menu:
+    _OPTIONS = ["Reprendre", "Sauvegarder", "Réinitialiser", "Quitter"]
+    _W = 320
+    _H = 290
+
+    def __init__(self, game_view: BaseGameView):
+        self.game_view = game_view
+        self.selected = 0
+
+    def draw(self) -> None:
+        if not self.game_view.show_menu:
+            return
+        cx = WINDOW_WIDTH / 2
+        cy = WINDOW_HEIGHT / 2
+        arcade.draw_lrbt_rectangle_filled(
+            cx - self._W / 2, cx + self._W / 2,
+            cy - self._H / 2, cy + self._H / 2,
+            (15, 15, 15, 210),
+        )
+        arcade.draw_lrbt_rectangle_outline(
+            cx - self._W / 2, cx + self._W / 2,
+            cy - self._H / 2, cy + self._H / 2,
+            arcade.color.WHITE, 2,
+        )
+        arcade.draw_text("MENU", cx, cy + self._H / 2 - 35,
+                         arcade.color.WHITE, 22, anchor_x="center", bold=True, font_name=KENNY)
+        for i, opt in enumerate(self._OPTIONS):
+            color = arcade.color.YELLOW if i == self.selected else arcade.color.WHITE
+            arcade.draw_text(opt, cx, cy + 50 - i * 55,
+                             color, 17, anchor_x="center", font_name=KENNY)
+
+    def handle_key(self, key) -> None:
+        if key == arcade.key.UP:
+            self.selected = (self.selected - 1) % len(self._OPTIONS)
+        elif key == arcade.key.DOWN:
+            self.selected = (self.selected + 1) % len(self._OPTIONS)
+        elif key == arcade.key.ENTER:
+            self._confirm()
+
+    def _confirm(self) -> None:
+        opt = self._OPTIONS[self.selected]
+        if opt == "Reprendre":
+            self.game_view.show_menu = False
+        elif opt == "Sauvegarder":
+            self.game_view.character_manager.save_player()
+            self.game_view.quest_manager.save_progress()
+        elif opt == "Réinitialiser":
+            self.game_view.character_manager.reset()
+            self.game_view.quest_manager.reset()
+            self.game_view.show_menu = False
+            self.game_view.manager.switch_map("home")
+        elif opt == "Quitter":
+            arcade.exit()
+
+
+# ---------------------------------------------------------------------------
+class QuestNotif:
+    _FADE_IN = 0.35
+    _HOLD = 2.2
+    _FADE_OUT = 0.55
+
+    def __init__(self):
+        self._queue: list[dict] = []
+        self._current_text = ""
+        self._current_type = ""
+        self._state = "idle"
+        self._timer = 0.0
+        self._alpha = 0
+
+    def update(self, delta_time: float, pending: list) -> None:
+        while pending:
+            self._queue.append(pending.pop(0))
+
+        if self._state == "idle":
+            if self._queue:
+                n = self._queue.pop(0)
+                self._current_text = n["text"]
+                self._current_type = n["type"]
+                self._state = "fade_in"
+                self._timer = 0.0
+                self._alpha = 0
+            return
+
+        self._timer += delta_time
+
+        if self._state == "fade_in":
+            self._alpha = min(255, int(255 * self._timer / self._FADE_IN))
+            if self._timer >= self._FADE_IN:
+                self._alpha = 255
+                self._state = "hold"
+                self._timer = 0.0
+        elif self._state == "hold":
+            if self._timer >= self._HOLD:
+                self._state = "fade_out"
+                self._timer = 0.0
+        elif self._state == "fade_out":
+            self._alpha = max(0, int(255 * (1.0 - self._timer / self._FADE_OUT)))
+            if self._timer >= self._FADE_OUT:
+                self._alpha = 0
+                self._state = "idle"
+                self._timer = 0.0
+
+    def draw(self) -> None:
+        if self._state == "idle" or self._alpha == 0:
+            return
+
+        cx = WINDOW_WIDTH / 2
+        cy = WINDOW_HEIGHT * 0.68
+
+        if self._current_type == "quest":
+            r, g, b = 255, 172, 28   # ALLOY_ORANGE
+            size = 24
+        else:
+            r, g, b = 0, 168, 107    # JADE
+            size = 19
+
+        bg_alpha = int(self._alpha * 0.72)
+        pad_x, pad_y = 28, 14
+        arcade.draw_lrbt_rectangle_filled(
+            cx - 220, cx + 220,
+            cy - pad_y, cy + size + pad_y,
+            (0, 0, 0, bg_alpha),
+        )
+        arcade.draw_text(
+            self._current_text,
+            cx, cy + size / 2,
+            (r, g, b, self._alpha),
+            size,
+            anchor_x="center",
+            anchor_y="center",
+            bold=True,
+            font_name=KENNY,
+        )

@@ -44,7 +44,7 @@
                         "validator": 0
                     },
                     {
-                        "name": "",
+                        "name": "envoyer son cv sur indead",
                         "description": "Envoyer son cv sur indead.",
                         "status": "na",
                         "type": "map_action",
@@ -89,12 +89,12 @@
                 "id": 1,
                 "title": "Aller a la formation.",
                 "description": "Bin vas la formation.",
-                "status": "Non commencé",
+                "status": "nc",
                 "objectives": [
                     {
-                        "name": "Parle à sylvain.",
+                        "name": "Parle à Sylvain.",
                         "description": "Parle avec tes formateurs.",
-                        "status": "Non atteint",
+                        "status": "na",
                         "type": "talk",
                         "stat_key": "Sylvain",
                         "validator": 1
@@ -102,7 +102,7 @@
                     {
                         "name": "Parle à Jean christophe.",
                         "description": "Parle avec tes formateurs.",
-                        "status": "Non atteint",
+                        "status": "na",
                         "type": "talk",
                         "stat_key": "Jean christophe",
                         "validator": 1
@@ -113,14 +113,14 @@
                 "id": 2,
                 "title": "Apprend le super language révolutionnaire du turfu.",
                 "description": "Acqui les compétences pour validé ta formation.",
-                "status": "Non commencé",
+                "status": "nc",
                 "objectives": [
                     {
                         "name": "Apprend le RPG.",
                         "description": "Apprend le RPG.",
-                        "status": "Non atteint",
+                        "status": "na",
                         "type": "stat",
-                        "stat_key": "RPG",
+                        "stat_key": "rpg",
                         "validator": 0.14
                     }
                 ]
@@ -129,12 +129,12 @@
                 "id": 3,
                 "title": "Termine ta formation.",
                 "description": "Pour valider ta formation tu doit passer un test ultime d'algo digne de la NASA.",
-                "status": "Non commencé",
+                "status": "nc",
                 "objectives": [
                     {
                         "name": "Valide le test de la formation.",
                         "description": "Réussit le test d'algo de la NASA.",
-                        "status": "Non atteint",
+                        "status": "na",
                         "type": "test",
                         "stat_key": "",
                         "validator": 1
@@ -153,14 +153,14 @@
                 "id": 1,
                 "title": "Aller au taf.",
                 "description": "Bin vas au taf.",
-                "status": "Non commencé",
+                "status": "nc",
                 "objectives": [
                     {
                         "name": "Rencontre Guy.",
-                        "description": "Guy est le directeur de l'entreprise. Ton patron. Choisit un secteur d'activité",
-                        "status": "Non atteint",
-                        "type": "stat",
-                        "stat_key": "secteur",
+                        "description": "Guy est le directeur de l'entreprise. Ton patron.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Guy",
                         "validator": 1
                     }
                 ]
