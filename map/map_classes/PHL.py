@@ -1,7 +1,7 @@
 from __future__ import annotations
 import arcade
 from character.character_classes import Humain, PNJ
-from assets.param_map import PLAYER_SCALING
+from assets.param_map import PLAYER_SCALING, KENNY
 from assets.param_humain import IbmI_personnage
 from map.map_base import BaseGameView
 from map.map_classes.objet import UpStat, MapActionObject
@@ -111,8 +111,12 @@ class GameView(BaseGameView):
 
         if 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600:
             left, top = self.interact.draw_interact_box()
-            arcade.draw_text("RALT : Maison", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14)
+            cx = left + (self.interact._BOX_W - 10) / 2
+            cy = top - self.interact._BOX_H / 2
+            arcade.draw_text("Sortie", cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+            arcade.draw_text("RALT : Maison", cx, cy - 9, self.interact._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
 
+        self.draw_stat_progress_bar()
         self.camera_gui.use()
         self.interact.draw_box()
         self.get_quests()

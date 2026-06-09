@@ -13,7 +13,7 @@
                 "objectives": [
                     {
                         "name": "Atteindre le niveau 0.15 en mathématique",
-                        "description": "Lire le livre Pythagore.",
+                        "description": "Lire le livre Mathématique de la bibliothèque.",
                         "status": "na",
                         "type": "stat",
                         "stat_key": "mathematique",
@@ -21,7 +21,7 @@
                     },
                     {
                         "name": "Atteindre le niveau 0.15 en logique",
-                        "description": "Jouer au jeu d'échec.",
+                        "description": "Jouer au jeu d'échec le PC.",
                         "status": "na",
                         "type": "stat",
                         "stat_key": "logique",
@@ -37,7 +37,7 @@
                 "objectives": [
                     {
                         "name": "rediger son cv",
-                        "description": "Utiliser son pc pour rédiger son cv.",
+                        "description": "Utilise le pc pour rédiger son cv.",
                         "status": "na",
                         "type": "map_action",
                         "stat_key": "",
@@ -45,7 +45,7 @@
                     },
                     {
                         "name": "envoyer son cv sur indead",
-                        "description": "Envoyer son cv sur indead.",
+                        "description": "Envoye ton cv sur indead.",
                         "status": "na",
                         "type": "map_action",
                         "stat_key": "",
@@ -88,12 +88,12 @@
             {
                 "id": 1,
                 "title": "Aller a la formation.",
-                "description": "Bin vas la formation.",
+                "description": "Bin vas à la formation. Commence par discuter avec tes formateurs.",
                 "status": "nc",
                 "objectives": [
                     {
                         "name": "Parle à Sylvain.",
-                        "description": "Parle avec tes formateurs.",
+                        "description": "Il se situe dans la salle de formation.",
                         "status": "na",
                         "type": "talk",
                         "stat_key": "Sylvain",
@@ -101,7 +101,7 @@
                     },
                     {
                         "name": "Parle à Jean christophe.",
-                        "description": "Parle avec tes formateurs.",
+                        "description": "Il se situe dans la salle de formation.",
                         "status": "na",
                         "type": "talk",
                         "stat_key": "Jean christophe",
@@ -117,7 +117,7 @@
                 "objectives": [
                     {
                         "name": "Apprend le RPG.",
-                        "description": "Apprend le RPG.",
+                        "description": "Apprend le RPG sur le PC de la salle de formation.",
                         "status": "na",
                         "type": "stat",
                         "stat_key": "rpg",
@@ -133,7 +133,7 @@
                 "objectives": [
                     {
                         "name": "Valide le test de la formation.",
-                        "description": "Réussit le test d'algo de la NASA.",
+                        "description": "Réussit le test d'algo de la NASA sur le PC.",
                         "status": "na",
                         "type": "test",
                         "stat_key": "",
@@ -157,7 +157,7 @@
                 "objectives": [
                     {
                         "name": "Rencontre Guy.",
-                        "description": "Guy est le directeur de l'entreprise. Ton patron.",
+                        "description": "Guy est le directeur de l'entreprise. Ton patron. Il se trouve dans son bureau. discute avec la femme à l'accueil pour qu'elle te redirige.",
                         "status": "na",
                         "type": "talk",
                         "stat_key": "Guy",

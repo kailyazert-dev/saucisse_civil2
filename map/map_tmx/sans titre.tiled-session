@@ -1,5 +1,5 @@
 {
-    "activeFile": "PHL.tmx",
+    "activeFile": "TMA.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -16,31 +16,31 @@
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 966,
-                "y": 2052.5
+                "x": 1241,
+                "y": 2053
             }
         },
         "TMA.tmx": {
             "scale": 0.3422794117647059,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1026.938775510204,
-                "y": 392.95381310418907
+                "x": 1025.4779806659506,
+                "y": 394.41460794844255
             }
         },
         "quests_box.tmx": {
             "scale": 0.72734375,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 527.9484425349087,
-                "y": 383.5875402792696
+                "x": 527.9484425349086,
+                "y": 309.3447905477981
             }
         },
         "stat_box.tmx": {
             "scale": 0.72734375,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 527.9484425349087,
+                "x": 527.9484425349086,
                 "y": 383.5875402792696
             }
         },
@@ -81,10 +81,10 @@
     ],
     "project": "sans titre.tiled-project",
     "recentFiles": [
-        "TMA.tmx",
-        "HOME.tmx",
         "stat_box.tmx",
         "quests_box.tmx",
-        "PHL.tmx"
+        "PHL.tmx",
+        "HOME.tmx",
+        "TMA.tmx"
     ]
 }

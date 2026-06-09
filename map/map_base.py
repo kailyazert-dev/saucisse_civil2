@@ -53,19 +53,12 @@ class BaseGameView(arcade.View):
         self.current_map_action = None
 
         self.quest_manager = quest_manager
-        self.show_quests = False
         self.show_side_bar = False
-        self.show_stats = False
 
-        try:
-            self.quest_texture = arcade.load_texture(paths.asset("map/map_tmx/bottom1.png"))
-        except Exception as e:
-            raise RuntimeError(f"Texture requise manquante : 'map/map_tmx/bottom1.png' — {e}") from e
-
-        self.quest_width = self.quest_texture.width * 0.5
-        self.quest_height = self.quest_texture.height * 0.5
-        self.quest_x = 30 + self.quest_width / 2
-        self.quest_y = WINDOW_HEIGHT - 30 - self.quest_height / 2
+        self.quest_width = 80
+        self.quest_height = 26
+        self.quest_x = 10 + self.quest_width / 2
+        self.quest_y = WINDOW_HEIGHT - 10 - self.quest_height / 2
 
         self.show_menu = False
 
@@ -88,12 +81,13 @@ class BaseGameView(arcade.View):
         )
 
     def get_quests(self) -> None:
-        if not self.show_stats and not self.show_quests:
-            arcade.draw_texture_rect(
-                self.quest_texture,
-                arcade.XYWH(30, WINDOW_HEIGHT - 28, self.quest_texture.width, self.quest_texture.height).scale(0.5),
-            )
-            arcade.draw_text("Quests:", 50, self.height - 40, arcade.color.WHITE, 14, bold=True, font_name=KENNY)
+        x, y = self.quest_x, self.quest_y
+        w, h = self.quest_width, self.quest_height
+        bg = (50, 50, 90, 200) if self.show_side_bar else (20, 20, 50, 200)
+        arcade.draw_lrbt_rectangle_filled(x - w / 2, x + w / 2, y - h / 2, y + h / 2, bg)
+        arcade.draw_lrbt_rectangle_outline(x - w / 2, x + w / 2, y - h / 2, y + h / 2, arcade.color.WHITE, 1)
+        arcade.draw_text("Quêtes", x, y, arcade.color.WHITE, 12,
+                         anchor_x="center", anchor_y="center", bold=True, font_name=KENNY)
 
     def update_notif(self, delta_time: float) -> None:
         self.quest_notif.update(delta_time, self.quest_manager.pending_notifications)
@@ -109,6 +103,35 @@ class BaseGameView(arcade.View):
         text = f"x: {x}   y: {y}"
         arcade.draw_text(text, 10, 10, arcade.color.WHITE, 14, font_name=KENNY)
 
+    def draw_stat_progress_bar(self) -> None:
+        cm = self.character_manager
+        if not cm.up or cm.current_progresseur is None or self.player_sprite is None:
+            return
+
+        player = self.player_sprite
+        stat    = cm.stat_to_up
+        current = getattr(player.humain, stat, 0.0)
+        prog    = cm.current_progresseur
+        filled  = max(0.0, min(1.0, (current - prog.stat_min) / max(prog.stat_max - prog.stat_min, 0.001)))
+        tick    = min(1.0, cm.time_since_last_up_increase / cm.up_increase_interval)
+
+        BAR_W, BAR_H, TICK_H = 84, 8, 3
+        cx      = player.center_x
+        bar_bot = player.top + 14
+
+        # Barre de tick (compteur jusqu'au prochain +0.002)
+        arcade.draw_lrbt_rectangle_filled(cx - BAR_W / 2, cx + BAR_W / 2, bar_bot - TICK_H - 2, bar_bot - 2, (20, 20, 40, 180))
+        arcade.draw_lrbt_rectangle_filled(cx - BAR_W / 2, cx - BAR_W / 2 + BAR_W * tick,        bar_bot - TICK_H - 2, bar_bot - 2, (150, 180, 230, 210))
+
+        # Barre de progression principale
+        arcade.draw_lrbt_rectangle_filled(cx - BAR_W / 2, cx + BAR_W / 2, bar_bot, bar_bot + BAR_H, (20, 20, 40, 200))
+        arcade.draw_lrbt_rectangle_outline(cx - BAR_W / 2, cx + BAR_W / 2, bar_bot, bar_bot + BAR_H, arcade.color.WHITE, 1)
+        if filled > 0:
+            arcade.draw_lrbt_rectangle_filled(cx - BAR_W / 2, cx - BAR_W / 2 + BAR_W * filled, bar_bot, bar_bot + BAR_H, arcade.color.JADE)
+
+        # Nom de la stat
+        arcade.draw_text(stat.capitalize(), cx, bar_bot + BAR_H + 4, arcade.color.WHITE, 9, anchor_x="center", font_name=KENNY)
+
 
 # ---------------------------------------------------------------------------
 class Keycaps:
@@ -116,24 +139,11 @@ class Keycaps:
         self.game_view = game_view
 
     def on_mouse_press(self, x: float, y: float, button, modifiers) -> None:
-        left = self.game_view.quest_x - self.game_view.quest_width
-        right = self.game_view.quest_x + self.game_view.quest_width
-        bottom = self.game_view.quest_y - self.game_view.quest_height / 2
-        top = self.game_view.quest_y + self.game_view.quest_height
-        if left <= x <= right and bottom <= y <= top:
+        qx, qy = self.game_view.quest_x, self.game_view.quest_y
+        qw, qh = self.game_view.quest_width / 2, self.game_view.quest_height / 2
+        if qx - qw <= x <= qx + qw and qy - qh <= y <= qy + qh:
             self.game_view.show_side_bar = not self.game_view.show_side_bar
 
-        if self.game_view.show_stats:
-            mini_world_pos = self.game_view.interact.mini_map_camera.unproject((x, y))
-            mini_x, mini_y = mini_world_pos.x, mini_world_pos.y
-            for tile in self.game_view.interact.choise_stat:
-                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
-                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Stats-base"]
-                    return
-            for tile in self.game_view.interact.choise_bag:
-                if tile.left <= mini_x <= tile.right and tile.bottom <= mini_y <= tile.top:
-                    self.game_view.interact.sous_box = self.game_view.interact.stat_map.sprite_lists["Bag-base"]
-                    return
 
     def handle_key_press(self, key, modifiers) -> None:
         if key == arcade.key.ESCAPE:
@@ -147,7 +157,6 @@ class Keycaps:
         if self._handle_movement_keys(key):
             return
         self._to_show_stat(key)
-        self._to_show_quests(key)
         self._to_dialogue(key)
         self._up_stat(key)
 
@@ -233,21 +242,7 @@ class Keycaps:
 
     def _to_show_stat(self, key) -> None:
         if key == arcade.key.P:
-            self.game_view.show_stats = not self.game_view.show_stats
-
-    def _to_show_quests(self, key) -> None:
-        if key != arcade.key.O:
-            return
-        self.game_view.show_quests = not self.game_view.show_quests
-        arc = self.game_view.quest_manager.arc
-        if arc is None:
-            return
-        quest = next((q for q in arc.quests if q.status == "ec"), None)
-        if quest is None:
-            return
-        print(quest.title, quest.description, quest.status)
-        for obj in quest.objectives:
-            print(obj.name, obj.description, obj.status)
+            self.game_view.window.show_view(StatsView(self.game_view))
 
     def _to_dialogue(self, key) -> None:
         player = self.game_view.player_sprite
@@ -278,34 +273,18 @@ class Keycaps:
 
 # ---------------------------------------------------------------------------
 class Interact:
+    _BOX_W    = 260
+    _BOX_H    = 50
+    _BOX_T_H  = 28
+    _BOX_C_H  = 43
+    _POP_BG   = (15, 15, 40, 215)
+    _HINT_COL = (150, 180, 230)
+
     def __init__(self, game_view: BaseGameView):
         self.game_view = game_view
 
-        try:
-            self.stat_map = arcade.load_tilemap(paths.asset("map/map_tmx/stat_box.tmx"), scaling=1)
-            self.quest_map = arcade.load_tilemap(paths.asset("map/map_tmx/quests_box.tmx"), scaling=1)
-        except Exception as e:
-            raise RuntimeError(f"Impossible de charger les UI boxes : {e}") from e
-
-        self.box_stat = arcade.Scene.from_tilemap(self.stat_map)
-        self.base = self.stat_map.sprite_lists["Base"]
-        self.top = self.stat_map.sprite_lists["Top-base"]
-        self.choise_stat = self.stat_map.sprite_lists["Choise_1"]
-        self.choise_bag = self.stat_map.sprite_lists["Choise_2"]
-        self.sous_box = self.stat_map.sprite_lists["Stats-base"]
-        self.box_quest = arcade.Scene.from_tilemap(self.quest_map)
-        self.mini_map_camera = arcade.Camera2D()
-
-        try:
-            self.box_text = arcade.load_texture(paths.asset("map/map_tmx/use_box.png"))
-            self.box_text_t = arcade.load_texture(paths.asset("map/map_tmx/use_box_t.png"))
-            self.box_text_c = arcade.load_texture(paths.asset("map/map_tmx/use_box_c.png"))
-            self.box_text_b = arcade.load_texture(paths.asset("map/map_tmx/use_box_b.png"))
-        except Exception as e:
-            raise RuntimeError(f"Texture d'interaction manquante : {e}") from e
-
     def draw_side_bar(self) -> None:
-        if self.game_view.show_stats or self.game_view.show_quests or not self.game_view.show_side_bar:
+        if not self.game_view.show_side_bar:
             return
         arc = self.game_view.quest_manager.arc
         if arc is None:
@@ -322,42 +301,15 @@ class Interact:
             y -= 20
 
     def draw_box(self) -> None:
-        if self.game_view.show_stats:
-            self.base.draw()
-            self.top.draw()
-            self.choise_stat.draw()
-            self.choise_bag.draw()
-            self.sous_box.draw()
-            arcade.draw_text("Physique", 360, 640, arcade.color.ORANGE, 12, font_name=KENNY)
-            arcade.draw_text("Intellect", 360, 592, arcade.color.ORANGE, 12, font_name=KENNY)
-            arcade.draw_text("Sociale", 360, 544, arcade.color.ORANGE, 12, font_name=KENNY)
-            if self.sous_box == self.stat_map.sprite_lists["Stats-base"]:
-                y = 325
-                arcade.draw_text("Stats physique", 247, 350, arcade.color.ORANGE, 12, font_name=KENNY)
-                for key, value in self.game_view.player_sprite.humain.get_stats_physique():
-                    arcade.draw_text(f"{key} : {value}", 247, y, arcade.color.BLACK, 12, font_name=KENNY)
-                    y -= 25
-                arcade.draw_text("Stats intellect", 447, 350, arcade.color.ORANGE, 12, font_name=KENNY)
-                y = 325
-                for key, value in self.game_view.player_sprite.humain.get_stats_intellect():
-                    arcade.draw_text(f"{key} : {value}", 447, y, arcade.color.BLACK, 12, font_name=KENNY)
-                    y -= 25
-                arcade.draw_text("Stats sociale", 647, 350, arcade.color.ORANGE, 12, font_name=KENNY)
-                y = 325
-                for key, value in self.game_view.player_sprite.humain.get_stats_sociale():
-                    arcade.draw_text(f"{key} : {value}", 647, y, arcade.color.BLACK, 12, font_name=KENNY)
-                    y -= 25
-        if self.game_view.show_quests:
-            self.box_quest.draw()
+        pass
 
     def draw_interact_box(self):
         arcade.get_window().use()
         player = self.game_view.player_sprite
-        left = player.center_x + 25
-        right = player.center_x + 200
-        top = player.center_y - 25
-        bottom = player.center_y - 75
-        arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, arcade.color.WHITE)
+        left  = player.center_x + 25
+        top   = player.center_y - 25
+        w, h  = self._BOX_W - 10, self._BOX_H
+        self._draw_popup(left, top, w, h)
         return left, top
 
     def create_obstacles(self):
@@ -374,9 +326,16 @@ class Interact:
         player = self.game_view.player_sprite
         return player.center_x + 20, player.center_y - 55
 
+    def _draw_popup(self, left: float, top: float, w: float, h: float) -> None:
+        arcade.draw_lrbt_rectangle_filled(left, left + w, top - h, top, self._POP_BG)
+        arcade.draw_lrbt_rectangle_outline(left, left + w, top - h, top, arcade.color.WHITE, 1)
+
+    def _draw_box_rect(self, cx: float, cy: float, w: float, h: float) -> None:
+        self._draw_popup(cx - w / 2, cy + h / 2, w, h)
+
     def interact_obj_prg(self) -> None:
-        box_width = self.box_text.width - 10
-        box_height = self.box_text.height - 40
+        box_width = self._BOX_W - 10
+        box_height = self._BOX_H - 10
         player = self.game_view.player_sprite
         qm = self.game_view.quest_manager
 
@@ -390,8 +349,10 @@ class Interact:
                 continue
             left, top = self.get_r_corner_cord()
             self.game_view.current_map_action = objet
-            arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
-            arcade.draw_text(objet.get_name(), left, top - 7, arcade.color.JADE, 12, box_width, "center", font_name=KENNY)
+            cx = left + box_width / 2
+            self._draw_box_rect(cx, top, box_width, box_height)
+            arcade.draw_text(objet.get_name(), cx, top + 9, arcade.color.JADE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+            arcade.draw_text("[Entrée]", cx, top - 9, self._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
             return  # Un seul objet affiché à la fois
 
         # Passe 2 : UpStat / UpStatCollection
@@ -404,28 +365,48 @@ class Interact:
                 self.game_view.current_objet = objet
                 stat_name = objet.stat_cible
                 player_level_stat = getattr(player.humain, stat_name)
-                arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
+                cx = left + box_width / 2
+                self._draw_box_rect(cx, top, box_width, box_height)
                 color = (
                     arcade.color.GRAY_BLUE if player_level_stat >= objet.stat_max
                     else arcade.color.RED if player_level_stat < objet.stat_min
                     else arcade.color.JADE
                 )
-                arcade.draw_text(objet.get_name(), left, top - 7, color, 12, box_width, "center", font_name=KENNY)
+                at_max = player_level_stat >= objet.stat_max
+                hint       = "Niveau max atteint" if at_max else "[Entrée]"
+                hint_color = arcade.color.GRAY_BLUE if at_max else self._HINT_COL
+                arcade.draw_text(objet.get_name(), cx, top + 9, color, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+                arcade.draw_text(hint, cx, top - 9, hint_color, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
                 return
 
             if type(objet).__name__ == "UpStatCollection":
                 self.game_view.current_collection = objet
                 box_width += 10
-                arcade.draw_texture_rect(self.box_text, arcade.XYWH(left + box_width / 2, top, box_width, box_height))
-                arcade.draw_text(objet.get_name(), left, top - 7, arcade.color.JADE, 12, box_width, "center", font_name=KENNY)
-                if self.game_view.current_collection and self.game_view.open_collection:
+                cx = left + box_width / 2
+
+                if not self.game_view.open_collection:
+                    self._draw_box_rect(cx, top, box_width, box_height)
+                    arcade.draw_text(objet.get_name(), cx, top + 9, arcade.color.JADE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+                    arcade.draw_text("[Entrée]", cx, top - 9, self._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
+                else:
                     upstats = objet.get_all_upStats()
-                    box_t_height = self.box_text_t.height - 8
-                    box_c_height = self.box_text_c.height - 13
-                    y_cursor = top - box_height / 2 - 4
-                    arcade.draw_texture_rect(self.box_text_t, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_t_height))
-                    y_cursor -= box_c_height / 2 + 3
-                    y_pos = y_cursor + box_t_height / 2 - 4
+                    HEADER_H = 30
+                    ITEM_H   = 28
+                    FOOTER_H = 36
+                    total_h  = HEADER_H + ITEM_H * len(upstats) + FOOTER_H
+                    bx       = cx - box_width / 2
+                    b_top    = top + box_height / 2
+                    b_bot    = b_top - total_h
+
+                    arcade.draw_lrbt_rectangle_filled(bx, bx + box_width, b_bot, b_top, self._POP_BG)
+                    arcade.draw_lrbt_rectangle_outline(bx, bx + box_width, b_bot, b_top, arcade.color.WHITE, 1)
+
+                    header_cy = b_top - HEADER_H / 2
+                    arcade.draw_text(objet.get_name(), cx, header_cy, arcade.color.JADE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+
+                    sep1 = b_top - HEADER_H
+                    arcade.draw_line(bx + 4, sep1, bx + box_width - 4, sep1, arcade.color.WHITE, 1)
+
                     for i, upstat in enumerate(upstats):
                         stat_name = upstat.stat_cible
                         player_level_stat = getattr(player.humain, stat_name)
@@ -434,14 +415,25 @@ class Interact:
                             else arcade.color.RED if player_level_stat < upstat.stat_min
                             else arcade.color.JADE
                         )
-                        arcade.draw_texture_rect(self.box_text_c, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_c_height))
-                        prefix = "-> " if i == self.game_view.current_index_upstat else "   "
-                        arcade.draw_text(prefix, left + 7, y_pos, arcade.color.BLACK, 10)
-                        arcade.draw_text(upstat.get_name(), left + 26, y_pos, color, 10, font_name=KENNY)
-                        y_cursor -= box_c_height
-                        y_pos -= 35
-                    y_cursor += box_c_height / 2
-                    arcade.draw_texture_rect(self.box_text_b, arcade.XYWH(left + box_width / 2, y_cursor, box_width, box_t_height))
+                        item_cy = sep1 - ITEM_H / 2 - i * ITEM_H
+                        if i == self.game_view.current_index_upstat:
+                            arcade.draw_lrbt_rectangle_filled(bx + 1, bx + box_width - 1, item_cy - ITEM_H / 2, item_cy + ITEM_H / 2, (50, 50, 90))
+                        label = f"> {upstat.get_name()}" if i == self.game_view.current_index_upstat else upstat.get_name()
+                        arcade.draw_text(label, cx, item_cy, color, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
+
+                    sep2 = sep1 - ITEM_H * len(upstats)
+                    arcade.draw_line(bx + 4, sep2, bx + box_width - 4, sep2, arcade.color.WHITE, 1)
+
+                    sel = upstats[self.game_view.current_index_upstat]
+                    sel_stat_val = getattr(player.humain, sel.stat_cible)
+                    sel_at_max   = sel_stat_val >= sel.stat_max
+
+                    footer_cy = sep2 - FOOTER_H / 2
+                    arcade.draw_text("↑ ↓   Naviguer", cx, footer_cy + 9, self._HINT_COL, 10, anchor_x="center", anchor_y="center", font_name=KENNY)
+                    if sel_at_max:
+                        arcade.draw_text("Niveau max atteint", cx, footer_cy - 9, arcade.color.GRAY_BLUE, 10, anchor_x="center", anchor_y="center", font_name=KENNY)
+                    else:
+                        arcade.draw_text("[Entrée]   Utiliser", cx, footer_cy - 9, self._HINT_COL, 10, anchor_x="center", anchor_y="center", font_name=KENNY)
                 return
 
     def interact_pnj_strateg(self) -> None:
@@ -449,8 +441,13 @@ class Interact:
         for strategique in self.game_view.strategique_sprite:
             if arcade.get_distance_between_sprites(player, strategique) < 50:
                 self.game_view.current_strategique = strategique
-                arcade.draw_text("RALT : Aller à PHL", strategique.center_x - 90, strategique.center_y - 50, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
-                arcade.draw_text(strategique.get_nom(), strategique.center_x - 40, strategique.center_y + 40, arcade.color.ALLOY_ORANGE, 14, font_name=KENNY)
+                w, h = self._BOX_W - 10, self._BOX_H
+                left = strategique.center_x - w / 2
+                top  = strategique.center_y + 60
+                self._draw_popup(left, top, w, h)
+                cx, cy = left + w / 2, top - h / 2
+                arcade.draw_text(strategique.get_nom(), cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+                arcade.draw_text("RALT : Aller à PHL", cx, cy - 9, self._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
                 break
 
     def interact_pnj(self) -> None:
@@ -458,8 +455,9 @@ class Interact:
         for pnj in self.game_view.pnj_sprite:
             if arcade.get_distance_between_sprites(player, pnj) < 50:
                 left, top = self.draw_interact_box()
-                arcade.draw_text(pnj.get_nom(), left + 15, top - 20, arcade.color.ORANGE, 14, font_name=KENNY)
-                arcade.draw_text("LALT : Discuter", left + 15, top - 40, arcade.color.LIGHT_GREEN, 14, font_name=KENNY)
+                cx, cy = left + (self._BOX_W - 10) / 2, top - self._BOX_H / 2
+                arcade.draw_text(pnj.get_nom(), cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+                arcade.draw_text("LALT : Discuter", cx, cy - 9, self._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
         if self.game_view.is_typing and self.game_view.current_pnj:
             self.game_view.talk.draw_dialogue_box()
 
@@ -571,6 +569,135 @@ class Talk:
             input={"prompt": full_prompt, "max_new_tokens": 250, "temperature": 0.7},
         )
         return "".join(output)
+
+
+# ---------------------------------------------------------------------------
+class StatsView(arcade.View):
+    _TABS = ["Stats", "Quêtes"]
+
+    def __init__(self, game_view: BaseGameView, tab: int = 0):
+        super().__init__()
+        self._game_view = game_view
+        self._tab = tab
+
+    def on_draw(self):
+        self.clear()
+        pad = 50
+        cx = WINDOW_WIDTH / 2
+
+        arcade.draw_lrbt_rectangle_filled(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, (10, 10, 30, 255))
+        arcade.draw_lrbt_rectangle_filled(pad, WINDOW_WIDTH - pad, pad, WINDOW_HEIGHT - pad, (25, 25, 50, 255))
+        arcade.draw_lrbt_rectangle_outline(pad, WINDOW_WIDTH - pad, pad, WINDOW_HEIGHT - pad, arcade.color.WHITE, 2)
+
+        player = self._game_view.player_sprite
+        if player is None:
+            return
+
+        arcade.draw_text(player.nom, cx, WINDOW_HEIGHT - 90,
+                         arcade.color.ORANGE, 18, anchor_x="center", font_name=KENNY)
+
+        # Onglets
+        tab_w, tab_h, tab_gap = 150, 34, 8
+        total_tabs_w = len(self._TABS) * tab_w + (len(self._TABS) - 1) * tab_gap
+        tab_start_x = cx - total_tabs_w / 2
+        tab_bottom = WINDOW_HEIGHT - 148
+        for i, name in enumerate(self._TABS):
+            tx = tab_start_x + i * (tab_w + tab_gap)
+            bg = (55, 55, 100) if i == self._tab else (30, 30, 60)
+            arcade.draw_lrbt_rectangle_filled(tx, tx + tab_w, tab_bottom, tab_bottom + tab_h, bg)
+            border = arcade.color.WHITE if i == self._tab else arcade.color.GRAY
+            arcade.draw_lrbt_rectangle_outline(tx, tx + tab_w, tab_bottom, tab_bottom + tab_h, border, 1)
+            color = arcade.color.WHITE if i == self._tab else arcade.color.GRAY
+            arcade.draw_text(name, tx + tab_w / 2, tab_bottom + tab_h / 2,
+                             color, 14, anchor_x="center", anchor_y="center",
+                             bold=(i == self._tab), font_name=KENNY)
+
+        sep_y = tab_bottom - 8
+        arcade.draw_line(pad + 20, sep_y, WINDOW_WIDTH - pad - 20, sep_y, arcade.color.WHITE, 1)
+
+        if self._tab == 0:
+            self._draw_stats(player, sep_y - 20)
+        else:
+            self._draw_quests(sep_y - 20)
+
+        arcade.draw_text("[← →] Changer d'onglet    [P] ou [Echap]  —  Fermer",
+                         cx, pad + 16, arcade.color.GRAY, 12, anchor_x="center", font_name=KENNY)
+
+    def _draw_stats(self, player, top_y: float):
+        pad = 50
+        col_w = (WINDOW_WIDTH - 2 * pad) / 3
+        sections = [
+            ("Physique",  player.humain.get_stats_physique()),
+            ("Intellect", player.humain.get_stats_intellect()),
+            ("Sociale",   player.humain.get_stats_sociale()),
+        ]
+        for i, (title, stats) in enumerate(sections):
+            col_cx = pad + col_w * i + col_w / 2
+            arcade.draw_text(title, col_cx, top_y,
+                             arcade.color.ORANGE, 16, anchor_x="center", bold=True, font_name=KENNY)
+            y = top_y - 50
+            for name, value in stats:
+                bar_x = col_cx - 80
+                bar_w, bar_h = 160, 14
+                filled = int(bar_w * min(float(value), 1.0))
+                arcade.draw_lrbt_rectangle_filled(bar_x, bar_x + bar_w, y, y + bar_h, (60, 60, 80))
+                arcade.draw_lrbt_rectangle_filled(bar_x, bar_x + filled, y, y + bar_h, arcade.color.JADE)
+                arcade.draw_text(name, bar_x, y + 18, arcade.color.WHITE, 13, font_name=KENNY)
+                arcade.draw_text(f"{float(value):.2f}", bar_x + bar_w + 8, y + 2, arcade.color.WHITE, 11, font_name=KENNY)
+                y -= 70
+
+    def _draw_quests(self, top_y: float):
+        pad = 50
+        cx = WINDOW_WIDTH / 2
+        text_w = WINDOW_WIDTH - 2 * pad - 40
+
+        arc = self._game_view.quest_manager.arc
+        if arc is None:
+            arcade.draw_text("Aucune quête disponible.", cx, top_y - 40,
+                             arcade.color.GRAY, 14, anchor_x="center", font_name=KENNY)
+            return
+        quest = next((q for q in arc.quests if q.status == "ec"), None)
+        if quest is None:
+            arcade.draw_text("Aucune quête en cours.", cx, top_y - 40,
+                             arcade.color.GRAY, 14, anchor_x="center", font_name=KENNY)
+            return
+
+        arcade.draw_text(quest.title, pad + 20, top_y,
+                         arcade.color.WHITE, 16, bold=True, font_name=KENNY)
+
+        desc = arcade.Text(quest.description, pad + 20, top_y - 26,
+                           arcade.color.GRAY, 12, font_name=KENNY,
+                           width=text_w, multiline=True, anchor_y="top")
+        desc.draw()
+        y = top_y - 26 - desc.content_height - 16
+
+        arcade.draw_text("Objectifs :", pad + 20, y, arcade.color.ORANGE, 14, bold=True, font_name=KENNY)
+        y -= 28
+        for obj in quest.objectives:
+            done = obj.status == "t"
+            color = arcade.color.JADE if done else arcade.color.WHITE
+            prefix = "[x]" if done else "[ ]"
+
+            name_t = arcade.Text(f"{prefix}  {obj.name}", pad + 30, y,
+                                 color, 13, font_name=KENNY,
+                                 width=text_w - 10, multiline=True, anchor_y="top")
+            name_t.draw()
+            y -= name_t.content_height + 4
+
+            if obj.description:
+                sub_t = arcade.Text(obj.description, pad + 60, y,
+                                    arcade.color.GRAY, 11, font_name=KENNY,
+                                    width=text_w - 40, multiline=True, anchor_y="top")
+                sub_t.draw()
+                y -= sub_t.content_height + 6
+
+    def on_key_press(self, key, modifiers):
+        if key in (arcade.key.P, arcade.key.ESCAPE):
+            self.window.show_view(self._game_view)
+        elif key == arcade.key.RIGHT:
+            self._tab = (self._tab + 1) % len(self._TABS)
+        elif key == arcade.key.LEFT:
+            self._tab = (self._tab - 1) % len(self._TABS)
 
 
 # ---------------------------------------------------------------------------

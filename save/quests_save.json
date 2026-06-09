@@ -37,7 +37,7 @@
                 "objectives": [
                     {
                         "name": "rediger son cv",
-                        "description": "Utiliser son pc pour rédiger son cv.",
+                        "description": "Utilise le pc pour rédiger son cv.",
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
@@ -45,7 +45,7 @@
                     },
                     {
                         "name": "envoyer son cv sur indead",
-                        "description": "Envoyer son cv sur indead.",
+                        "description": "Envoye ton cv sur indead.",
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
@@ -83,28 +83,84 @@
         "arc": 2,
         "name": "La super POEI",
         "description": "Pour répondre au mieux aux exigences de ton nouveau job tu doit passer une formation qui te permettra d'avoir les compétences nécessaire.",
-        "status": "ec",
+        "status": "t",
         "quests": [
             {
                 "id": 1,
                 "title": "Aller a la formation.",
-                "description": "Bin vas la formation.",
-                "status": "ec",
+                "description": "Bin vas à la formation. Commence par discuter avec tes formateurs.",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Parle à Sylvain.",
-                        "description": "Parle avec tes formateurs.",
-                        "status": "na",
+                        "description": "Il se situe dans la salle de formation.",
+                        "status": "t",
                         "type": "talk",
                         "stat_key": "Sylvain",
                         "validator": 1
                     },
                     {
                         "name": "Parle à Jean christophe.",
-                        "description": "Parle avec tes formateurs.",
-                        "status": "na",
+                        "description": "Il se situe dans la salle de formation.",
+                        "status": "t",
                         "type": "talk",
                         "stat_key": "Jean christophe",
+                        "validator": 1
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "Apprend le super language révolutionnaire du turfu.",
+                "description": "Acqui les compétences pour validé ta formation.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Apprend le RPG.",
+                        "description": "Apprend le RPG sur le PC de la salle de formation.",
+                        "status": "t",
+                        "type": "stat",
+                        "stat_key": "rpg",
+                        "validator": 0.14
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Termine ta formation.",
+                "description": "Pour valider ta formation tu doit passer un test ultime d'algo digne de la NASA.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Valide le test de la formation.",
+                        "description": "Réussit le test d'algo de la NASA sur le PC.",
+                        "status": "t",
+                        "type": "test",
+                        "stat_key": "",
+                        "validator": 1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "arc": 3,
+        "name": "Bienvenu chez 'Armonie pas mutuelle'.",
+        "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
+        "status": "ec",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Aller au taf.",
+                "description": "Bin vas au taf.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Rencontre Guy.",
+                        "description": "Guy est le directeur de l'entreprise. Ton patron. Il se trouve dans son bureau. discute avec la femme à l'accueil pour qu'elle te redirige.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Guy",
                         "validator": 1
                     }
                 ]

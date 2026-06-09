@@ -111,7 +111,12 @@ class GameView(BaseGameView):
         if self._phl_unlocked :
             if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750 :
                 left, top = self.interact.draw_interact_box()
-                arcade.draw_text("RALT : PHL", left + 15, top - 30, arcade.color.LIGHT_GREEN, 14, font_name=KENNY) 
+                cx = left + (self.interact._BOX_W - 10) / 2
+                cy = top - self.interact._BOX_H / 2
+                arcade.draw_text("Sortie", cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
+                arcade.draw_text("RALT : PHL", cx, cy - 9, self.interact._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
+
+        self.draw_stat_progress_bar()
 
         # Déssine la camera
         self.camera_gui.use()
