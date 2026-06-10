@@ -57,23 +57,59 @@ class GameView(BaseGameView):
         self.scene.add_sprite("Player", self.player_sprite)
 
         # PNJs — chacun avec ses propres stats
+        self.behind_player = arcade.SpriteList()
         for nom, cx, cy in [
-            ("Mael",   694, 940),
-            ("Louis",  556, 940),
-            ("Thomas", 556, 790),
-            ("Kyle",   694, 790),
-            ("Sylvain",       264, 529),
+            ("Sylvain",         264, 529),
             ("Jean christophe", 165, 529),
         ]:
             pnj = PNJ(nom, _humain_from_data(nom), "Male", paths.asset("assets/images/player_d.png"), PLAYER_SCALING)
             pnj.center_x = cx
             pnj.center_y = cy
+            tw = pnj.texture.width / 2
+            th = pnj.texture.height / 2
+            pnj.hit_box = arcade.hitbox.RotatableHitBox(
+                [(-tw, 0), (tw, 0), (tw, th), (-tw, th)],
+                position=pnj.position,
+                angle=pnj.angle,
+            )
             self.pnj_sprite.append(pnj)
-            self.scene.add_sprite("Pnj", pnj)
+            self.behind_player.append(pnj)
+
+        sitting_d   = arcade.load_texture(paths.asset("assets/images/personnage_b_assit_d.png"))
+        sitting_g = arcade.load_texture(paths.asset("assets/images/personnage_b_assit_g.png"))
+
+        mael = PNJ("Mael", _humain_from_data("Mael"), "Male", paths.asset("assets/images/personnage_b_assit_g.png"), PLAYER_SCALING)
+        mael.center_x = 690
+        mael.center_y = 992
+        mael.textures = {"up": sitting_g, "down": sitting_g, "left": sitting_g, "right": sitting_g}
+        self.pnj_sprite.append(mael)
+        self.scene.add_sprite("Pnj", mael)
+
+        kyle = PNJ("Kyle", _humain_from_data("Kyle"), "Male", paths.asset("assets/images/personnage_b_assit_g.png"), PLAYER_SCALING)
+        kyle.center_x = 690
+        kyle.center_y = 848
+        kyle.textures = {"up": sitting_g, "down": sitting_g, "left": sitting_g, "right": sitting_g}
+        self.pnj_sprite.append(kyle)
+        self.scene.add_sprite("Pnj", kyle)
+
+        thomas = PNJ("Thomas", _humain_from_data("Thomas"), "Male", paths.asset("assets/images/personnage_b_assit_d.png"), PLAYER_SCALING)
+        thomas.center_x = 558
+        thomas.center_y = 848
+        thomas.textures = {"up": sitting_d, "down": sitting_d, "left": sitting_d, "right": sitting_d}
+        self.pnj_sprite.append(thomas)
+        self.scene.add_sprite("Pnj", thomas)
+
+        louis = PNJ("Louis", _humain_from_data("Louis"), "Male", paths.asset("assets/images/personnage_b_assit_d.png"), PLAYER_SCALING)
+        louis.center_x = 558
+        louis.center_y = 992
+        louis.textures = {"up": sitting_d, "down": sitting_d, "left": sitting_d, "right": sitting_d}
+        self.pnj_sprite.append(louis)
+        self.scene.add_sprite("Pnj", louis)
 
         hotesse = PNJ("Hotesse", _humain_from_data("Hotesse"), "Femelle", paths.asset("assets/images/hotesse_l.png"), PLAYER_SCALING)
         hotesse.center_x = 2850
         hotesse.center_y = 1848
+        hotesse.interaction_distance = 80
         self.strategique_sprite.append(hotesse)
         self.scene.add_sprite("Pnj", hotesse)
 
@@ -103,7 +139,14 @@ class GameView(BaseGameView):
     def on_draw(self) -> None:
         self.clear()
         self.camera_sprites.use()
-        self.scene.draw()
+        self.scene["Sol"].draw()
+        self.scene["Mur"].draw()
+        self.scene["Meuble_B"].draw()
+        self.behind_player.draw()
+        self.scene["Meuble_H"].draw()
+        self.scene["Meuble_T"].draw()
+        self.scene["Player"].draw()
+        self.scene["Pnj"].draw()
 
         self.interact.interact_obj_prg()
         self.interact.interact_pnj_strateg()
@@ -118,6 +161,7 @@ class GameView(BaseGameView):
 
         self.draw_stat_progress_bar()
         self.camera_gui.use()
+        self.talk.draw_dialogue_box()
         self.interact.draw_box()
         self.get_quests()
         self.interact.draw_side_bar()

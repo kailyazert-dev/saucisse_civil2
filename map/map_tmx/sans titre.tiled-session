@@ -1,31 +1,32 @@
 {
-    "activeFile": "TMA.tmx",
+    "activeFile": "tuile/personnage.tsx",
     "expandedProjectPaths": [
-        "."
+        ".",
+        "tuile"
     ],
     "fileStates": {
         "HOME.tmx": {
             "scale": 0.5289772727272727,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 648.421052631579,
-                "y": 527.4328678839956
+                "x": 648.4210526315788,
+                "y": 528.3780880773362
             }
         },
         "PHL.tmx": {
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1241,
-                "y": 2053
+                "x": 827,
+                "y": 1428.5
             }
         },
         "TMA.tmx": {
             "scale": 0.3422794117647059,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1025.4779806659506,
-                "y": 394.41460794844255
+                "x": 1463.716433941998,
+                "y": 813.6627282491944
             }
         },
         "quests_box.tmx": {
@@ -57,7 +58,8 @@
             "scaleInDock": 1
         },
         "tuile/personnage.tsx": {
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "tuile/salle de bain.tsx": {
             "scaleInDock": 1
@@ -76,15 +78,15 @@
         "TMA.tmx",
         "HOME.tmx",
         "PHL.tmx",
-        "quests_box.tmx",
-        "stat_box.tmx"
+        "tuile/personnage.tsx"
     ],
     "project": "sans titre.tiled-project",
     "recentFiles": [
-        "stat_box.tmx",
-        "quests_box.tmx",
-        "PHL.tmx",
+        "TMA.tmx",
         "HOME.tmx",
-        "TMA.tmx"
+        "PHL.tmx",
+        "tuile/personnage.tsx",
+        "stat_box.tmx",
+        "quests_box.tmx"
     ]
 }

@@ -57,6 +57,7 @@ class GameView(BaseGameView):
         self.interact.interact_pnj()
         self.draw_stat_progress_bar()
         self.camera_gui.use()
+        self.talk.draw_dialogue_box()
         self.interact.draw_box()
         self.get_quests()
         self.interact.draw_side_bar()

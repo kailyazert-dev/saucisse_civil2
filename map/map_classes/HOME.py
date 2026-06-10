@@ -120,8 +120,7 @@ class GameView(BaseGameView):
 
         # Déssine la camera
         self.camera_gui.use()
-
-        # Pour la stat_box
+        self.talk.draw_dialogue_box()
         self.interact.draw_box()
 
         self.get_quests()

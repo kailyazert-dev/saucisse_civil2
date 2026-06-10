@@ -249,7 +249,7 @@ class Keycaps:
         pnjs = self.game_view.pnj_sprite
         if key == arcade.key.LALT:
             for pnj in pnjs:
-                if arcade.get_distance_between_sprites(player, pnj) < 50:
+                if arcade.get_distance_between_sprites(player, pnj) < 70:
                     dx = player.center_x - pnj.center_x
                     dy = player.center_y - pnj.center_y
                     if abs(dx) > abs(dy):
@@ -439,7 +439,8 @@ class Interact:
     def interact_pnj_strateg(self) -> None:
         player = self.game_view.player_sprite
         for strategique in self.game_view.strategique_sprite:
-            if arcade.get_distance_between_sprites(player, strategique) < 50:
+            dist = getattr(strategique, "interaction_distance", 50)
+            if arcade.get_distance_between_sprites(player, strategique) < dist:
                 self.game_view.current_strategique = strategique
                 w, h = self._BOX_W - 10, self._BOX_H
                 left = strategique.center_x - w / 2
@@ -453,13 +454,11 @@ class Interact:
     def interact_pnj(self) -> None:
         player = self.game_view.player_sprite
         for pnj in self.game_view.pnj_sprite:
-            if arcade.get_distance_between_sprites(player, pnj) < 50:
+            if arcade.get_distance_between_sprites(player, pnj) < 70:
                 left, top = self.draw_interact_box()
                 cx, cy = left + (self._BOX_W - 10) / 2, top - self._BOX_H / 2
                 arcade.draw_text(pnj.get_nom(), cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
                 arcade.draw_text("LALT : Discuter", cx, cy - 9, self._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
-        if self.game_view.is_typing and self.game_view.current_pnj:
-            self.game_view.talk.draw_dialogue_box()
 
 
 # ---------------------------------------------------------------------------
@@ -494,34 +493,59 @@ class Talk:
         thread.start()
 
     def draw_dialogue_box(self) -> None:
-        arcade.get_window().use()
         if not (self.game_view.is_typing or self.game_view.last_response):
             return
-        margin = 15
-        dialog_w = WINDOW_WIDTH - 2 * margin
-        left = self.game_view.player_sprite.center_x - WINDOW_WIDTH // 2 + margin
-        right = self.game_view.player_sprite.center_x + WINDOW_WIDTH // 2 - margin
-        top = self.game_view.player_sprite.center_y - 100
-        bottom = self.game_view.player_sprite.center_y - WINDOW_HEIGHT // 2 - 10
-        arcade.draw_lrbt_rectangle_filled(left - margin, right + margin, bottom, top, arcade.color.WHITE)
 
-        if self.game_view.is_typing:
-            arcade.draw_text(
-                f"{self.game_view.player_sprite.nom} : {self.game_view.current_input}",
-                left, top - margin - 15,
-                arcade.color.BLACK, 14,
-                width=int(dialog_w), multiline=True,
-            )
+        PAD       = 16
+        BOX_H     = 180
+        SEP_H     = 36   # hauteur de la zone joueur
+        RESP_H    = BOX_H - SEP_H
+        BG        = (15, 15, 40, 230)
+        HINT_COL  = (150, 180, 230)
+        text_w    = WINDOW_WIDTH - 2 * PAD - 2 * PAD
 
+        # Coordonnées GUI (ancrées en bas de l'écran)
+        box_l = PAD
+        box_r = WINDOW_WIDTH - PAD
+        box_b = PAD
+        box_t = PAD + BOX_H
+        sep_y = box_b + SEP_H
+
+        # Fond principal
+        arcade.draw_lrbt_rectangle_filled(box_l, box_r, box_b, box_t, BG)
+        arcade.draw_lrbt_rectangle_outline(box_l, box_r, box_b, box_t, arcade.color.WHITE, 1)
+        # Séparateur horizontal
+        arcade.draw_line(box_l + 4, sep_y, box_r - 4, sep_y, arcade.color.WHITE, 1)
+
+        # ── Zone joueur (bas) ──────────────────────────────────────────────
+        player_nom = self.game_view.player_sprite.nom
+        cursor = "_" if not self.game_view.waiting_response else ""
+        input_text = f"{player_nom} : {self.game_view.current_input}{cursor}"
+        arcade.draw_text(input_text, box_l + PAD, sep_y - SEP_H / 2,
+                         arcade.color.WHITE, 13,
+                         anchor_y="center", font_name=KENNY,
+                         width=int(text_w), multiline=False)
+        arcade.draw_text("[Entrée] Envoyer", box_r - PAD, box_b + 10,
+                         HINT_COL, 10, anchor_x="right", font_name=KENNY)
+
+        # ── Zone PNJ (haut) ────────────────────────────────────────────────
+        pnj = self.game_view.current_pnj
+        if pnj:
+            arcade.draw_text(pnj.nom, box_l + PAD, box_t - 14,
+                             arcade.color.ORANGE, 13, bold=True,
+                             anchor_y="center", font_name=KENNY)
         if self.game_view.waiting_response:
-            arcade.draw_text("...", left, top - margin - 45, arcade.color.GRAY, 14)
-        elif self.game_view.last_response and self.game_view.current_pnj:
-            arcade.draw_text(
-                f"{self.game_view.current_pnj.nom} : {self.game_view.last_response}",
-                left, top - margin - 45,
-                arcade.color.LIGHT_GREEN, 14,
-                width=int(dialog_w), multiline=True,
-            )
+            arcade.draw_text("...", box_l + PAD, sep_y + RESP_H / 2,
+                             HINT_COL, 14, anchor_y="center", font_name=KENNY)
+        elif self.game_view.last_response and pnj:
+            resp_t = arcade.Text(self.game_view.last_response,
+                                 box_l + PAD, box_t - 28,
+                                 arcade.color.WHITE, 13,
+                                 font_name=KENNY,
+                                 width=int(text_w),
+                                 multiline=True,
+                                 anchor_y="top")
+            resp_t.draw()
 
     # ------------------------------------------------------------------ private
 
