@@ -34,16 +34,12 @@ class Images:
     image_feminin = {
         ":resources:images/animated_characters/female_person/femalePerson_idle.png",
         ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
-    }   
+    }
 
 class IbmI_personnage :
     personnages = {
         'Henry': {
             'nom': 'Henry',
-            'charisme': 1,
-            'intensite_boof': 1,
-            'receptif_boof': 1,
-            'rigidite': 1,
             'type': 'Masculin',
             'metier' : 'Développeur',
             'hobbie' : 'Photographie',
@@ -67,10 +63,6 @@ class IbmI_personnage :
         },
         'Kyle': {
             'nom': 'Kyle',
-            'charisme': 0.5,
-            'intensite_boof': 0.5,
-            'receptif_boof': 0.5,
-            'rigidite': 0.7,
             'type': 'Masculin',
             'metier' : 'Développeur',
             'hobbie' : 'Sport',
@@ -94,10 +86,6 @@ class IbmI_personnage :
         },
         'Mael': {
             'nom': 'Mael',
-            'charisme': 0.3,
-            'intensite_boof': 0.7,
-            'receptif_boof': 0.7,
-            'rigidite': 0.6,
             'type': 'Masculin',
             'metier' : 'Développeur',
             'hobbie' : 'Sport, cinéma',
@@ -121,10 +109,6 @@ class IbmI_personnage :
         },
         'Thomas': {
             'nom': 'Thomas',
-            'charisme': 0.5,
-            'intensite_boof': 0.4,
-            'receptif_boof': 0.4,
-            'rigidite': 0.8,
             'type': 'Masculin',
             'metier' : 'Data engineer',
             'hobbie' : 'Miner du bitcoin, la finance',
@@ -148,10 +132,6 @@ class IbmI_personnage :
         },
         'Louis': {
             'nom': 'Louis',
-            'charisme': 0.5,
-            'intensite_boof': 0.6,
-            'receptif_boof': 0.4,
-            'rigidite': 0.6,
             'type': 'Masculin',
             'metier' : 'Data scientist',
             'hobbie' : 'Music',
@@ -175,10 +155,6 @@ class IbmI_personnage :
         },
         'Ludovic_L': {
             'nom': 'Ludovic_L',
-            'charisme': 0.3,
-            'intensite_boof': 0.7,
-            'receptif_boof': 0.7,
-            'rigidite': 0.3,
             'type': 'Masculin',
             'or' : 2000,
             'competences' : {
@@ -199,10 +175,6 @@ class IbmI_personnage :
         },
         'Ilies': {
             'nom': 'Ilies',
-            'charisme': 0.6,
-            'intensite_boof': 0.8,
-            'receptif_boof': 0.9,
-            'rigidite': 0.1,
             'type': 'Masculin',
             'or' : 2000,
             'competences' : {
@@ -223,10 +195,6 @@ class IbmI_personnage :
         },
         'Ludovic_S': {
             'nom': 'Ludovic_S',
-            'charisme': 0.6,
-            'intensite_boof': 0.5,
-            'receptif_boof': 0.7,
-            'rigidite': 0.8,
             'type': 'Masculin',
             'or' : 2000,
             'competences' : {
@@ -247,10 +215,6 @@ class IbmI_personnage :
         },
         'Abdel': {
             'nom': 'Abdel',
-            'charisme': 0.3,
-            'intensite_boof': 0.3,
-            'receptif_boof': 0.3,
-            'rigidite': 1,
             'type': 'Masculin',
             'or' : 2000,
             'competences' : {
@@ -271,10 +235,6 @@ class IbmI_personnage :
         },
         'Guy': {
             'nom': 'Guy',
-            'charisme': 0.9,
-            'intensite_boof': 0.1,
-            'receptif_boof': 0.2,
-            'rigidite': 0.9,
             'type': 'Masculin',
             'metier': 'Directeur général Armonie',
             'hobbie': 'Golf, management, optimisation des coûts',
@@ -286,10 +246,6 @@ class IbmI_personnage :
         },
         'Sylvain': {
             'nom': 'Sylvain',
-            'charisme': 0.7,
-            'intensite_boof': 0.2,
-            'receptif_boof': 0.3,
-            'rigidite': 0.6,
             'type': 'Masculin',
             'metier': 'Formateur RPG',
             'hobbie': 'Enseigner, lire des specs',
@@ -301,10 +257,6 @@ class IbmI_personnage :
         },
         'Jean christophe': {
             'nom': 'Jean christophe',
-            'charisme': 0.5,
-            'intensite_boof': 0.3,
-            'receptif_boof': 0.4,
-            'rigidite': 0.7,
             'type': 'Masculin',
             'metier': 'Formateur senior',
             'hobbie': 'Golf, management',
@@ -316,12 +268,8 @@ class IbmI_personnage :
         },
         'Hotesse': {
             'nom': 'Hotesse',
-            'charisme': 0.5,
-            'intensite_boof': 0.4,
-            'receptif_boof': 0.4,
-            'rigidite': 0.8,
             'type': 'Feminin',
-            'metier' : 'Hotesse d''accueil',
+            'metier' : 'Hotesse d\'accueil',
             'hobbie' : 'Jouer sur son telephone',
             'personnalite' : "Tu est tres acceuillante",
             'or' : 99999999999999999,
@@ -341,4 +289,4 @@ class IbmI_personnage :
                 }
             }
         },
-    }         
+    }

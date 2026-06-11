@@ -99,6 +99,7 @@ class QuestManager:
                 "name": o.name, "description": o.description,
                 "status": o.status, "type": o.type,
                 "stat_key": o.stat_key, "validator": o.validator,
+                "counter": o.counter,
             }
 
         def quest_to_dict(q: Quest) -> dict:
@@ -168,6 +169,32 @@ class QuestManager:
                     self._complete_objective(quest, obj)
                     return
 
+    def get_kill_objective(self):
+        if self.arc is None:
+            return None
+        for quest in self.arc.quests:
+            if quest.status != "ec":
+                continue
+            for obj in quest.objectives:
+                if obj.type == "compteur" and obj.stat_key == "kill" and obj.status != "t":
+                    return obj
+        return None
+
+    def register_kill(self) -> None:
+        if self.arc is None:
+            return
+        for quest in self.arc.quests:
+            if quest.status != "ec":
+                continue
+            for obj in quest.objectives:
+                if obj.type == "compteur" and obj.stat_key == "kill" and obj.status != "t":
+                    obj.counter += 1
+                    if obj.counter >= int(obj.validator):
+                        self._complete_objective(quest, obj)
+                    else:
+                        self.save_progress()
+                    return
+
     def check_objective(self, stat: str, value: float) -> None:
         if self.arc is None:
             return
@@ -212,8 +239,10 @@ class QuestManager:
             return
         next_quest = self._create_quest_from_dict(next_data)
         next_quest.status = "ec"
-        # Éviter les doublons si la quête est déjà présente (chargée depuis le save)
-        if not any(q.id == next_quest.id for q in self.arc.quests):
+        existing = next((q for q in self.arc.quests if q.id == next_quest.id), None)
+        if existing:
+            existing.status = "ec"
+        else:
             self.arc.add_quest(next_quest)
         print(f"[QUETE] Nouvelle quête : '{next_quest.title}'")
         self.save_progress()
@@ -269,6 +298,7 @@ class QuestManager:
             type=o.get("type", ""),
             stat_key=o.get("stat_key", ""),
             validator=o.get("validator", 0),
+            counter=o.get("counter", 0),
         )
 
     def _create_quest_from_dict(self, q: dict) -> Quest:

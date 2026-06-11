@@ -41,7 +41,8 @@
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     },
                     {
                         "name": "envoyer son cv sur indead",
@@ -49,7 +50,8 @@
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     }
                 ]
             },
@@ -65,7 +67,8 @@
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     },
                     {
                         "name": "Répondre à l'offre.",
@@ -73,7 +76,8 @@
                         "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     }
                 ]
             }
@@ -97,7 +101,8 @@
                         "status": "t",
                         "type": "talk",
                         "stat_key": "Sylvain",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     },
                     {
                         "name": "Parle à Jean christophe.",
@@ -105,7 +110,8 @@
                         "status": "t",
                         "type": "talk",
                         "stat_key": "Jean christophe",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             },
@@ -121,7 +127,8 @@
                         "status": "t",
                         "type": "stat",
                         "stat_key": "rpg",
-                        "validator": 0.14
+                        "validator": 0.14,
+                        "counter": 0
                     }
                 ]
             },
@@ -137,7 +144,42 @@
                         "status": "t",
                         "type": "test",
                         "stat_key": "",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "title": "La rencontre.",
+                "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Rencontre Guy.",
+                        "description": "Guy est le directeur de l'entreprise. Ton patron. Il se trouve dans son bureau. discute avec la femme à l'accueil pour qu'elle te redirige.",
+                        "status": "t",
+                        "type": "talk",
+                        "stat_key": "Guy",
+                        "validator": 1,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 5,
+                "title": "Termine ta première journée.",
+                "description": "Apres cette journé intense, il est temps de prendre du repos.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Home sweet home.",
+                        "description": "Rentre te couché car demain tu dine en enfer.",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "lit",
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             }
@@ -146,22 +188,40 @@
     {
         "arc": 3,
         "name": "Bienvenu chez 'Armonie pas mutuelle'.",
-        "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
+        "description": "C'est votre premier jour chez Armonie, aller au travaille.",
         "status": "ec",
         "quests": [
             {
                 "id": 1,
                 "title": "Aller au taf.",
                 "description": "Bin vas au taf.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Rencontre ses collègues de travaille.",
+                        "description": "Rend toi dans ton secteur d'activité et discute avec un collègue.",
+                        "status": "t",
+                        "type": "talk",
+                        "stat_key": "Kyle",
+                        "validator": 1,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "tafer !!",
+                "description": "Hello there.",
                 "status": "ec",
                 "objectives": [
                     {
-                        "name": "Rencontre Guy.",
-                        "description": "Guy est le directeur de l'entreprise. Ton patron. Il se trouve dans son bureau. discute avec la femme à l'accueil pour qu'elle te redirige.",
+                        "name": "This is life babe !!.",
+                        "description": "Purifie la zone !!",
                         "status": "na",
-                        "type": "talk",
-                        "stat_key": "Guy",
-                        "validator": 1
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 30,
+                        "counter": 0
                     }
                 ]
             }

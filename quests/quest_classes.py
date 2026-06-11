@@ -1,89 +1,90 @@
 from __future__ import annotations
-from typing import List
+
 
 class Objective:
-    def __init__(self, name: str, description: str, status: str = "na", type: str = "", stat_key: str = "", validator: float = 0):
-        self.name = name
+    def __init__(self, name: str, description: str, status: str = "na",
+                 type: str = "", stat_key: str = "",
+                 validator: float = 0.0, counter: int = 0) -> None:
+        self.name        = name
         self.description = description
-        self.status = status
-        self.type = type
-        self.stat_key = stat_key
-        self.validator = validator
+        self.status      = status
+        self.type        = type
+        self.stat_key    = stat_key
+        self.validator   = validator
+        self.counter     = counter
 
-    # Marque l'objectif en cour
     def start(self) -> None:
         self.status = "ec"
 
-    # Marque l'objectif terminé
     def complete(self) -> None:
         self.status = "t"
 
-    # Marque l'object comme terminé
     def is_completed(self) -> bool:
         return self.status == "t"
 
+    def progress_ratio(self) -> float:
+        """Retourne une progression normalisée 0.0 → 1.0 (pour les objectifs compteur)."""
+        if self.type == "compteur" and self.validator > 0:
+            return min(1.0, self.counter / self.validator)
+        return 1.0 if self.is_completed() else 0.0
+
     def __repr__(self) -> str:
-        return f"<Objective {self.name} - {self.status}>"
+        return f"<Objective {self.name!r} [{self.status}]>"
 
 
 class Quest:
-    def __init__(self, id: int, title: str, description: str, status: str = "nc"):
-        self.id = id
-        self.title = title
+    def __init__(self, id: int, title: str, description: str, status: str = "nc") -> None:
+        self.id          = id
+        self.title       = title
         self.description = description
-        self.objectives: List[Objective] = []
-        self.status = status
+        self.status      = status
+        self.objectives: list[Objective] = []
 
-    # Ajoute un objectif à la quête.
     def add_objective(self, objective: Objective) -> None:
         self.objectives.append(objective)
 
-    # Met la quête en cour
     def start(self) -> None:
         if self.objectives:
             self.status = "ec"
 
-    # Marque la quête comme terminer si tous les objectifs sont terminer
     def complete(self) -> None:
         if all(obj.is_completed() for obj in self.objectives):
             self.status = "t"
-        # self.status = "t"
 
-    # Retourne le nombre d'objectifs terminés / total. 
+    def current_objective(self) -> Objective | None:
+        """Retourne le premier objectif non terminé, ou None si tout est fait."""
+        return next((obj for obj in self.objectives if not obj.is_completed()), None)
+
     def progress(self) -> str:
         completed = sum(obj.is_completed() for obj in self.objectives)
         return f"{completed}/{len(self.objectives)} Objectifs terminés"
 
     def __repr__(self) -> str:
-        return f"<Quest {self.title} - {self.status} - {self.progress()}>"
-    
+        return f"<Quest {self.title!r} [{self.status}] {self.progress()}>"
+
 
 class Arc:
-    def __init__(self, arc_id: int, name: str, description: str, status: str = "nc"):
-        self.arc_id = arc_id
-        self.name = name
+    def __init__(self, arc_id: int, name: str, description: str, status: str = "nc") -> None:
+        self.arc_id      = arc_id
+        self.name        = name
         self.description = description
-        self.status = status
-        self.quests: List[Quest] = []
+        self.status      = status
+        self.quests:     list[Quest] = []
 
-    # Ajoute une quête à l'arc
     def add_quest(self, quest: Quest) -> None:
         self.quests.append(quest)
 
-    # Démarre l'arc si au moins une quête est en cours
     def start(self) -> None:
         if self.quests:
             self.status = "ec"
 
-    # Vérifie si toutes les quêtes sont terminées
     def complete(self) -> None:
         if all(quest.status == "t" for quest in self.quests):
             self.status = "t"
 
-    # Retourne le nombre de quêtes terminées sur le total
     def progress(self) -> str:
         completed = sum(quest.status == "t" for quest in self.quests)
         return f"{completed}/{len(self.quests)} Quêtes terminées"
 
     def __repr__(self) -> str:
-        return f"<Arc {self.name} - {self.status} - {self.progress()}>"    
+        return f"<Arc {self.name!r} [{self.status}] {self.progress()}>"

@@ -1,0 +1,29 @@
+{
+  "tilemap": "map/map_tmx/TMA.tmx",
+  "player_spawn": {
+    "default": [1300, 1225]
+  },
+  "pnjs": [
+    {
+      "nom": "Guy",
+      "genre": "Male",
+      "image": "assets/images/player_d.png",
+      "x": 2830,
+      "y": 660,
+      "attitude": "assis",
+      "scene_layer": "Pnj"
+    }
+  ],
+  "strategiques": [
+    {
+      "nom": "Hotesse",
+      "genre": "Femelle",
+      "image": "assets/images/hotesse_d.png",
+      "x": 1360,
+      "y": 1220,
+      "interaction_distance": 50,
+      "scene_layer": "Pnj"
+    }
+  ],
+  "objets": []
+}

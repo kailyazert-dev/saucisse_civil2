@@ -140,19 +140,11 @@
                         "validator": 1
                     }
                 ]
-            }
-        ]
-    },
-    {
-        "arc": 3,
-        "name": "Bienvenu chez 'Armonie pas mutuelle'.",
-        "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
-        "status": "nc",
-        "quests": [
+            },
             {
-                "id": 1,
-                "title": "Aller au taf.",
-                "description": "Bin vas au taf.",
+                "id": 4,
+                "title": "La rencontre.",
+                "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
                 "status": "nc",
                 "objectives": [
                     {
@@ -162,6 +154,62 @@
                         "type": "talk",
                         "stat_key": "Guy",
                         "validator": 1
+                    }
+                ]
+            },
+            {
+                "id": 5,
+                "title": "Termine ta première journée.",
+                "description": "Apres cette journé intense, il est temps de prendre du repos.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Home sweet home.",
+                        "description": "Rentre te couché car demain tu dine en enfer.",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "lit",
+                        "validator": 1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "arc": 3,
+        "name": "Bienvenu chez 'Armonie pas mutuelle'.",
+        "description": "C'est votre premier jour chez Armonie, aller au travaille.",
+        "status": "nc",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Aller au taf.",
+                "description": "Bin vas au taf.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Rencontre ses collègues de travaille.",
+                        "description": "Rend toi dans ton secteur d'activité et discute avec un collègue.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Kyle",
+                        "validator": 1
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "tafer !!",
+                "description": "Hello there.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "This is life babe !!.",
+                        "description": "Purifie la zone !!",
+                        "status": "na",
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 30
                     }
                 ]
             }

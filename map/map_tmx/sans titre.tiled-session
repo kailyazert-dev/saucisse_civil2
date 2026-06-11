@@ -1,5 +1,5 @@
 {
-    "activeFile": "tuile/personnage.tsx",
+    "activeFile": "PHL.tmx",
     "expandedProjectPaths": [
         ".",
         "tuile"
@@ -18,7 +18,7 @@
             "selectedLayer": 3,
             "viewCenter": {
                 "x": 827,
-                "y": 1428.5
+                "y": 2499.5
             }
         },
         "TMA.tmx": {
@@ -84,8 +84,8 @@
     "recentFiles": [
         "TMA.tmx",
         "HOME.tmx",
-        "PHL.tmx",
         "tuile/personnage.tsx",
+        "PHL.tmx",
         "stat_box.tmx",
         "quests_box.tmx"
     ]

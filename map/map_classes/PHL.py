@@ -1,200 +1,307 @@
 from __future__ import annotations
 import arcade
-from character.character_classes import Humain, PNJ
-from assets.param_map import PLAYER_SCALING, KENNY
-from assets.param_humain import IbmI_personnage
+from assets.param_map import PLAYER_SCALING, KENNY, WINDOW_WIDTH, WINDOW_HEIGHT
+from character.character_classes import PNJ, Weapon
 from map.map_base import BaseGameView
-from map.map_classes.objet import UpStat, MapActionObject
+from map.map_loader import MapLoader, humain_from_data
+from map.zombie_manager import ZombieManager
+from map.ui_menus import DeathMenu
 import utils.paths as paths
 
-
-def _humain_from_data(name: str) -> Humain:
-    """Crée un Humain avec les stats de param_humain pour ce PNJ."""
-    d = IbmI_personnage.personnages.get(name, {})
-    phys = d.get("competences", {}).get("physique", {})
-    intel = d.get("competences", {}).get("intelecte", {})
-    return Humain(
-        charisme=d.get("charisme", 0.1),
-        rigidite=d.get("rigidite", 0.1),
-        beauf=d.get("intensite_boof", 0.1),
-        receptif_beauf=d.get("receptif_boof", 0.1),
-        force=phys.get("force", 0.1),
-        vitesse=phys.get("vitesse", 0.1),
-        endurance=phys.get("endurance", 0.1),
-        mathematique=intel.get("mathematique", 0.1),
-        logique=intel.get("logique", 0.1),
-        rpg=0.1,
-        music=intel.get("musique", 0.1),
-        langue=intel.get("langage", 0.1),
-        sociabilite=intel.get("sociale", 0.1),
-    )
+_ZOMBIE_SPAWN = (574, 50)  # position "home" dans PHL.json
 
 
+# ---------------------------------------------------------------------------
 class GameView(BaseGameView):
 
     def __init__(self, environnement, quest_manager, character_manager):
         super().__init__(environnement, quest_manager, character_manager)
-        self.quest_manager = quest_manager
-        self.character_manager = character_manager
+
+    # ---------------------------------------------------------------- setup
 
     def setup(self, last_map: str | None) -> None:
+        loader = MapLoader("PHL")
+
         try:
-            self.tile_map = arcade.load_tilemap(paths.asset("map/map_tmx/PHL.tmx"), scaling=1.0)
+            self.tile_map = arcade.load_tilemap(paths.asset(loader.get_tilemap_path()), scaling=1.0)
         except Exception as e:
             raise RuntimeError(f"Impossible de charger la carte PHL : {e}") from e
 
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        entry_positions = {
-            "tma": (2792, 1848),
-            "home": (574, 50),
-        }
-        x, y = entry_positions.get(last_map or "", (72, 72))
-
         self.player_sprite = self.character_manager.player
-        self.player_sprite.center_x = x
-        self.player_sprite.center_y = y
+        self.player_sprite.center_x, self.player_sprite.center_y = loader.get_player_spawn(last_map)
         self.scene.add_sprite("Player", self.player_sprite)
 
-        # PNJs — chacun avec ses propres stats
         self.behind_player = arcade.SpriteList()
-        for nom, cx, cy in [
-            ("Sylvain",         264, 529),
-            ("Jean christophe", 165, 529),
-        ]:
-            pnj = PNJ(nom, _humain_from_data(nom), "Male", paths.asset("assets/images/player_d.png"), PLAYER_SCALING)
-            pnj.center_x = cx
-            pnj.center_y = cy
-            tw = pnj.texture.width / 2
-            th = pnj.texture.height / 2
-            pnj.hit_box = arcade.hitbox.RotatableHitBox(
-                [(-tw, 0), (tw, 0), (tw, th), (-tw, th)],
-                position=pnj.position,
-                angle=pnj.angle,
-            )
-            self.pnj_sprite.append(pnj)
-            self.behind_player.append(pnj)
+        loader.load_pnjs(self, behind_player=self.behind_player)
+        loader.load_strategiques(self)
+        loader.load_objets(self)
+        self._setup_kyle()
 
-        sitting_d   = arcade.load_texture(paths.asset("assets/images/personnage_b_assit_d.png"))
+        obstacles = self.interact_ui.create_obstacles()
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
+
+        self._setup_zombie_mode()
+
+        self._death_alpha = 0
+        self._death_dir   = 0
+        self._death_menu  = DeathMenu()
+        self.mouse_x      = WINDOW_WIDTH  // 2
+        self.mouse_y      = WINDOW_HEIGHT // 2
+
+    def _setup_kyle(self) -> None:
         sitting_g = arcade.load_texture(paths.asset("assets/images/personnage_b_assit_g.png"))
-
-        mael = PNJ("Mael", _humain_from_data("Mael"), "Male", paths.asset("assets/images/personnage_b_assit_g.png"), PLAYER_SCALING)
-        mael.center_x = 690
-        mael.center_y = 992
-        mael.textures = {"up": sitting_g, "down": sitting_g, "left": sitting_g, "right": sitting_g}
-        self.pnj_sprite.append(mael)
-        self.scene.add_sprite("Pnj", mael)
-
-        kyle = PNJ("Kyle", _humain_from_data("Kyle"), "Male", paths.asset("assets/images/personnage_b_assit_g.png"), PLAYER_SCALING)
+        kyle = PNJ("Kyle", humain_from_data("Kyle"), "Male",
+                   paths.asset("assets/images/personnage_b_assit_g.png"), PLAYER_SCALING,
+                   attitude="assis")
         kyle.center_x = 690
         kyle.center_y = 848
-        kyle.textures = {"up": sitting_g, "down": sitting_g, "left": sitting_g, "right": sitting_g}
+        kyle.load_walk_textures("player")
+        kyle._stand_textures = dict(kyle.textures)
+        kyle._standing_tex   = kyle.textures["down"]
+        kyle._sitting_tex    = sitting_g
+        kyle.textures = {d: sitting_g for d in ("up", "down", "left", "right")}
+        kyle.texture  = sitting_g
+        kyle.speed    = 2.2
+        kyle.weapon   = Weapon("TaMère", damage_min=2.0, damage_max=2.5,
+                               bullet_color=(50, 130, 255))
         self.pnj_sprite.append(kyle)
         self.scene.add_sprite("Pnj", kyle)
+        self.kyle_sprite = kyle
 
-        thomas = PNJ("Thomas", _humain_from_data("Thomas"), "Male", paths.asset("assets/images/personnage_b_assit_d.png"), PLAYER_SCALING)
-        thomas.center_x = 558
-        thomas.center_y = 848
-        thomas.textures = {"up": sitting_d, "down": sitting_d, "left": sitting_d, "right": sitting_d}
-        self.pnj_sprite.append(thomas)
-        self.scene.add_sprite("Pnj", thomas)
+    def _setup_zombie_mode(self) -> None:
+        walls = arcade.SpriteList()
+        walls.extend(self.scene["Mur"])
+        walls.extend(self.scene["Meuble_H"])
 
-        louis = PNJ("Louis", _humain_from_data("Louis"), "Male", paths.asset("assets/images/personnage_b_assit_d.png"), PLAYER_SCALING)
-        louis.center_x = 558
-        louis.center_y = 992
-        louis.textures = {"up": sitting_d, "down": sitting_d, "left": sitting_d, "right": sitting_d}
-        self.pnj_sprite.append(louis)
-        self.scene.add_sprite("Pnj", louis)
+        self.zombie_manager = ZombieManager(self.quest_manager, self.player_sprite)
+        self.zombie_manager.setup_walls(walls)
+        self.zombie_manager.set_spawn_points([_ZOMBIE_SPAWN])
+        self.player_sprite.weapon = Weapon("Pistolet", damage_min=1.0, damage_max=1.5)
+        self._kyle_walls = walls
 
-        hotesse = PNJ("Hotesse", _humain_from_data("Hotesse"), "Femelle", paths.asset("assets/images/hotesse_l.png"), PLAYER_SCALING)
-        hotesse.center_x = 2850
-        hotesse.center_y = 1848
-        hotesse.interaction_distance = 80
-        self.strategique_sprite.append(hotesse)
-        self.scene.add_sprite("Pnj", hotesse)
-
-        livre = UpStat(paths.asset("assets/images/livre.png"), 0.7, "Pythagore", "mathematique", 0, 0.3)
-        livre.center_x = 448
-        livre.center_y = 1030
-        self.objet_sprites.append(livre)
-        self.scene.add_sprite("Livre", livre)
-
-        # Ordinateur RPG (arc 2, quest 2 : rpg 0 → 0.14)
-        ordi_rpg = UpStat(paths.asset("assets/images/ordinateur.png"), 1, "Intro RPG", "rpg", 0, 0.14)
-        ordi_rpg.center_x = 265
-        ordi_rpg.center_y = 991
-        self.objet_sprites.append(ordi_rpg)
-        self.scene.add_sprite("OrdiRPG", ordi_rpg)
-
-        # Même ordinateur — test de formation (arc 2, quest 3)
-        pc_test = MapActionObject(paths.asset("assets/images/ordinateur.png"), 1, "Test de formation", "Valide le test de la formation.")
-        pc_test.center_x = 265
-        pc_test.center_y = 991
-        self.objet_sprites.append(pc_test)
-        self.scene.add_sprite("PcTest", pc_test)
-
-        obstacles = self.interact.create_obstacles()
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
+    # ---------------------------------------------------------------- draw
 
     def on_draw(self) -> None:
         self.clear()
-        self.camera_sprites.use()
-        self.scene["Sol"].draw()
-        self.scene["Mur"].draw()
-        self.scene["Meuble_B"].draw()
-        self.behind_player.draw()
-        self.scene["Meuble_H"].draw()
-        self.scene["Meuble_T"].draw()
-        self.scene["Player"].draw()
-        self.scene["Pnj"].draw()
-
-        self.interact.interact_obj_prg()
-        self.interact.interact_pnj_strateg()
-        self.interact.interact_pnj()
-
-        if 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600:
-            left, top = self.interact.draw_interact_box()
-            cx = left + (self.interact._BOX_W - 10) / 2
-            cy = top - self.interact._BOX_H / 2
-            arcade.draw_text("Sortie", cx, cy + 9, arcade.color.ORANGE, 13, anchor_x="center", anchor_y="center", font_name=KENNY)
-            arcade.draw_text("RALT : Maison", cx, cy - 9, self.interact._HINT_COL, 11, anchor_x="center", anchor_y="center", font_name=KENNY)
-
+        self._draw_world()
         self.draw_stat_progress_bar()
         self.camera_gui.use()
-        self.talk.draw_dialogue_box()
-        self.interact.draw_box()
-        self.get_quests()
-        self.interact.draw_side_bar()
+        self._draw_hud()
+
+    def _draw_world(self) -> None:
+        self.camera_sprites.use()
+        for layer in ("Sol", "Mur", "Meuble_B"):
+            self.scene[layer].draw()
+        self.behind_player.draw()
+        self.zombie_manager.draw()
+        for layer in ("Meuble_H", "Meuble_T", "Livre", "OrdiRPG", "PcTest"):
+            self.scene[layer].draw()
+        self.scene["Player"].draw()
+        self.scene["Pnj"].draw()
+        self.kyle_sprite.draw_bullets()
+
+        if not self.zombie_manager.is_active():
+            self.interact_ui.interact_obj_prg()
+            self.interact_ui.interact_pnj_strateg()
+            self.interact_ui.interact_pnj()
+            if 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600:
+                left, top = self.interact_ui.draw_interact_box()
+                cx = left + (self.interact_ui._BOX_W - 10) / 2
+                cy = top - self.interact_ui._BOX_H / 2
+                arcade.draw_text("Sortie", cx, cy + 9, arcade.color.ORANGE, 13,
+                                 anchor_x="center", anchor_y="center", font_name=KENNY)
+                arcade.draw_text("[Entrée] Maison", cx, cy - 9, self.interact_ui._HINT_COL, 11,
+                                 anchor_x="center", anchor_y="center", font_name=KENNY)
+
+    def _draw_hud(self) -> None:
+        if self.zombie_manager.is_active():
+            self._draw_zombie_hud()
+        else:
+            self.dialogue.draw_dialogue_box()
+            self.interact_ui.draw_box()
+            self.get_quests()
+            self.interact_ui.draw_side_bar()
+
+        if self._death_alpha > 0:
+            arcade.draw_lrbt_rectangle_filled(
+                0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, (0, 0, 0, self._death_alpha))
+        self._death_menu.draw()
         self.get_position()
         self.draw_notif()
         self.menu.draw()
 
-    def on_text(self, text: str) -> None:
-        if self.is_typing:
-            self.talk.on_text(text)
+    def _draw_zombie_hud(self) -> None:
+        obj = self.quest_manager.get_kill_objective()
+        if obj:
+            arcade.draw_text(f"Zombies : {obj.counter} / {int(obj.validator)}",
+                             WINDOW_WIDTH / 2, WINDOW_HEIGHT - 40,
+                             arcade.color.RED, 20, anchor_x="center",
+                             bold=True, font_name=KENNY)
+        BAR_W, BAR_H = 200, 16
+        bx    = WINDOW_WIDTH - BAR_W - 20
+        by    = WINDOW_HEIGHT - 70
+        ratio = max(0.0, self.player_sprite.health / 50)
+        bar_color = (arcade.color.JADE   if ratio > 0.5
+                     else arcade.color.ORANGE if ratio > 0.25
+                     else arcade.color.RED)
+        arcade.draw_text("Vie", bx - 40, by + BAR_H / 2,
+                         arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
+        arcade.draw_lrbt_rectangle_filled(bx, bx + BAR_W, by, by + BAR_H, (60, 10, 10))
+        if ratio > 0:
+            arcade.draw_lrbt_rectangle_filled(bx, bx + BAR_W * ratio, by, by + BAR_H, bar_color)
+        arcade.draw_lrbt_rectangle_outline(bx, bx + BAR_W, by, by + BAR_H, arcade.color.WHITE, 1)
+        arcade.draw_text(f"{self.player_sprite.health} / 50",
+                         bx + BAR_W + 8, by + BAR_H / 2,
+                         arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
+        mx, my = self.mouse_x, self.mouse_y
+        arcade.draw_line(mx - 12, my, mx + 12, my, arcade.color.RED, 2)
+        arcade.draw_line(mx, my - 12, mx, my + 12, arcade.color.RED, 2)
+        arcade.draw_circle_outline(mx, my, 7, arcade.color.RED, 1)
+
+    # --------------------------------------------------------------- update
 
     def on_update(self, delta_time: float) -> None:
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
         self.update_notif(delta_time)
+        self.character_manager.update_player_stats(delta_time)
+
+        if self._death_dir != 0 or self._death_menu.active:
+            self._update_death_fade(delta_time)
+            return
+
+        zombie_active = self.zombie_manager.is_active()
+        kills = self.zombie_manager.update(delta_time)
+        for _ in range(kills):
+            self.quest_manager.register_kill()
+        self.zombie_manager.check_player_damage(self.player_sprite, delta_time)
+
+        if self.player_sprite.health <= 0:
+            self._death_dir = 1
+
+        self.window.set_mouse_visible(not zombie_active)
+        self._update_kyle(delta_time)
+
+        hide_pnjs = self._pnjs_should_hide()
+        for pnj in self.pnj_sprite + self.strategique_sprite:
+            pnj.visible = not hide_pnjs or pnj is self.kyle_sprite
+
+    def _update_death_fade(self, delta_time: float) -> None:
+        _SPEED = 5
+        if self._death_dir == 1:
+            self._death_alpha = min(255, self._death_alpha + _SPEED)
+            if self._death_alpha >= 255:
+                self._death_dir = 0
+                self._death_menu.active = True
+        elif self._death_dir == -1:
+            self._death_alpha = max(0, self._death_alpha - _SPEED)
+            if self._death_alpha <= 0:
+                self._death_dir = 0
+
+    def _kyle_state(self) -> str:
+        if not self._pnjs_should_hide():
+            return "sit"
+        if self.zombie_manager.is_active():
+            return "chasse"
+        return "stand"
+
+    def _update_kyle(self, dt: float) -> None:
+        k     = self.kyle_sprite
+        state = self._kyle_state()
+
+        if state == "stand":
+            k.attitude = "assis"
+            k.texture  = k._standing_tex
+            k.center_x = 694
+            k.center_y = 787
+        elif state == "chasse":
+            if k.attitude != "chasse":
+                k.attitude = "chasse"
+                k.textures = k._stand_textures
+            kills = k.update_ai(dt, walls=self._kyle_walls,
+                                 zombies=self.zombie_manager.zombies)
+            for _ in range(kills):
+                self.quest_manager.register_kill()
+        else:
+            k.attitude = "assis"
+            k.texture  = k._sitting_tex
+
+    def _pnjs_should_hide(self) -> bool:
+        arc = self.quest_manager.arc
+        if arc is None:
+            return False
+        return any(q.title == "Aller au taf." for q in arc.quests)
+
+    def _do_death_reset(self) -> None:
+        obj = self.quest_manager.get_kill_objective()
+        if obj:
+            obj.counter = 0
+            self.quest_manager.save_progress()
+        self.player_sprite.health          = 50
+        self.player_sprite.damage_cooldown = 0.0
+        self.player_sprite.center_x        = _ZOMBIE_SPAWN[0]
+        self.player_sprite.center_y        = _ZOMBIE_SPAWN[1]
+        self.zombie_manager.reset()
+
+    # --------------------------------------------------------- input
+
+    def on_text(self, text: str) -> None:
+        if self.is_typing:
+            self.dialogue.on_text(text)
 
     def on_key_press(self, key, modifiers) -> None:
-        self.keycaps.handle_key_press(key, modifiers)
+        if self._death_menu.active:
+            choice = self._death_menu.handle_key(key)
+            if choice == "Recommencer au début":
+                self._death_menu.active = False
+                self._do_death_reset()
+                self._death_dir = -1
+            elif choice == "Apparaître à la maison":
+                self._death_menu.active = False
+                self._do_death_reset()
+                self._death_alpha = 255
+                self._death_dir   = -1
+                self.character_manager.save_player()
+                self.manager.switch_map("home")
+            return
 
-        if self.current_strategique and key == arcade.key.RALT:
-            self.character_manager.save_player()
-            self.manager.switch_map("tma")
+        if self.zombie_manager.is_active():
+            self.input_handler._handle_movement_keys(key)
+            if key == arcade.key.ESCAPE:
+                self.show_menu = not self.show_menu
+                self.menu.selected = 0
+            elif self.show_menu:
+                self.menu.handle_key(key)
+            return
 
-        if 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600 and key == arcade.key.RALT:
-            self.character_manager.save_player()
-            self.manager.switch_map("home")
+        self.input_handler.handle_key_press(key, modifiers)
+        if not self.is_typing and key == arcade.key.ENTER:
+            if self.current_strategique:
+                self.character_manager.save_player()
+                self.manager.switch_map("tma")
+            elif 0 <= self.player_sprite.center_y <= 55 and 550 <= self.player_sprite.center_x <= 600:
+                self.character_manager.save_player()
+                self.manager.switch_map("home")
 
     def on_key_release(self, key, modifiers) -> None:
-        self.keycaps.reset_movement_on_release(key, modifiers)
+        self.input_handler.reset_movement_on_release(key, modifiers)
 
     def on_mouse_press(self, x, y, button, modifiers) -> None:
-        self.keycaps.on_mouse_press(x, y, button, modifiers)
+        if self.zombie_manager.is_active() and button == arcade.MOUSE_BUTTON_LEFT:
+            world = self.camera_sprites.unproject((x, y))
+            self.zombie_manager.fire(
+                self.player_sprite.center_x, self.player_sprite.center_y,
+                world.x, world.y,
+                weapon=self.player_sprite.weapon,
+            )
+            return
+        self.input_handler.on_mouse_press(x, y, button, modifiers)
+
+    def on_mouse_motion(self, x, y, dx, dy) -> None:
+        self.mouse_x, self.mouse_y = x, y
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
