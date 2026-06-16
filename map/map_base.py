@@ -1,7 +1,10 @@
 from __future__ import annotations
+import math
 import arcade
-from assets.param_map import WINDOW_HEIGHT, KENNY
-from map.ui_menus import Menu, QuestNotif
+from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT, KENNY, MOVEMENT_SPEED
+from map.ui_menus import Menu
+from map.ui_quests_notif import QuestNotif
+from map.ui_quests_dialogue import CutscenePopup, KYLE_LINES, SYLVAIN_LINES, JEAN_CHRISTOPHE_LINES, GUY_LINES
 from map.input_handler import InputHandler
 from map.interact_system import InteractUI
 from map.dialogue_system import DialogueSystem
@@ -48,11 +51,21 @@ class BaseGameView(arcade.View):
 
         self.show_menu = False
 
-        self.input_handler = InputHandler(self)
-        self.interact_ui   = InteractUI(self)
-        self.dialogue      = DialogueSystem(self)
-        self.menu          = Menu(self)
-        self.quest_notif   = QuestNotif()
+        self.auto_walk_active   = False
+        self.auto_walk_target   = (0.0, 0.0)
+        self.auto_walk_path     = []
+        self._on_auto_walk_done = None
+
+        self.input_handler  = InputHandler(self)
+        self.interact_ui    = InteractUI(self)
+        self.dialogue       = DialogueSystem(self)
+        self.menu           = Menu(self)
+        self.quest_notif       = QuestNotif()
+        self.quest_manager._on_progress_save = self.character_manager.save_player
+        self.kyle_cutscene     = CutscenePopup("Kyle", KYLE_LINES)
+        self.sylvain_cutscene  = CutscenePopup("Sylvain", SYLVAIN_LINES, (100, 200, 255))
+        self.jc_cutscene       = CutscenePopup("Jean-Christophe", JEAN_CHRISTOPHE_LINES, (150, 220, 120))
+        self.guy_cutscene      = CutscenePopup("Guy", GUY_LINES, (220, 80, 80))
 
     def set_manager(self, manager) -> None:
         self.manager = manager
@@ -77,6 +90,8 @@ class BaseGameView(arcade.View):
 
     def update_notif(self, delta_time: float) -> None:
         self.quest_notif.update(delta_time, self.quest_manager.pending_notifications)
+        if self.quest_manager._needs_stat_check and self.player_sprite is not None:
+            self.quest_manager.check_current_quest_stat_objectives(self.player_sprite)
 
     def draw_notif(self) -> None:
         self.quest_notif.draw()
@@ -87,6 +102,51 @@ class BaseGameView(arcade.View):
         x = int(self.player_sprite.center_x)
         y = int(self.player_sprite.center_y)
         arcade.draw_text(f"x: {x}   y: {y}", 10, 10, arcade.color.WHITE, 14, font_name=KENNY)
+
+    def start_auto_walk(self, target_x: float, target_y: float,
+                        path: list | None = None) -> None:
+        self.auto_walk_target = (target_x, target_y)
+        self.auto_walk_path   = list(path) if path else []
+        self.auto_walk_active = True
+
+    def update_auto_walk(self) -> None:
+        if not self.auto_walk_active or self.player_sprite is None:
+            return
+        player = self.player_sprite
+
+        if self.auto_walk_path:
+            tx, ty = self.auto_walk_path[0]
+        else:
+            tx, ty = self.auto_walk_target
+
+        dx   = tx - player.center_x
+        dy   = ty - player.center_y
+        dist = math.hypot(dx, dy)
+
+        if dist <= MOVEMENT_SPEED:
+            player.center_x = tx
+            player.center_y = ty
+            if self.auto_walk_path:
+                self.auto_walk_path.pop(0)
+                if self.auto_walk_path:
+                    return
+            player.change_x = 0
+            player.change_y = 0
+            player.texture  = player.textures[player.direction]
+            self.auto_walk_active = False
+            if self._on_auto_walk_done is not None:
+                cb = self._on_auto_walk_done
+                self._on_auto_walk_done = None
+                cb()
+            return
+
+        nx, ny          = dx / dist, dy / dist
+        player.change_x = nx * MOVEMENT_SPEED
+        player.change_y = ny * MOVEMENT_SPEED
+        if abs(dx) > abs(dy):
+            player.direction = "right" if dx > 0 else "left"
+        else:
+            player.direction = "up" if dy > 0 else "down"
 
     def draw_stat_progress_bar(self) -> None:
         cm = self.character_manager

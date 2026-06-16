@@ -43,7 +43,8 @@ class Bullet(arcade.SpriteSolidColor):
 
     def __init__(self, x: float, y: float, tx: float, ty: float,
                  damage: float = 1.0, color: tuple[int, int, int] = (255, 210, 50)) -> None:
-        super().__init__(8, 8, color)
+        super().__init__(8, 8, arcade.color.WHITE)
+        self.color = (*color, 255) if len(color) == 3 else color
         self.center_x, self.center_y = x, y
         self.damage = damage
         dist = math.hypot(tx - x, ty - y)
@@ -105,6 +106,7 @@ class PNJState(Enum):
     ERRANCE  = "errance"
     CHASSE   = "chasse"
     DIALOGUE = "dialogue"   # immobile, face au joueur
+    STAND    = "stand"      # debout immobile (jambes chevauchables)
 
 
 class PNJ(arcade.Sprite):

@@ -92,8 +92,7 @@ class Zombie(arcade.SpriteSolidColor):
 
 
 class ZombieManager:
-    SPAWN_INTERVAL = 2.5
-    MAX_ZOMBIES    = 12
+    SPAWN_INTERVAL = 0.8
 
     def __init__(self, quest_manager, player_sprite: arcade.Sprite):
         self._qm           = quest_manager
@@ -162,11 +161,15 @@ class ZombieManager:
 
     def update(self, delta_time: float) -> int:
         if not self.is_active():
+            for b in list(self.bullets):
+                b.remove_from_sprite_lists()
             return 0
 
-        # Spawn
+        # Spawn — le plafond est le min entre MAX_ZOMBIES et les kills restants
         self._timer += delta_time
-        if self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < self.MAX_ZOMBIES:
+        obj = self._qm.get_kill_objective()
+        remaining = max(0, int(obj.validator) - obj.counter) if obj else 0
+        if self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < remaining:
             self.zombies.append(Zombie(*random.choice(self._spawn_points)))
             self._timer = 0.0
 

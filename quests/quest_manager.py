@@ -14,6 +14,8 @@ class QuestManager:
         quests_default_file: str = "quests_default_save.json",
     ):
         self.pending_notifications: list[dict] = []
+        self._needs_stat_check: bool = False
+        self._on_progress_save = None  # callback optionnel → character_manager.save_player
         self.quests_file_dir = os.path.join(paths.get_project_root(), "quests", "quests_file")
         self.quests_save_dir = os.path.join(paths.get_project_root(), "quests", "quests_save_file")
 
@@ -29,6 +31,8 @@ class QuestManager:
         saved_data = self._get_save_progress()
         if saved_data:
             self._load_progress(saved_data)
+        if self._is_new_game():
+            self._queue_arc_start_notifs(header="Nouvelle Histoire !")
 
     # ------------------------------------------------------------------ save
 
@@ -81,6 +85,31 @@ class QuestManager:
         else:
             print("[WARN] Aucun arc trouvé dans la sauvegarde.")
 
+    def _is_new_game(self) -> bool:
+        if self.arc is None or self.arc.arc_id != 1:
+            return False
+        quest = next((q for q in self.arc.quests if q.id == 1), None)
+        if quest is None:
+            return False
+        return not any(o.status == "t" for o in quest.objectives)
+
+    def _queue_arc_start_notifs(self, header: str = "Nouvel arc !") -> None:
+        if self.arc is None:
+            return
+        self.pending_notifications.append({"type": "new_arc", "text": header, "title": self.arc.name})
+        quest = next((q for q in self.arc.quests if q.status == "ec"), None)
+        if quest:
+            self.pending_notifications.append({"type": "new_quest", "text": "Nouvelle quête !", "title": quest.title, "objectives": [o.name for o in quest.objectives]})
+
+    def load_from_data(self, data: list) -> None:
+        """Écrase le fichier de sauvegarde quêtes et recharge depuis ces données."""
+        with open(self.quest_save_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        self.arc = None
+        saved = self._get_save_progress()
+        if saved:
+            self._load_progress(saved)
+
     def reset(self) -> None:
         if os.path.exists(self.quest_default_save_file):
             shutil.copy(self.quest_default_save_file, self.quest_save_file)
@@ -88,6 +117,8 @@ class QuestManager:
         saved_data = self._get_save_progress()
         if saved_data:
             self._load_progress(saved_data)
+        if self._is_new_game():
+            self._queue_arc_start_notifs(header="Nouvelle Histoire !")
         print("[RESET] Quêtes réinitialisées.")
 
     def save_progress(self) -> None:
@@ -142,6 +173,8 @@ class QuestManager:
 
         with open(self.quest_save_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+        if self._on_progress_save is not None:
+            self._on_progress_save()
 
     # ------------------------------------------------------------------ progression
 
@@ -204,12 +237,25 @@ class QuestManager:
                     if obj.validator <= value:
                         self._complete_objective(quest, obj)
 
+    def check_current_quest_stat_objectives(self, player) -> None:
+        self._needs_stat_check = False
+        if self.arc is None:
+            return
+        quest = next((q for q in self.arc.quests if q.status == "ec"), None)
+        if quest is None:
+            return
+        for obj in quest.objectives:
+            if obj.type == "stat" and not obj.is_completed():
+                current = getattr(player.humain, obj.stat_key, None)
+                if current is not None and float(current) >= obj.validator:
+                    self._complete_objective(quest, obj)
+
     def _complete_objective(self, quest: Quest, objective: Objective) -> None:
         if objective.is_completed():
             return
         objective.complete()
         print(f"[OK] Objectif '{objective.name}' terminé dans '{quest.title}'")
-        self.pending_notifications.append({"type": "objective", "text": "Objectif atteint !"})
+        self.pending_notifications.append({"type": "objective", "text": "Objectif atteint !", "title": objective.name})
         self.save_progress()
         self._check_quest_complete(quest)
 
@@ -217,7 +263,7 @@ class QuestManager:
         if all(o.status == "t" for o in quest.objectives) and quest.status != "t":
             quest.complete()
             print(f"[QUETE] Quête '{quest.title}' complétée !")
-            self.pending_notifications.append({"type": "quest", "text": "Quête terminée !"})
+            self.pending_notifications.append({"type": "quest", "text": "Quête terminée !", "title": quest.title})
             self.save_progress()
             self._start_next_quest(quest.id)
 
@@ -245,6 +291,8 @@ class QuestManager:
         else:
             self.arc.add_quest(next_quest)
         print(f"[QUETE] Nouvelle quête : '{next_quest.title}'")
+        self.pending_notifications.append({"type": "new_quest", "text": "Nouvelle quête !", "title": next_quest.title, "objectives": [o.name for o in next_quest.objectives]})
+        self._needs_stat_check = True
         self.save_progress()
 
     def _complete_arc(self) -> None:
@@ -277,6 +325,7 @@ class QuestManager:
             description=arc_data.get("description", ""),
             status="ec",
         )
+        self.pending_notifications.append({"type": "new_arc", "text": "Nouvel arc !", "title": new_arc.name})
         first_quest_data = next(
             (q for q in arc_data.get("quests", []) if q.get("id") == 1), None
         )
@@ -284,6 +333,8 @@ class QuestManager:
             first_quest = self._create_quest_from_dict(first_quest_data)
             first_quest.status = "ec"
             new_arc.add_quest(first_quest)
+            self.pending_notifications.append({"type": "new_quest", "text": "Nouvelle quête !", "title": first_quest.title, "objectives": [o.name for o in first_quest.objectives]})
+            self._needs_stat_check = True
         self.arc = new_arc
         self.save_progress()
         print(f"[QUETE] Nouvel arc : '{self.arc.name}'")

@@ -2,9 +2,10 @@ from __future__ import annotations
 import os
 import json
 import shutil
+import datetime
 from typing import Protocol
 from assets.param_map import PLAYER_SCALING, MAP_WIDTH, MAP_HEIGHT
-from character.character_classes import Player, PNJ, Humain
+from character.character_classes import Player, PNJ, Humain, Weapon
 import utils.paths as paths
 
 
@@ -21,6 +22,7 @@ _CHARACTER_DEFAULTS: dict[str, object] = {
     "sociabilite": 0.1,
     "x": 0,
     "y": 0,
+    "weapon": None,
 }
 
 # Délai entre deux auto-saves pendant la lecture active (secondes)
@@ -51,6 +53,8 @@ class CharacterManager:
         # Debounce : sauvegarde différée pendant la lecture
         self._stats_dirty:    bool  = False
         self._auto_save_timer: float = 0.0
+
+        self._pending_spawn: tuple[float, float] | None = None
 
         self.PNJ: list[PNJ] = []
 
@@ -120,6 +124,14 @@ class CharacterManager:
                                   quest_manager, self, scale)
         player.center_x  = x
         player.center_y  = y
+        weapon_data = data.get("weapon")
+        if weapon_data:
+            player.weapon = Weapon(
+                weapon_data["name"],
+                weapon_data["damage_min"],
+                weapon_data["damage_max"],
+                tuple(weapon_data["bullet_color"]),
+            )
         self.player      = player
 
     def reset(self) -> None:
@@ -134,12 +146,18 @@ class CharacterManager:
         self._write_json(self.character_file, _CHARACTER_DEFAULTS)
         print("[RESET] Personnage réinitialisé.")
 
+    def consume_pending_spawn(self) -> tuple[float, float] | None:
+        spawn = self._pending_spawn
+        self._pending_spawn = None
+        return spawn
+
     def save_player(self) -> None:
         if self.player is None:
             return
         if os.path.exists(self.character_file):
             shutil.copy(self.character_file, self.character_file + ".bak")
         p     = self.player
+        w = p.weapon
         stats = {
             "nom":          p.nom,
             "force":        p.humain.force,
@@ -153,8 +171,88 @@ class CharacterManager:
             "sociabilite":  p.humain.sociabilite,
             "x":            p.humain.x,
             "y":            p.humain.y,
+            "weapon": {
+                "name":         w.name,
+                "damage_min":   w.damage_min,
+                "damage_max":   w.damage_max,
+                "bullet_color": list(w.bullet_color),
+            } if w is not None else None,
         }
         self._write_json(self.character_file, stats)
+
+    def get_all_saves(self) -> list:
+        """Retourne la liste de toutes les sauvegardes nommées."""
+        saves_file = os.path.join(paths.get_save_dir(), "saves.json")
+        try:
+            with open(saves_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
+
+    def save_slot(self, name: str, map_name: str) -> None:
+        """Crée ou écrase une sauvegarde nommée avec l'état courant."""
+        self.save_player()
+        self.quest_manager.save_progress()
+        try:
+            with open(self.character_file, "r", encoding="utf-8") as f:
+                char_data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            char_data = {}
+        if self.player:
+            char_data["x"] = self.player.center_x
+            char_data["y"] = self.player.center_y
+        try:
+            with open(self.quest_manager.quest_save_file, "r", encoding="utf-8") as f:
+                quests_data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            quests_data = []
+        saves = self.get_all_saves()
+        saves = [s for s in saves if s["name"] != name]
+        saves.append({
+            "name":      name,
+            "map":       map_name,
+            "date":      datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "character": char_data,
+            "quests":    quests_data,
+        })
+        saves_file = os.path.join(paths.get_save_dir(), "saves.json")
+        os.makedirs(os.path.dirname(saves_file), exist_ok=True)
+        with open(saves_file, "w", encoding="utf-8") as f:
+            json.dump(saves, f, ensure_ascii=False, indent=4)
+
+    def delete_slot(self, name: str) -> None:
+        """Supprime la sauvegarde nommée de saves.json."""
+        saves = self.get_all_saves()
+        saves = [s for s in saves if s["name"] != name]
+        saves_file = os.path.join(paths.get_save_dir(), "saves.json")
+        os.makedirs(os.path.dirname(saves_file), exist_ok=True)
+        with open(saves_file, "w", encoding="utf-8") as f:
+            json.dump(saves, f, ensure_ascii=False, indent=4)
+
+    def load_slot(self, slot: dict) -> str:
+        """Charge un slot nommé : restaure personnage, quêtes et position. Retourne le nom de la map."""
+        char_data  = slot.get("character", {})
+        quest_data = slot.get("quests", [])
+        self._write_json(self.character_file, char_data)
+        self.quest_manager.load_from_data(quest_data)
+        if self.player:
+            data = self._validate_data(char_data)
+            h = self.player.humain
+            for key in ("force", "vitesse", "endurance", "mathematique",
+                        "logique", "rpg", "music", "langue", "sociabilite"):
+                setattr(h, key, data[key])
+            weapon_data = char_data.get("weapon")
+            if weapon_data:
+                self.player.weapon = Weapon(
+                    weapon_data["name"],
+                    weapon_data["damage_min"],
+                    weapon_data["damage_max"],
+                    tuple(weapon_data["bullet_color"]),
+                )
+            else:
+                self.player.weapon = None
+            self._pending_spawn = (char_data.get("x", 745.0), char_data.get("y", 970.0))
+        return slot.get("map", "home")
 
     # ------------------------------------------------------------------ stat upgrade
 

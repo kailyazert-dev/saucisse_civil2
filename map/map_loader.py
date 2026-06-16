@@ -56,6 +56,7 @@ class MapLoader:
         """Crée les PNJs normaux et les ajoute à game_view.pnj_sprite."""
         for data in self._cfg.get("pnjs", []):
             pnj = self._make_pnj(data)
+            pnj.interaction_distance = data.get("interaction_distance", 60)
             game_view.pnj_sprite.append(pnj)
             if data.get("behind_player") and behind_player is not None:
                 behind_player.append(pnj)

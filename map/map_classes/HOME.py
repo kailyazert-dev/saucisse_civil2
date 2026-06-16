@@ -18,7 +18,8 @@ class GameView(BaseGameView):
         self.scene    = arcade.Scene.from_tilemap(self.tile_map)
 
         self.player_sprite = self.character_manager.player
-        self.player_sprite.center_x, self.player_sprite.center_y = loader.get_player_spawn(last_map)
+        spawn = self.character_manager.consume_pending_spawn()
+        self.player_sprite.center_x, self.player_sprite.center_y = spawn if spawn else loader.get_player_spawn(last_map)
         self.scene.add_sprite("Player", self.player_sprite)
 
         loader.load_pnjs(self)
@@ -67,7 +68,7 @@ class GameView(BaseGameView):
         self.interact_ui.interact_pnj()
 
         if self._phl_unlocked:
-            if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750:
+            if 975 <= self.player_sprite.center_y <= 980 and 735 <= self.player_sprite.center_x <= 755:
                 left, top = self.interact_ui.draw_interact_box()
                 cx = left + (self.interact_ui._BOX_W - 10) / 2
                 cy = top - self.interact_ui._BOX_H / 2
@@ -103,6 +104,9 @@ class GameView(BaseGameView):
     # ---------------------------------------------------------------- update
 
     def on_update(self, delta_time):
+        if self.show_menu:
+            return
+        self.update_auto_walk()
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
@@ -124,7 +128,9 @@ class GameView(BaseGameView):
     # ---------------------------------------------------------------- input
 
     def on_text(self, text):
-        if self.is_typing:
+        if self.show_menu:
+            self.menu.on_text(text)
+        elif self.is_typing:
             self.dialogue.on_text(text)
 
     def on_mouse_press(self, x, y, button, modifiers) -> None:
@@ -138,7 +144,7 @@ class GameView(BaseGameView):
             return
         self.input_handler.handle_key_press(key, modifiers)
         if self._phl_unlocked and not self.is_typing:
-            if 975 <= self.player_sprite.center_y <= 980 and 740 <= self.player_sprite.center_x <= 750 and key == arcade.key.ENTER:
+            if 975 <= self.player_sprite.center_y <= 980 and 735 <= self.player_sprite.center_x <= 755 and key == arcade.key.ENTER:
                 self.character_manager.save_player()
                 self.manager.switch_map("phl")
 

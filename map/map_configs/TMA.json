@@ -10,7 +10,7 @@
       "image": "assets/images/player_d.png",
       "x": 2830,
       "y": 660,
-      "attitude": "assis",
+      "attitude": "stand",
       "scene_layer": "Pnj"
     }
   ],

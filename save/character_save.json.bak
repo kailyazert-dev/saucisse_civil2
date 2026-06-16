@@ -3,12 +3,22 @@
     "force": 0.1,
     "vitesse": 0.1,
     "endurance": 0.1,
-    "mathematique": 0.15,
+    "mathematique": 0.158,
     "rpg": 0.14,
-    "logique": 0.152,
+    "logique": 0.16,
     "music": 0.1,
     "langue": 0.1,
     "sociabilite": 0.1,
     "x": 0,
-    "y": 0
+    "y": 0,
+    "weapon": {
+        "name": "Pistolet",
+        "damage_min": 1.0,
+        "damage_max": 1.5,
+        "bullet_color": [
+            255,
+            120,
+            0
+        ]
+    }
 }

@@ -3,26 +3,26 @@
         "arc": 1,
         "name": "Trouver un job de développeur.",
         "description": "Vous debut votre aventure comme tous les chlingoses qui l'on fait avant vous. Commencé par avoir les compétences d'une bonne sous merde d'esclave de ce monde capitaliste, et n'oublie pas que tu vis dans un saucisse, et qu'ici ca dev !",
-        "status": "ec",
+        "status": "t",
         "quests": [
             {
                 "id": 1,
                 "title": "Formation autodidact.",
                 "description": "Commence par avoir les compétences necessaires pour un job de dév.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Atteindre le niveau 0.15 en mathématique",
-                        "description": "Lire le livre Mathématique de la bibliothèque.",
-                        "status": "na",
+                        "description": "Lire le livre Pythagore.",
+                        "status": "t",
                         "type": "stat",
                         "stat_key": "mathematique",
                         "validator": 0.15
                     },
                     {
                         "name": "Atteindre le niveau 0.15 en logique",
-                        "description": "Jouer au jeu d'échec le PC.",
-                        "status": "na",
+                        "description": "Jouer au jeu d'échec.",
+                        "status": "t",
                         "type": "stat",
                         "stat_key": "logique",
                         "validator": 0.15
@@ -33,23 +33,25 @@
                 "id": 2,
                 "title": "Postuler sur indead.",
                 "description": "Grace aux nouvelles compétences acquises, il est temps de chercher un job.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "rediger son cv",
                         "description": "Utilise le pc pour rédiger son cv.",
-                        "status": "na",
+                        "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     },
                     {
                         "name": "envoyer son cv sur indead",
                         "description": "Envoye ton cv sur indead.",
-                        "status": "na",
+                        "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     }
                 ]
             },
@@ -57,23 +59,25 @@
                 "id": 3,
                 "title": "Lire le retour des entreprises.",
                 "description": "Il est temps de vérifier le retour des entreprises.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Consulté tes mails.",
                         "description": "Vous avez recus un mail. Vas le lire grosse larve!",
-                        "status": "na",
+                        "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     },
                     {
                         "name": "Répondre à l'offre.",
                         "description": "Une boite veut bien vous recruter malgré vos piètres compétences. S'agit t'il d'un tracnar ? seul l'histoire vous le dirat",
-                        "status": "na",
+                        "status": "t",
                         "type": "map_action",
                         "stat_key": "",
-                        "validator": 0
+                        "validator": 0,
+                        "counter": 0
                     }
                 ]
             }
@@ -83,29 +87,31 @@
         "arc": 2,
         "name": "La super POEI",
         "description": "Pour répondre au mieux aux exigences de ton nouveau job tu doit passer une formation qui te permettra d'avoir les compétences nécessaire.",
-        "status": "nc",
+        "status": "t",
         "quests": [
             {
                 "id": 1,
                 "title": "Aller a la formation.",
                 "description": "Bin vas à la formation. Commence par discuter avec tes formateurs.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Parle à Sylvain.",
                         "description": "Il se situe dans la salle de formation.",
-                        "status": "na",
+                        "status": "t",
                         "type": "talk",
                         "stat_key": "Sylvain",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     },
                     {
                         "name": "Parle à Jean christophe.",
                         "description": "Il se situe dans la salle de formation.",
-                        "status": "na",
+                        "status": "t",
                         "type": "talk",
                         "stat_key": "Jean christophe",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             },
@@ -113,15 +119,16 @@
                 "id": 2,
                 "title": "Apprend le super language révolutionnaire du turfu.",
                 "description": "Acqui les compétences pour validé ta formation.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Apprend le RPG.",
                         "description": "Apprend le RPG sur le PC de la salle de formation.",
-                        "status": "na",
+                        "status": "t",
                         "type": "stat",
                         "stat_key": "rpg",
-                        "validator": 0.14
+                        "validator": 0.14,
+                        "counter": 0
                     }
                 ]
             },
@@ -129,15 +136,16 @@
                 "id": 3,
                 "title": "Termine ta formation.",
                 "description": "Pour valider ta formation tu doit passer un test ultime d'algo digne de la NASA.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Valide le test de la formation.",
                         "description": "Réussit le test d'algo de la NASA sur le PC.",
-                        "status": "na",
+                        "status": "t",
                         "type": "test",
                         "stat_key": "",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             },
@@ -145,15 +153,16 @@
                 "id": 4,
                 "title": "La rencontre.",
                 "description": "Vous venez de vous faire engagé en tant que sous merde, felicitation. Maintenant il est temp de prouvé que tu n'est pas venu ici pour te la touché.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Rencontre Guy.",
                         "description": "Guy est le directeur de l'entreprise. Ton patron. Il se trouve dans son bureau. discute avec la femme à l'accueil pour qu'elle te redirige.",
-                        "status": "na",
+                        "status": "t",
                         "type": "talk",
                         "stat_key": "Guy",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             },
@@ -161,15 +170,16 @@
                 "id": 5,
                 "title": "Termine ta première journée.",
                 "description": "Apres cette journé intense, il est temps de prendre du repos.",
-                "status": "nc",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "Home sweet home.",
                         "description": "Rentre te couché car demain tu dine en enfer.",
-                        "status": "na",
+                        "status": "t",
                         "type": "map_action",
                         "stat_key": "lit",
-                        "validator": 1
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             }
@@ -179,13 +189,13 @@
         "arc": 3,
         "name": "Bienvenu chez 'Armonie pas mutuelle'.",
         "description": "C'est votre premier jour chez Armonie, aller au travaille.",
-        "status": "nc",
+        "status": "ec",
         "quests": [
             {
                 "id": 1,
                 "title": "Aller au taf.",
                 "description": "Bin vas au taf.",
-                "status": "nc",
+                "status": "ec",
                 "objectives": [
                     {
                         "name": "Rencontre ses collègues de travaille.",
@@ -193,23 +203,8 @@
                         "status": "na",
                         "type": "talk",
                         "stat_key": "Kyle",
-                        "validator": 1
-                    }
-                ]
-            },
-            {
-                "id": 2,
-                "title": "tafer !!",
-                "description": "Hello there.",
-                "status": "nc",
-                "objectives": [
-                    {
-                        "name": "This is life babe !!.",
-                        "description": "Purifie la zone !!",
-                        "status": "na",
-                        "type": "compteur",
-                        "stat_key": "kill",
-                        "validator": 60
+                        "validator": 1,
+                        "counter": 0
                     }
                 ]
             }

@@ -1,14 +1,16 @@
 from __future__ import annotations
+import math
 import arcade
 from assets.param_map import PLAYER_SCALING, KENNY, WINDOW_WIDTH, WINDOW_HEIGHT
 from character.character_classes import PNJ, Weapon
 from map.map_base import BaseGameView
 from map.map_loader import MapLoader, humain_from_data
 from map.zombie_manager import ZombieManager
-from map.ui_menus import DeathMenu
+from map.ui_menus import DeathMenu, StatsView
 import utils.paths as paths
 
-_ZOMBIE_SPAWN = (574, 50)  # position "home" dans PHL.json
+_ZOMBIE_SPAWN    = (574, 50)   # position "home" dans PHL.json
+_kyle_path_cache: list | None = None  # calculé une fois pour arc 3 quête 1
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +32,8 @@ class GameView(BaseGameView):
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
         self.player_sprite = self.character_manager.player
-        self.player_sprite.center_x, self.player_sprite.center_y = loader.get_player_spawn(last_map)
+        spawn = self.character_manager.consume_pending_spawn()
+        self.player_sprite.center_x, self.player_sprite.center_y = spawn if spawn else loader.get_player_spawn(last_map)
         self.scene.add_sprite("Player", self.player_sprite)
 
         self.behind_player = arcade.SpriteList()
@@ -44,9 +47,15 @@ class GameView(BaseGameView):
 
         self._setup_zombie_mode()
 
-        self._death_alpha = 0
-        self._death_dir   = 0
-        self._death_menu  = DeathMenu()
+        self._death_alpha          = 0
+        self._death_dir            = 0
+        self._death_menu           = DeathMenu()
+        self._kyle_walk_path       = []
+        self._kyle_walk_path_cache = []
+        self._kyle_walk_active     = False
+        self._kyle_walk_done       = False
+        self._kyle_full_hitbox     = False
+        self._init_kyle_path()
         self.mouse_x      = WINDOW_WIDTH  // 2
         self.mouse_y      = WINDOW_HEIGHT // 2
 
@@ -61,14 +70,75 @@ class GameView(BaseGameView):
         kyle._stand_textures = dict(kyle.textures)
         kyle._standing_tex   = kyle.textures["down"]
         kyle._sitting_tex    = sitting_g
+        tex = kyle._standing_tex
+        tw, th = tex.width / 2, tex.height / 2
+        kyle.hit_box = arcade.hitbox.RotatableHitBox(
+            [(-tw, 0), (tw, 0), (tw, th), (-tw, th)],
+            position=kyle.position, angle=kyle.angle,
+        )
         kyle.textures = {d: sitting_g for d in ("up", "down", "left", "right")}
         kyle.texture  = sitting_g
-        kyle.speed    = 2.2
-        kyle.weapon   = Weapon("TaMère", damage_min=2.0, damage_max=2.5,
-                               bullet_color=(50, 130, 255))
+        kyle.speed          = 2.2
+        kyle._fire_interval = 0.3
+        kyle.interaction_distance = 65
+        kyle.weapon         = Weapon("TaMère", damage_min=2.0, damage_max=2.5,
+                                     bullet_color=(30, 110, 255))
         self.pnj_sprite.append(kyle)
-        self.scene.add_sprite("Pnj", kyle)
         self.kyle_sprite = kyle
+
+    def _calc_astar(self, start_sprite: arcade.Sprite, tx: float, ty: float) -> list:
+        walls = arcade.SpriteList()
+        walls.extend(self.scene["Mur"])
+        walls.extend(self.scene["Meuble_H"])
+        map_w = int(self.tile_map.width  * self.tile_map.tile_width)
+        map_h = int(self.tile_map.height * self.tile_map.tile_height)
+        # Sprite 1×1 pour éviter que la grande hitbox de Kyle ne gonfle les obstacles
+        # et ne bloque sa propre cellule de départ dans la grille A*.
+        dummy = arcade.SpriteSolidColor(1, 1, arcade.color.WHITE)
+        dummy.center_x = start_sprite.center_x
+        dummy.center_y = start_sprite.center_y
+        barrier = arcade.AStarBarrierList(
+            moving_sprite=dummy,
+            blocking_sprites=walls,
+            grid_size=16,
+            left=0, right=map_w,
+            bottom=0, top=map_h,
+        )
+        path = arcade.astar_calculate_path(
+            (start_sprite.center_x, start_sprite.center_y),
+            (tx, ty),
+            barrier,
+            diagonal_movement=True,
+        )
+        return list(path) if path else []
+
+    def _kyle_quest_active(self) -> bool:
+        qm = self.quest_manager
+        return (qm.arc is not None and qm.arc.arc_id == 3
+                and any(q.id == 1 and q.status == "ec" for q in qm.arc.quests))
+
+    def _init_kyle_path(self) -> None:
+        global _kyle_path_cache
+        if not self._kyle_quest_active():
+            self._kyle_walk_path_cache = []
+            return
+        if _kyle_path_cache is None:
+            self._precompute_kyle_walk_path()
+            _kyle_path_cache = list(self._kyle_walk_path_cache)
+        else:
+            self._kyle_walk_path_cache = list(_kyle_path_cache)
+
+    def _precompute_kyle_walk_path(self) -> None:
+        dummy = arcade.SpriteSolidColor(1, 1, arcade.color.WHITE)
+        dummy.center_x, dummy.center_y = 694.0, 787.0
+        path = self._calc_astar(dummy, 772.0, 236.0)
+        self._kyle_walk_path_cache = path if path else [(772.0, 236.0)]
+
+    def _start_kyle_walk(self, tx: float, ty: float) -> None:
+        global _kyle_path_cache
+        self._kyle_walk_path   = list(self._kyle_walk_path_cache)
+        self._kyle_walk_active = True
+        _kyle_path_cache = None  # quête terminée — cache inutile
 
     def _setup_zombie_mode(self) -> None:
         walls = arcade.SpriteList()
@@ -77,8 +147,11 @@ class GameView(BaseGameView):
 
         self.zombie_manager = ZombieManager(self.quest_manager, self.player_sprite)
         self.zombie_manager.setup_walls(walls)
-        self.zombie_manager.set_spawn_points([_ZOMBIE_SPAWN])
-        self.player_sprite.weapon = Weapon("Pistolet", damage_min=1.0, damage_max=1.5)
+        self.zombie_manager.set_spawn_points([
+            _ZOMBIE_SPAWN,
+            (92, 1114),
+            (2516, 1854),
+        ])
         self._kyle_walls = walls
 
     # ---------------------------------------------------------------- draw
@@ -90,17 +163,38 @@ class GameView(BaseGameView):
         self.camera_gui.use()
         self._draw_hud()
 
+    _STAND_ATTITUDES = {"errance", "stand", "dialogue"}
+
     def _draw_world(self) -> None:
         self.camera_sprites.use()
         for layer in ("Sol", "Mur", "Meuble_B"):
             self.scene[layer].draw()
-        self.behind_player.draw()
+
+        before = arcade.SpriteList()
+        after  = arcade.SpriteList()
+        for pnj in self.pnj_sprite:
+            if pnj.visible:
+                if pnj.attitude in self._STAND_ATTITUDES:
+                    before.append(pnj)
+                else:
+                    after.append(pnj)
+
+        before.draw()
         self.zombie_manager.draw()
         for layer in ("Meuble_H", "Meuble_T", "Livre", "OrdiRPG", "PcTest"):
             self.scene[layer].draw()
+        strat_visible = arcade.SpriteList()
+        for pnj in self.strategique_sprite:
+            if pnj.visible:
+                strat_visible.append(pnj)
+        strat_visible.draw()
         self.scene["Player"].draw()
-        self.scene["Pnj"].draw()
+        after.draw()
         self.kyle_sprite.draw_bullets()
+
+        # Nettoie les listes temporaires pour éviter l'accumulation de références
+        before.clear()
+        after.clear()
 
         if not self.zombie_manager.is_active():
             self.interact_ui.interact_obj_prg()
@@ -131,6 +225,9 @@ class GameView(BaseGameView):
         self.get_position()
         self.draw_notif()
         self.menu.draw()
+        self.kyle_cutscene.draw()
+        self.sylvain_cutscene.draw()
+        self.jc_cutscene.draw()
 
     def _draw_zombie_hud(self) -> None:
         obj = self.quest_manager.get_kill_objective()
@@ -155,6 +252,45 @@ class GameView(BaseGameView):
         arcade.draw_text(f"{self.player_sprite.health} / 50",
                          bx + BAR_W + 8, by + BAR_H / 2,
                          arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
+
+        w = self.player_sprite.weapon
+        if w is not None:
+            cx      = bx - 40
+            cy      = by - 14
+            cw      = BAR_W + 48
+            ch      = 110
+            bar_w   = cw - 32
+
+            arcade.draw_lrbt_rectangle_filled(cx, cx + cw, cy - ch, cy, (35, 35, 65, 220))
+            arcade.draw_lrbt_rectangle_outline(cx, cx + cw, cy - ch, cy, arcade.color.WHITE, 1)
+
+            arcade.draw_text(w.name, cx + 16, cy - 22,
+                             arcade.color.WHITE, 14, bold=True,
+                             anchor_y="center", font_name=KENNY)
+
+            dmg_y = cy - 46
+            arcade.draw_text("Dégâts :", cx + 16, dmg_y,
+                             arcade.color.GRAY, 11, anchor_y="center", font_name=KENNY)
+            arcade.draw_text(f"{w.damage_min:.1f}  –  {w.damage_max:.1f}",
+                             cx + 95, dmg_y,
+                             arcade.color.YELLOW, 12, anchor_y="center", font_name=KENNY)
+
+            bry = cy - 64
+            fill_min = max(0.0, min(1.0, w.damage_min / 10.0))
+            fill_max = max(0.0, min(1.0, w.damage_max / 10.0))
+            arcade.draw_lrbt_rectangle_filled(cx + 16, cx + 16 + bar_w, bry, bry + 8, (50, 50, 70))
+            arcade.draw_lrbt_rectangle_filled(cx + 16, cx + 16 + bar_w * fill_max, bry, bry + 8, (180, 60, 60))
+            arcade.draw_lrbt_rectangle_filled(cx + 16, cx + 16 + bar_w * fill_min, bry, bry + 8, (220, 100, 60))
+            arcade.draw_lrbt_rectangle_outline(cx + 16, cx + 16 + bar_w, bry, bry + 8, arcade.color.WHITE, 1)
+
+            proj_y = cy - 90
+            arcade.draw_text("Projectile :", cx + 16, proj_y,
+                             arcade.color.GRAY, 11, anchor_y="center", font_name=KENNY)
+            r, g, b = w.bullet_color
+            sw = 14
+            arcade.draw_lrbt_rectangle_filled(cx + 100, cx + 100 + sw, proj_y - sw / 2, proj_y + sw / 2, (r, g, b))
+            arcade.draw_lrbt_rectangle_outline(cx + 100, cx + 100 + sw, proj_y - sw / 2, proj_y + sw / 2, arcade.color.WHITE, 1)
+
         mx, my = self.mouse_x, self.mouse_y
         arcade.draw_line(mx - 12, my, mx + 12, my, arcade.color.RED, 2)
         arcade.draw_line(mx, my - 12, mx, my + 12, arcade.color.RED, 2)
@@ -163,6 +299,10 @@ class GameView(BaseGameView):
     # --------------------------------------------------------------- update
 
     def on_update(self, delta_time: float) -> None:
+        if self.show_menu:
+            return
+        self.update_auto_walk()
+
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
@@ -204,7 +344,9 @@ class GameView(BaseGameView):
     def _kyle_state(self) -> str:
         if not self._pnjs_should_hide():
             return "sit"
-        if self.zombie_manager.is_active():
+        if self._kyle_walk_active:
+            return "walk"
+        if self._kyle_walk_done and self.zombie_manager.is_active():
             return "chasse"
         return "stand"
 
@@ -212,15 +354,72 @@ class GameView(BaseGameView):
         k     = self.kyle_sprite
         state = self._kyle_state()
 
+        # Hitbox plein corps en chasse, demi-supérieure sinon
+        if state == "chasse" and not self._kyle_full_hitbox:
+            tw = k._standing_tex.width  / 2
+            th = k._standing_tex.height / 2
+            k.hit_box = arcade.hitbox.RotatableHitBox(
+                [(-tw, -th), (tw, -th), (tw, th), (-tw, th)],
+                position=k.position, angle=k.angle,
+            )
+            self._kyle_full_hitbox = True
+        elif state != "chasse" and self._kyle_full_hitbox:
+            tw = k._standing_tex.width  / 2
+            th = k._standing_tex.height / 2
+            k.hit_box = arcade.hitbox.RotatableHitBox(
+                [(-tw, 0), (tw, 0), (tw, th), (-tw, th)],
+                position=k.position, angle=k.angle,
+            )
+            self._kyle_full_hitbox = False
+
         if state == "stand":
-            k.attitude = "assis"
+            k.attitude = "stand"
             k.texture  = k._standing_tex
-            k.center_x = 694
-            k.center_y = 787
-        elif state == "chasse":
+            if not self._kyle_walk_done:
+                k.center_x = 694
+                k.center_y = 787
+        elif state == "walk":
             if k.attitude != "chasse":
                 k.attitude = "chasse"
-                k.textures = k._stand_textures
+            path = self._kyle_walk_path
+            if not path:
+                k.change_x = 0
+                k.change_y = 0
+                self._kyle_walk_active = False
+                self._kyle_walk_done   = True
+                return
+            tx, ty = path[0]
+            dx = tx - k.center_x
+            dy = ty - k.center_y
+            dist = math.hypot(dx, dy)
+            if dist <= k.speed:
+                k.center_x = tx
+                k.center_y = ty
+                path.pop(0)
+                k.change_x = 0
+                k.change_y = 0
+                if not path:
+                    self._kyle_walk_active = False
+                    self._kyle_walk_done   = True
+                    return
+                tx, ty = path[0]
+                dx = tx - k.center_x
+                dy = ty - k.center_y
+                dist = math.hypot(dx, dy)
+            if dist > 0:
+                nx, ny      = dx / dist, dy / dist
+                k.center_x += nx * k.speed
+                k.center_y += ny * k.speed
+                k.change_x  = nx * k.speed
+                k.change_y  = ny * k.speed
+                if abs(dx) > abs(dy):
+                    k.direction = "right" if dx > 0 else "left"
+                else:
+                    k.direction = "up" if dy > 0 else "down"
+                k._animate(k.direction, dt)
+        elif state == "chasse":
+            k.attitude = "chasse"
+            k.textures = k._stand_textures
             kills = k.update_ai(dt, walls=self._kyle_walls,
                                  zombies=self.zombie_manager.zombies)
             for _ in range(kills):
@@ -249,7 +448,9 @@ class GameView(BaseGameView):
     # --------------------------------------------------------- input
 
     def on_text(self, text: str) -> None:
-        if self.is_typing:
+        if self.show_menu:
+            self.menu.on_text(text)
+        elif self.is_typing:
             self.dialogue.on_text(text)
 
     def on_key_press(self, key, modifiers) -> None:
@@ -270,15 +471,20 @@ class GameView(BaseGameView):
 
         if self.zombie_manager.is_active():
             self.input_handler._handle_movement_keys(key)
-            if key == arcade.key.ESCAPE:
-                self.show_menu = not self.show_menu
-                self.menu.selected = 0
+            if key == arcade.key.P and not self.show_menu:
+                self.window.show_view(StatsView(self))
+            elif key == arcade.key.ESCAPE:
+                if self.show_menu and self.menu.has_sub():
+                    self.menu.handle_key(key)
+                else:
+                    self.show_menu = not self.show_menu
+                    self.menu.reset()
             elif self.show_menu:
                 self.menu.handle_key(key)
             return
 
         self.input_handler.handle_key_press(key, modifiers)
-        if not self.is_typing and key == arcade.key.ENTER:
+        if not self.is_typing and not self.kyle_cutscene.active and not self.sylvain_cutscene.active and not self.jc_cutscene.active and key == arcade.key.ENTER:
             if self.current_strategique:
                 self.character_manager.save_player()
                 self.manager.switch_map("tma")

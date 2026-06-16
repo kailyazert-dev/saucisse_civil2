@@ -220,7 +220,7 @@
                         "status": "na",
                         "type": "compteur",
                         "stat_key": "kill",
-                        "validator": 30,
+                        "validator": 60,
                         "counter": 0
                     }
                 ]

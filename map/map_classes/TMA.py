@@ -21,7 +21,8 @@ class GameView(BaseGameView):
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
         self.player_sprite = self.character_manager.player
-        self.player_sprite.center_x, self.player_sprite.center_y = loader.get_player_spawn(last_map)
+        spawn = self.character_manager.consume_pending_spawn()
+        self.player_sprite.center_x, self.player_sprite.center_y = spawn if spawn else loader.get_player_spawn(last_map)
         self.scene.add_sprite("Player", self.player_sprite)
 
         loader.load_pnjs(self)
@@ -49,10 +50,14 @@ class GameView(BaseGameView):
         self.get_position()
         self.draw_notif()
         self.menu.draw()
+        self.guy_cutscene.draw()
 
     # ---------------------------------------------------------------- update
 
     def on_update(self, delta_time: float) -> None:
+        if self.show_menu:
+            return
+        self.update_auto_walk()
         self.physics_engine.update()
         self.scene.update(delta_time)
         self.follow_player()
@@ -61,12 +66,14 @@ class GameView(BaseGameView):
     # ---------------------------------------------------------------- input
 
     def on_text(self, text: str) -> None:
-        if self.is_typing:
+        if self.show_menu:
+            self.menu.on_text(text)
+        elif self.is_typing:
             self.dialogue.on_text(text)
 
     def on_key_press(self, key, modifiers) -> None:
         self.input_handler.handle_key_press(key, modifiers)
-        if self.current_strategique and key == arcade.key.RALT:
+        if self.current_strategique and not self.is_typing and not self.guy_cutscene.active and key == arcade.key.ENTER:
             self.character_manager.save_player()
             self.manager.switch_map("phl")
 

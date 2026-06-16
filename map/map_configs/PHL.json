@@ -12,9 +12,10 @@
       "image": "assets/images/player_d.png",
       "x": 264,
       "y": 529,
-      "attitude": "errance",
+      "attitude": "stand",
       "hitbox": "upper_half",
-      "behind_player": true
+      "behind_player": true,
+      "interaction_distance": 50
     },
     {
       "nom": "Jean christophe",
@@ -22,9 +23,10 @@
       "image": "assets/images/player_d.png",
       "x": 165,
       "y": 529,
-      "attitude": "errance",
+      "attitude": "stand",
       "hitbox": "upper_half",
-      "behind_player": true
+      "behind_player": true,
+      "interaction_distance": 50
     },
     {
       "nom": "Mael",
@@ -34,7 +36,8 @@
       "x": 690,
       "y": 992,
       "attitude": "assis",
-      "scene_layer": "Pnj"
+      "scene_layer": "Pnj",
+      "interaction_distance": 65
     },
     {
       "nom": "Thomas",
@@ -44,7 +47,8 @@
       "x": 558,
       "y": 848,
       "attitude": "assis",
-      "scene_layer": "Pnj"
+      "scene_layer": "Pnj",
+      "interaction_distance": 65
     },
     {
       "nom": "Louis",
@@ -54,7 +58,8 @@
       "x": 558,
       "y": 992,
       "attitude": "assis",
-      "scene_layer": "Pnj"
+      "scene_layer": "Pnj",
+      "interaction_distance": 65
     }
   ],
   "strategiques": [

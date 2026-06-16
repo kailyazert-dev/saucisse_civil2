@@ -193,7 +193,7 @@ class InteractUI:
         gv     = self.game_view
         player = gv.player_sprite
         for strategique in gv.strategique_sprite:
-            dist = getattr(strategique, "interaction_distance", 50)
+            dist = getattr(strategique, "interaction_distance", 55)
             if arcade.get_distance_between_sprites(player, strategique) < dist:
                 gv.current_strategique = strategique
                 w, h  = self._BOX_W - 10, self._BOX_H
@@ -211,7 +211,7 @@ class InteractUI:
         gv     = self.game_view
         player = gv.player_sprite
         for pnj in gv.pnj_sprite:
-            if arcade.get_distance_between_sprites(player, pnj) < 70:
+            if arcade.get_distance_between_sprites(player, pnj) < getattr(pnj, "interaction_distance", 60):
                 left, top = self.draw_interact_box()
                 cx = left + (self._BOX_W - 10) / 2
                 cy = top - self._BOX_H / 2
