@@ -212,6 +212,38 @@
                         "validator": 60
                     }
                 ]
+            },
+            {
+                "id": 3,
+                "title": "Holly shit",
+                "description": "Fin de l'invation",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Finito",
+                        "description": "Parle avec kyle.",
+                        "status": "na",
+                        "type": "talk",
+                        "stat_key": "Kyle",
+                        "validator": 1
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "title": "Go home",
+                "description": "Fin de la 1er journé.",
+                "status": "nc",
+                "objectives": [
+                    {
+                        "name": "Ouuuuuf",
+                        "description": "Pique un somme",
+                        "status": "na",
+                        "type": "map_action",
+                        "stat_key": "lit",
+                        "validator": 1
+                    }
+                ]
             }
         ]
     }

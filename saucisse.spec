@@ -12,7 +12,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('assets',                          'assets'),
-        ('map/map_tmx',                     'map/map_tmx'),
+        ('world/tilemaps',                   'world/tilemaps'),
         ('quests/quests_file',              'quests/quests_file'),
         ('quests/quests_save_file',         'quests/quests_save_file'),
     ],

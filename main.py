@@ -1,7 +1,7 @@
 import arcade
-from map.map_manager import MapManager
+from world.scene.scene_manager import SceneManager
 from quests.quest_manager import QuestManager
-from character.character_manager import CharacterManager
+from character.player.player_manager import CharacterManager
 
 def main():
     # Création du gestionnaire de quêtes
@@ -11,7 +11,7 @@ def main():
     character_manager = CharacterManager(quest_manager)
 
     # Création du gestionnaire de maps
-    MapManager(quest_manager, character_manager)
+    SceneManager(quest_manager, character_manager)
 
     # Lance la boucle de jeu arcade
     arcade.run()

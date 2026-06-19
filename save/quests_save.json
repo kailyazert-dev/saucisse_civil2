@@ -189,7 +189,7 @@
         "arc": 3,
         "name": "Bienvenu chez 'Armonie pas mutuelle'.",
         "description": "C'est votre premier jour chez Armonie, aller au travaille.",
-        "status": "ec",
+        "status": "t",
         "quests": [
             {
                 "id": 1,
@@ -212,15 +212,49 @@
                 "id": 2,
                 "title": "tafer !!",
                 "description": "Hello there.",
-                "status": "ec",
+                "status": "t",
                 "objectives": [
                     {
                         "name": "This is life babe !!.",
                         "description": "Purifie la zone !!",
-                        "status": "na",
+                        "status": "t",
                         "type": "compteur",
                         "stat_key": "kill",
                         "validator": 60,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Holly shit",
+                "description": "Fin de l'invation",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Finito",
+                        "description": "Parle avec kyle.",
+                        "status": "t",
+                        "type": "talk",
+                        "stat_key": "Kyle",
+                        "validator": 1,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "title": "Go home",
+                "description": "Fin de la 1er journé.",
+                "status": "t",
+                "objectives": [
+                    {
+                        "name": "Ouuuuuf",
+                        "description": "Pique un somme",
+                        "status": "t",
+                        "type": "map_action",
+                        "stat_key": "lit",
+                        "validator": 1,
                         "counter": 0
                     }
                 ]
