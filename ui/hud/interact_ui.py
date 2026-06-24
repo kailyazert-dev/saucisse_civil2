@@ -2,10 +2,10 @@ from __future__ import annotations
 import arcade
 from typing import TYPE_CHECKING
 from assets.param_map import KENNY, WINDOW_HEIGHT
-from world.objects.up_stat import UpStat
-from world.objects.up_stat_collection import UpStatCollection
-from world.objects.map_action_object import MapActionObject
-from world.objects.interactable import ObjetInteractif
+from world.objects.interactables.up_stat import UpStat
+from world.objects.interactables.up_stat_collection import UpStatCollection
+from world.objects.interactables.map_action_object import MapActionObject
+from world.objects.interactables.interactable import ObjetInteractif
 
 if TYPE_CHECKING:
     from world.scene.base_scene import BaseScene

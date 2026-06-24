@@ -5,16 +5,31 @@ from assets.param_map import KENNY, WINDOW_WIDTH, WINDOW_HEIGHT
 from character.equipment.weapon import FirearmWeapon, MeleeWeapon
 from character.player.player import Player
 from typing import TYPE_CHECKING
+import utils.paths as paths
 
 if TYPE_CHECKING:
     from world.zombie_mode import ZombieMode
 
+# Constantes du panneau HUD droit
+_PANEL_RIGHT = WINDOW_WIDTH - 15
+_PANEL_W     = 248
+_PANEL_LEFT  = _PANEL_RIGHT - _PANEL_W
+_BAR_W, _BAR_H = 200, 16
+_BAR_X       = WINDOW_WIDTH - _BAR_W - 20   # bord gauche de la barre de vie
+_BAR_Y       = WINDOW_HEIGHT - 70            # bord bas de la barre de vie
+_ICON_SIZE   = 40
+
 
 class ZombieHUD:
-    """Rendu visuel du mode zombie : sprite arme, arc mêlée, barre vie, kills, cartes armes, crosshair."""
+    """Rendu visuel du mode zombie : sprite arme, arc mêlée, barre vie, kills, or, armes, crosshair."""
 
     def __init__(self, zombie_mode: "ZombieMode") -> None:
         self._zm = zombie_mode
+        try:
+            self._coin_tex = arcade.load_texture(
+                paths.asset("assets/images/conssomables/coins.png"))
+        except Exception:
+            self._coin_tex = None
 
     # ---------------------------------------------------------------- world-space
 
@@ -107,72 +122,79 @@ class ZombieHUD:
         player = scene.player_sprite
         obj    = scene.quest_manager.get_kill_objective()
 
+        # Kills (centre haut)
         if obj:
             arcade.draw_text(f"Zombies : {obj.counter} / {int(obj.validator)}",
                              WINDOW_WIDTH / 2, WINDOW_HEIGHT - 40,
                              arcade.color.RED, 20, anchor_x="center", bold=True, font_name=KENNY)
 
-        BAR_W, BAR_H = 200, 16
-        bx    = WINDOW_WIDTH - BAR_W - 20
-        by    = WINDOW_HEIGHT - 70
+        # --- Barre de vie (même position qu'avant) ---
         ratio = max(0.0, player.health / Player.MAX_HEALTH)
         bar_color = (arcade.color.JADE   if ratio > 0.5
                      else arcade.color.ORANGE if ratio > 0.25
                      else arcade.color.RED)
-        arcade.draw_text("Vie", bx - 40, by + BAR_H / 2,
+        arcade.draw_text("Vie", _BAR_X - 40, _BAR_Y + _BAR_H / 2,
                          arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
-        arcade.draw_lrbt_rectangle_filled(bx, bx + BAR_W, by, by + BAR_H, (60, 10, 10))
+        arcade.draw_lrbt_rectangle_filled(_BAR_X, _BAR_X + _BAR_W, _BAR_Y, _BAR_Y + _BAR_H,
+                                          (60, 10, 10))
         if ratio > 0:
-            arcade.draw_lrbt_rectangle_filled(bx, bx + BAR_W * ratio, by, by + BAR_H, bar_color)
-        arcade.draw_lrbt_rectangle_outline(bx, bx + BAR_W, by, by + BAR_H, arcade.color.WHITE, 1)
+            arcade.draw_lrbt_rectangle_filled(_BAR_X, _BAR_X + _BAR_W * ratio,
+                                              _BAR_Y, _BAR_Y + _BAR_H, bar_color)
+        arcade.draw_lrbt_rectangle_outline(_BAR_X, _BAR_X + _BAR_W, _BAR_Y, _BAR_Y + _BAR_H,
+                                           arcade.color.WHITE, 1)
         arcade.draw_text(f"{player.health} / {Player.MAX_HEALTH}",
-                         bx + BAR_W + 8, by + BAR_H / 2,
+                         _BAR_X + _BAR_W + 8, _BAR_Y + _BAR_H / 2,
                          arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
 
-        cx_card = bx - 40
-        self._draw_weapon_card(player.weapon_feu,   cx_card, by - 14,        "Clic G")
-        self._draw_weapon_card(player.weapon_blanc, cx_card, by - 14 - 94,   "Clic D")
+        # --- Or (sous la barre) ---
+        gold_cy = _BAR_Y - 22
+        if self._coin_tex:
+            arcade.draw_texture_rect(
+                self._coin_tex,
+                arcade.XYWH(_PANEL_LEFT + 10, gold_cy, 20, 20))
+        arcade.draw_text(f"Or : {player.gold}",
+                         _PANEL_LEFT + 26, gold_cy,
+                         (220, 180, 20), 13, anchor_y="center", bold=True, font_name=KENNY)
 
-    def _draw_weapon_card(self, w, cx: float, cy: float, label: str) -> None:
-        cw, ch, bar_w = 210, 88, 178
-        arcade.draw_lrbt_rectangle_filled(cx, cx + cw, cy - ch, cy, (35, 35, 65, 220))
-        arcade.draw_lrbt_rectangle_outline(cx, cx + cw, cy - ch, cy, arcade.color.WHITE, 1)
-        arcade.draw_text(label, cx + 8, cy - 9,
-                         arcade.color.LIGHT_GRAY, 9, anchor_y="center", font_name=KENNY)
-        if w is None:
-            arcade.draw_text("— vide —", cx + cw / 2, cy - ch / 2,
-                             arcade.color.GRAY, 11, anchor_x="center",
-                             anchor_y="center", font_name=KENNY)
-            return
-        arcade.draw_text(w.name, cx + 12, cy - 22,
-                         arcade.color.WHITE, 13, bold=True, anchor_y="center", font_name=KENNY)
-        dmg_y = cy - 42
-        arcade.draw_text("Dégâts :", cx + 12, dmg_y,
-                         arcade.color.GRAY, 10, anchor_y="center", font_name=KENNY)
-        arcade.draw_text(f"{w.damage_min:.1f} – {w.damage_max:.1f}", cx + 85, dmg_y,
-                         arcade.color.YELLOW, 11, anchor_y="center", font_name=KENNY)
-        bry      = cy - 58
-        fill_min = max(0.0, min(1.0, w.damage_min / 10.0))
-        fill_max = max(0.0, min(1.0, w.damage_max / 10.0))
-        arcade.draw_lrbt_rectangle_filled(cx + 12, cx + 12 + bar_w, bry, bry + 7, (50, 50, 70))
-        arcade.draw_lrbt_rectangle_filled(cx + 12, cx + 12 + bar_w * fill_max, bry, bry + 7, (180, 60, 60))
-        arcade.draw_lrbt_rectangle_filled(cx + 12, cx + 12 + bar_w * fill_min, bry, bry + 7, (220, 100, 60))
-        arcade.draw_lrbt_rectangle_outline(cx + 12, cx + 12 + bar_w, bry, bry + 7, arcade.color.WHITE, 1)
-        info_y = cy - 76
-        if isinstance(w, FirearmWeapon):
-            arcade.draw_text("Projectile :", cx + 12, info_y,
-                             arcade.color.GRAY, 10, anchor_y="center", font_name=KENNY)
-            r, g, b = w.bullet_color
-            sw = 12
+        # --- Armes (sous l'or) ---
+        self._draw_weapon_compact(player.weapon_feu,   gold_cy - 48,  "Clic G")
+        self._draw_weapon_compact(player.weapon_blanc, gold_cy - 106, "Clic D", icon_size=26)
+
+    def _draw_weapon_compact(self, w, cy: float, label: str, icon_size: int = _ICON_SIZE) -> None:
+        """Ligne compacte : icône + nom + dégâts, alignée sur le panneau droit."""
+        row_h = 50
+        arcade.draw_lrbt_rectangle_filled(
+            _PANEL_LEFT, _PANEL_RIGHT, cy - row_h / 2, cy + row_h / 2, (35, 35, 65, 210))
+        arcade.draw_lrbt_rectangle_outline(
+            _PANEL_LEFT, _PANEL_RIGHT, cy - row_h / 2, cy + row_h / 2, arcade.color.WHITE, 1)
+
+        # Icône arme
+        texture = w.get_texture() if w else None
+        icon_cx = _PANEL_LEFT + icon_size / 2 + 5
+        if texture:
+            arcade.draw_texture_rect(
+                texture,
+                arcade.XYWH(icon_cx, cy, icon_size, icon_size))
+        else:
             arcade.draw_lrbt_rectangle_filled(
-                cx + 90, cx + 90 + sw, info_y - sw / 2, info_y + sw / 2, (r, g, b))
-            arcade.draw_lrbt_rectangle_outline(
-                cx + 90, cx + 90 + sw, info_y - sw / 2, info_y + sw / 2, arcade.color.WHITE, 1)
-        elif isinstance(w, MeleeWeapon):
-            arcade.draw_text("Rayon :", cx + 12, info_y,
-                             arcade.color.GRAY, 10, anchor_y="center", font_name=KENNY)
-            arcade.draw_text(f"{int(w.attack_radius)} px", cx + 85, info_y,
-                             arcade.color.YELLOW, 11, anchor_y="center", font_name=KENNY)
+                _PANEL_LEFT + 5, _PANEL_LEFT + 5 + icon_size,
+                cy - icon_size / 2, cy + icon_size / 2, (55, 55, 75))
+
+        # Textes
+        tx = _PANEL_LEFT + icon_size + 14
+        if w is None:
+            arcade.draw_text("— vide —", tx + 60, cy,
+                             arcade.color.GRAY, 11,
+                             anchor_x="center", anchor_y="center", font_name=KENNY)
+            return
+
+        arcade.draw_text(w.name, tx, cy + 10,
+                         arcade.color.WHITE, 13, bold=True, anchor_y="center", font_name=KENNY)
+        arcade.draw_text(label, _PANEL_RIGHT - 8, cy + 10,
+                         arcade.color.LIGHT_GRAY, 9,
+                         anchor_x="right", anchor_y="center", font_name=KENNY)
+        arcade.draw_text(f"Dégâts : {w.damage_min:.1f} – {w.damage_max:.1f}", tx, cy - 9,
+                         arcade.color.YELLOW, 10, anchor_y="center", font_name=KENNY)
 
     def _draw_crosshair(self) -> None:
         mx, my = self._zm.mouse_x, self._zm.mouse_y

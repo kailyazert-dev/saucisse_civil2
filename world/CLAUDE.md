@@ -9,7 +9,7 @@ world/
 ├── scene/          — couche arcade.View (boucle de jeu, caméras, physique)
 ├── maps/           — implémentations par zone (HOME, PHL, TMA)
 ├── loader/         — chargement des configs JSON de map (world/configs/)
-├── objects/        — objets interactifs placés dans le monde
+├── objects/        — objets interactifs (interactables/) et drops ennemis (drops/)
 ├── environment/    — données d'environnement social d'un lieu
 ├── zombie_mode.py  — ZombieMode : spawn, tir, dégâts, mort (partagé PHL/Merc) ; rendu délégué à ZombieHUD
 └── pathfinding/    — algorithmes de navigation (A*)

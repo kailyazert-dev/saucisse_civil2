@@ -130,7 +130,7 @@ print('Tous les modules OK')
 "
 
 # Vérifier qu'un module spécifique importe correctement
-python -c "from world.objects.up_stat import UpStat; print('OK')"
+python -c "from world.objects.interactables.up_stat import UpStat; print('OK')"
 ```
 
 ---

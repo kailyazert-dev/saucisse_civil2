@@ -1,0 +1,83 @@
+{
+  
+  "quetes": [
+    
+    {
+      "mouvement": {
+        "vitesse_errance": 90.0,
+        "vitesse_chasse_max": 135.0,
+        "acceleration_chasse": 30.0,
+        "rayon_detection": 220,
+        "rayon_fuite": 450,
+        "changement_direction": [2.5, 4.5]
+      },
+      "stats": {
+        "max_sante": 3, 
+        "degats": 2
+      },
+      "drops": [
+        {"type": "GoldDrop", "chance": 0.55}, 
+        {"type": "HealthDrop", "chance": 0.10}]
+    },
+
+
+    {
+      "mouvement": {
+        "vitesse_errance": 100.0,
+        "vitesse_chasse_max": 140.0,
+        "acceleration_chasse": 30.0,
+        "rayon_detection": 220,
+        "rayon_fuite": 450,
+        "changement_direction": [2.5, 4.5]
+      },
+      "stats": {
+        "max_sante": 5, 
+        "degats": 3
+      },
+      "drops": [
+        {"type": "GoldDrop", "chance": 0.60}, 
+        {"type": "HealthDrop", "chance": 0.12}
+      ]
+    },
+
+
+    {
+      "mouvement": {
+        "vitesse_errance": 105.0,
+        "vitesse_chasse_max": 145.0,
+        "acceleration_chasse": 40.0,
+        "rayon_detection": 240,
+        "rayon_fuite": 450,
+        "changement_direction": [2.5, 4.5]
+      },
+      "stats": {
+        "max_sante": 7, 
+        "degats": 4
+      },
+      "drops": [
+        {"type": "GoldDrop", "chance": 0.65}, 
+        {"type": "HealthDrop", "chance": 0.15}
+      ]
+    },
+
+
+    {
+      "mouvement": {
+        "vitesse_errance": 110.0,
+        "vitesse_chasse_max": 145.0,
+        "acceleration_chasse": 40.0,
+        "rayon_detection": 250,
+        "rayon_fuite": 450,
+        "changement_direction": [2.5, 4.5]
+      },
+      "stats": {
+        "max_sante": 10, 
+        "degats": 5
+      },
+      "drops": [
+        {"type": "GoldDrop", "chance": 0.70}, 
+        {"type": "HealthDrop", "chance": 0.18}
+      ]
+    }
+  ]
+}

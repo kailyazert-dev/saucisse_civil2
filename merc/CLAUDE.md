@@ -8,10 +8,10 @@ Mode mercenaire — zone de jeu dédiée, accessible depuis l'objet « Mode merc
 |---|---|
 | `merc_scene.py` | `MercScene(BaseScene)` — scène principale |
 | `configs/MERC.json` | Config map : spawn joueur `[700, 325]`, pas de PNJs ni d'objets |
+| `configs/zombie.json` | Stats, mouvement et drops des `MercZombie` |
 | `map/PHL_MER.tmx` | Tilemap Tiled chargée par le jeu |
 | `map/tuile/` | Tilesets PNG |
-| `quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes (30 / 60 / 90 / 110 kills) |
-| `quests/merc_quests_default.json` | État initial des quêtes (quête 1 uniquement, utilisé à la réinitialisation) |
+| `quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes (30 / 60 / 90 / 110 kills) — sert aussi de fichier de réinitialisation par défaut |
 
 ## Accès
 
@@ -28,10 +28,15 @@ Les tilesets sont dans `merc/map/tuile/`. Aucune copie nécessaire.
 ## Setup de la scène
 
 `MercScene.setup()` :
-1. Instancie un `QuestManager` local pointant sur `merc/quests/`
+1. Instancie un `QuestManager` local pointant sur `merc/quests/` (`quests.json` est utilisé à la fois comme fichier de définition et comme fichier de réinitialisation par défaut — `merc_quests_default.json` supprimé)
 2. Désactive la sauvegarde (`save_progress = lambda: None`) — runtime dans `save/merc_quests_save.json`
 3. Équipe le joueur avec `Weapon.from_name("Pistolet")` (feu) et `Weapon.from_name("Couteau")` (blanc)
-4. Appelle `_setup_zombie_mode()`
+4. Appelle `_setup_zombie_mode()` qui :
+   - Appelle `_load_zombie_class()` pour créer dynamiquement `MercZombie(Zombie)` depuis `configs/zombie.json`
+   - Instancie `ZombieMode(always_active=True)` avec `zombie_class=MercZombie` et `player_spawn`
+   - Désactive le spawn (`set_spawn_enabled(False)`) — réactivé après la fin de l'animation `QuestNotif`
+
+**Délai de spawn** : `on_update()` surveille `quest_notif.is_idle` — le spawn n'est débloqué qu'une fois la notification initiale terminée (flags `_notif_was_active`, `_spawn_unlocked`).
 
 ## Système de quêtes local
 

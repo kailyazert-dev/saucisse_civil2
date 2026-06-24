@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import os
 import arcade
 from world.scene.base_scene import BaseScene
@@ -6,13 +7,16 @@ from world.loader.map_loader import MapLoader
 from world.zombie_mode import ZombieMode
 from quests.quest_manager import QuestManager
 from character.equipment.weapon import Weapon
+from character.enemies.zombie import Zombie
 import utils.paths as paths
+
+_ZOMBIE_CONFIG_PATH = os.path.join(paths.get_project_root(), "merc", "configs", "zombie.json")
 
 _MERC_QUESTS_DIR = os.path.join(paths.get_project_root(), "merc", "quests")
 _QUEST1_SPAWNS   = [(570, 80), (575, 547)]
 _QUEST2_SPAWNS   = [(570, 80), (528, 1123), (1946, 652)]
 _QUEST3_SPAWNS   = [(570, 80), (528, 1123), (2686, 1108)]
-_QUEST4_SPAWNS   = [(570, 80), (528, 1123), (2686, 1108), (2517, 1846)]
+_QUEST4_SPAWNS   = [(570, 80), (528, 1123), (2517, 1846)]
 
 
 class MercScene(BaseScene):
@@ -28,7 +32,7 @@ class MercScene(BaseScene):
         self.quest_manager = QuestManager(
             quest_file=os.path.join(_MERC_QUESTS_DIR, "quests.json"),
             quests_save_file="merc_quests_save.json",
-            quests_default_file=os.path.join(_MERC_QUESTS_DIR, "merc_quests_default.json"),
+            quests_default_file=os.path.join(_MERC_QUESTS_DIR, "quests.json"),
         )
         self.quest_manager.save_progress = lambda: None
         arc_id = self.quest_manager.arc.arc_id if self.quest_manager.arc else None
@@ -45,7 +49,8 @@ class MercScene(BaseScene):
         self.player_sprite.weapon_feu   = Weapon.from_name("Pistolet")
         self.player_sprite.weapon_blanc = Weapon.from_name("Couteau")
         spawn = self.character_manager.consume_pending_spawn()
-        self.player_sprite.center_x, self.player_sprite.center_y = spawn if spawn else loader.get_player_spawn(last_map)
+        self._player_spawn = spawn if spawn else loader.get_player_spawn(last_map)
+        self.player_sprite.center_x, self.player_sprite.center_y = self._player_spawn
         self.scene.add_sprite("Player", self.player_sprite)
 
         loader.load_pnjs(self)
@@ -57,6 +62,39 @@ class MercScene(BaseScene):
         self._hide_step3 = False
         self._active_quest_id = None
         self._setup_zombie_mode()
+
+    @staticmethod
+    def _load_zombie_classes() -> list[type]:
+        """Lit merc/configs/zombie.json et retourne une sous-classe de Zombie par quête."""
+        with open(_ZOMBIE_CONFIG_PATH, encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        from world.objects.drops.gold_drop import GoldDrop
+        from world.objects.drops.health_drop import HealthDrop
+        drop_map = {"GoldDrop": GoldDrop, "HealthDrop": HealthDrop}
+
+        classes = []
+        for i, quete in enumerate(cfg.get("quetes", [{}]), start=1):
+            stats = quete.get("stats", {})
+            mouv  = quete.get("mouvement", {})
+            drops = [
+                (drop_map[d["type"]], d["chance"])
+                for d in quete.get("drops", [])
+                if d["type"] in drop_map
+            ]
+            MercZombie = type(f"MercZombie{i}", (Zombie,), {
+                "MAX_HEALTH":      stats.get("max_sante",          Zombie.MAX_HEALTH),
+                "DAMAGE":          stats.get("degats",             Zombie.DAMAGE),
+                "VITESSE_ERRANCE": mouv.get("vitesse_errance",     Zombie.VITESSE_ERRANCE),
+                "VITESSE_CHASSE":  mouv.get("vitesse_chasse_max",  Zombie.VITESSE_CHASSE),
+                "ACCEL_CHASSE":    mouv.get("acceleration_chasse", Zombie.ACCEL_CHASSE),
+                "RAYON_DETECTION": mouv.get("rayon_detection",     Zombie.RAYON_DETECTION),
+                "RAYON_FUITE":     mouv.get("rayon_fuite",         Zombie.RAYON_FUITE),
+                "CHANGEMENT_DIR":  tuple(mouv.get("changement_direction", list(Zombie.CHANGEMENT_DIR))),
+                "_DROPS":          drops or None,
+            })
+            classes.append(MercZombie)
+        return classes
 
     def _setup_zombie_mode(self) -> None:
         """Construit les murs de combat, la physique et initialise ZombieMode (toujours actif)."""
@@ -75,8 +113,14 @@ class MercScene(BaseScene):
         obstacles.extend(walls)
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
 
+        self._zombie_classes = self._load_zombie_classes()
         self.zombie_mode = ZombieMode(self)
-        self.zombie_mode.setup(walls, _QUEST1_SPAWNS, always_active=True)
+        self.zombie_mode.setup(walls, _QUEST1_SPAWNS, always_active=True,
+                               zombie_class=self._zombie_classes[0],
+                               player_spawn=self._player_spawn)
+        self.zombie_mode.set_spawn_enabled(False)
+        self._notif_was_active = False
+        self._spawn_unlocked   = False
 
     def _get_active_quest_id(self) -> int | None:
         if self.quest_manager.arc is None:
@@ -134,6 +178,13 @@ class MercScene(BaseScene):
         if not self._update_common(delta_time):
             return
 
+        if not self._spawn_unlocked:
+            if not self.quest_notif.is_idle:
+                self._notif_was_active = True
+            elif self._notif_was_active:
+                self.zombie_mode.set_spawn_enabled(True)
+                self._spawn_unlocked = True
+
         kills = self.zombie_mode.update(delta_time)
         for _ in range(kills):
             self.quest_manager.register_kill()
@@ -141,6 +192,8 @@ class MercScene(BaseScene):
         quest_id = self._get_active_quest_id()
         if quest_id != self._active_quest_id:
             self._active_quest_id = quest_id
+            if quest_id is not None and 1 <= quest_id <= len(self._zombie_classes):
+                self.zombie_mode.set_zombie_class(self._zombie_classes[quest_id - 1])
             if quest_id == 2:
                 self.zombie_mode.set_spawn_points(_QUEST2_SPAWNS)
                 if not self._hide_steps:

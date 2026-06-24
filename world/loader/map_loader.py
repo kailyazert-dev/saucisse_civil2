@@ -6,10 +6,10 @@ from assets.param_map import PLAYER_SCALING
 from character.pnj.pnj import PNJ
 from character.pnj.pnj_loader import humain_from_data
 from character.equipment.weapon import Weapon
-from world.objects.up_stat import UpStat
-from world.objects.up_stat_collection import UpStatCollection
-from world.objects.map_action_object import MapActionObject
-from world.objects.interactable import ObjetInteractif
+from world.objects.interactables.up_stat import UpStat
+from world.objects.interactables.up_stat_collection import UpStatCollection
+from world.objects.interactables.map_action_object import MapActionObject
+from world.objects.interactables.interactable import ObjetInteractif
 import utils.paths as paths
 
 if TYPE_CHECKING:

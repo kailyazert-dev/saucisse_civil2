@@ -49,10 +49,10 @@ loader.load_objets(game_view)        # crée les objets interactifs
 
 | `type` JSON | Classe Python |
 |---|---|
-| `"UpStat"` | `world.objects.up_stat.UpStat` |
-| `"UpStatCollection"` | `world.objects.up_stat_collection.UpStatCollection` |
-| `"MapActionObject"` | `world.objects.map_action_object.MapActionObject` |
-| `"ObjetInteractif"` | `world.objects.interactable.ObjetInteractif` |
+| `"UpStat"` | `world.objects.interactables.up_stat.UpStat` |
+| `"UpStatCollection"` | `world.objects.interactables.up_stat_collection.UpStatCollection` |
+| `"MapActionObject"` | `world.objects.interactables.map_action_object.MapActionObject` |
+| `"ObjetInteractif"` | `world.objects.interactables.interactable.ObjetInteractif` |
 
 ## Propriétés PNJ supportées dans le JSON
 

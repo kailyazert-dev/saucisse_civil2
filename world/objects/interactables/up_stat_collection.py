@@ -1,5 +1,5 @@
 from __future__ import annotations
-from world.objects.base_object import Objet
+from world.objects.interactables.base_object import Objet
 
 
 class UpStatCollection(Objet):

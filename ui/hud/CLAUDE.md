@@ -16,14 +16,23 @@ Classe instanciée par `ZombieMode` (`self._hud = ZombieHUD(self)`). Contient to
 
 ```python
 zombie_hud.draw_world()  # world-space : sprite arme à feu + animation arc mêlée
-zombie_hud.draw_hud()    # screen-space : kills, barre vie, cartes armes, crosshair
+zombie_hud.draw_hud()    # screen-space : kills, barre vie, or, cartes armes, crosshair
 ```
+
+**Layout en colonne verticale** (panneau droit) : kills (centre haut) → barre de vie → or avec icône pièce → arme feu → arme blanche.
+
+Constantes de layout définies en haut du module :
+- `_PANEL_RIGHT`, `_PANEL_W`, `_PANEL_LEFT` — bords du panneau droit
+- `_BAR_X`, `_BAR_Y` — position de la barre de vie
+- `_ICON_SIZE = 40` — taille d'icône arme par défaut
+
+Chargement dans `__init__` : `self._coin_tex` (texture `assets/images/conssomables/coins.png`, `None` si absent).
 
 Méthodes internes :
 - `_draw_player_firearm()` — sprite arme à feu orienté vers le curseur, avec flip horizontal et rotation correcte
 - `_draw_melee_arcs()` — animation de frappe arc mêlée (sprite ou fallback géométrique)
-- `_draw_stats()` — compteur kills, barre vie, deux cartes armes
-- `_draw_weapon_card(w, cx, cy, label)` — carte arme avec nom, dégâts et info type (couleur balle / rayon)
+- `_draw_stats()` — kills + barre vie + or + armes compactes
+- `_draw_weapon_compact(w, cy, label, icon_size=40)` — ligne compacte : icône + nom + dégâts (remplace l'ancienne `_draw_weapon_card`)
 - `_draw_crosshair()` — viseur rouge (crosshair), appelé séparément pour éviter le double-rendu
 
 ## InteractUI

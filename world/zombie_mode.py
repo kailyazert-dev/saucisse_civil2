@@ -1,5 +1,6 @@
 from __future__ import annotations
 import math
+import random
 import arcade
 from assets.param_map import WINDOW_WIDTH, WINDOW_HEIGHT
 from character.enemies.zombie_manager import ZombieManager
@@ -7,6 +8,7 @@ from character.player.player import Player
 from ui.menus.death_menu import DeathMenu
 from ui.hud.zombie_hud import ZombieHUD
 from ui.menus.stats_view import StatsView
+from character.enemies.zombie import Zombie
 from typing import TYPE_CHECKING
 import utils.paths as paths
 
@@ -47,6 +49,7 @@ class ZombieMode:
         self._fire_timer_right   = 0.0
         self._pending_melee_kills = 0
         self._melee_arcs: list[dict] = []
+        self.drops       = arcade.SpriteList()
         self._hud        = ZombieHUD(self)
 
     # ---------------------------------------------------------------- setup
@@ -55,15 +58,25 @@ class ZombieMode:
         if self.zombie_manager:
             self.zombie_manager.set_spawn_points(points)
 
+    def set_spawn_enabled(self, enabled: bool) -> None:
+        if self.zombie_manager:
+            self.zombie_manager.spawn_enabled = enabled
+
+    def set_zombie_class(self, zombie_class: type) -> None:
+        if self.zombie_manager:
+            self.zombie_manager._zombie_class = zombie_class
+
     def setup(self, walls: arcade.SpriteList, spawn_points: list,
-              always_active: bool = False) -> None:
+              always_active: bool = False, zombie_class: type | None = None,
+              player_spawn: tuple[float, float] | None = None) -> None:
         """Configure le ZombieManager, le DeathMenu, les points de spawn et la musique."""
         self._combat_walls = walls
-        self._zombie_spawn = spawn_points[0] if spawn_points else (574, 50)
+        self._zombie_spawn = player_spawn or (spawn_points[0] if spawn_points else (574, 50))
         self._death_menu   = DeathMenu()
 
         scene = self._scene
-        self.zombie_manager = ZombieManager(scene.quest_manager, scene.player_sprite)
+        self.zombie_manager = ZombieManager(scene.quest_manager, scene.player_sprite,
+                                            zombie_class=zombie_class)
         if always_active:
             self.zombie_manager.is_active = lambda: True
         self.zombie_manager.setup_walls(walls)
@@ -134,6 +147,7 @@ class ZombieMode:
             return 0
 
         if active:
+            self.zombie_manager.morts_ce_frame.clear()
             player = self._scene.player_sprite
             if self._mouse_held_left:
                 self._fire_timer_left -= delta_time
@@ -154,8 +168,16 @@ class ZombieMode:
 
         kills = self.zombie_manager.update(delta_time) + self._pending_melee_kills
         self._pending_melee_kills = 0
+
+        for pos in self.zombie_manager.morts_ce_frame:
+            self.drops.extend(Zombie.loot(*pos))
+
         player = self._scene.player_sprite
         self.zombie_manager.check_player_damage(player, delta_time)
+
+        for drop in arcade.check_for_collision_with_list(player, self.drops):
+            drop.ramasser(player)
+            drop.remove_from_sprite_lists()
 
         if player.health <= 0:
             self._death_dir = 1
@@ -183,15 +205,19 @@ class ZombieMode:
         player             = scene.player_sprite
         player.health          = Player.MAX_HEALTH
         player.damage_cooldown = 0.0
+        player.gold            = 0
         player.center_x, player.center_y = self._zombie_spawn
         self.zombie_manager.reset()
+        for drop in list(self.drops):
+            drop.remove_from_sprite_lists()
 
     # ---------------------------------------------------------------- draw
 
     def draw_world(self) -> None:
-        """Dessine arme, animation de frappe et zombies (world-space, caméra déjà activée)."""
+        """Dessine arme, animation de frappe, zombies et drops (world-space, caméra déjà activée)."""
         self._hud.draw_world()
         self.zombie_manager.draw()
+        self.drops.draw()
 
     def draw_hud(self) -> None:
         """HUD zombie complet : indicateurs, overlay de mort et menu de mort."""

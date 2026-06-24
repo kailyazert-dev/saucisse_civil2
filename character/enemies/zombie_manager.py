@@ -12,14 +12,18 @@ _SPAWN_POINTS = [(574, 50)]
 class ZombieManager:
     SPAWN_INTERVAL = 0.8
 
-    def __init__(self, quest_manager, player_sprite: arcade.Sprite):
-        self._qm           = quest_manager
-        self._player       = player_sprite
-        self.zombies       = arcade.SpriteList()
-        self.bullets       = arcade.SpriteList()
-        self._timer        = 0.0
+    def __init__(self, quest_manager, player_sprite: arcade.Sprite,
+                 zombie_class: type | None = None):
+        self._qm             = quest_manager
+        self._player         = player_sprite
+        self._zombie_class   = zombie_class or Zombie
+        self.spawn_enabled   = True
+        self.zombies         = arcade.SpriteList()
+        self.bullets         = arcade.SpriteList()
+        self._timer          = 0.0
         self._walls: arcade.SpriteList | None = None
-        self._spawn_points = list(_SPAWN_POINTS)
+        self._spawn_points   = list(_SPAWN_POINTS)
+        self.morts_ce_frame: list[tuple[float, float]] = []
 
     def setup_walls(self, wall_sprites: arcade.SpriteList) -> None:
         self._walls = wall_sprites
@@ -59,6 +63,7 @@ class ZombieManager:
                     continue
             z.health -= get_damage()
             if z.health <= 0:
+                self.morts_ce_frame.append((z.center_x, z.center_y))
                 z.remove_from_sprite_lists()
                 kills += 1
         return kills
@@ -104,8 +109,8 @@ class ZombieManager:
         self._timer += delta_time
         obj = self._qm.get_kill_objective()
         remaining = max(0, int(obj.validator) - obj.counter) if obj else 0
-        if self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < remaining:
-            self.zombies.append(Zombie(*random.choice(self._spawn_points)))
+        if self.spawn_enabled and self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < remaining:
+            self.zombies.append(self._zombie_class(*random.choice(self._spawn_points)))
             self._timer = 0.0
 
         for z in self.zombies:
@@ -126,6 +131,7 @@ class ZombieManager:
                 for z in hit:
                     z.health -= b.damage
                     if z.health <= 0:
+                        self.morts_ce_frame.append((z.center_x, z.center_y))
                         z.remove_from_sprite_lists()
                         kills += 1
         return kills
@@ -141,7 +147,7 @@ class ZombieManager:
         BAR_W, BAR_H = z.width, 4
         bx = z.center_x - BAR_W / 2
         by = z.top + 4
-        ratio = max(0.0, z.health / Zombie.MAX_HEALTH)
+        ratio = max(0.0, z.health / z.MAX_HEALTH)
 
         arcade.draw_lrbt_rectangle_filled(bx, bx + BAR_W, by, by + BAR_H, (40, 10, 10))
         if ratio > 0:

@@ -57,7 +57,7 @@ Pour ajouter un nouveau type d'équipement, créer un fichier dans ce dossier.
 
 Joueur contrôlé par le clavier (AZERTY : Z/Q/S/D).
 
-Propriétés spécifiques : `reading`, `quest_manager`, `character_manager`, `textures_read`, timers d'animation.
+Propriétés spécifiques : `reading`, `quest_manager`, `character_manager`, `textures_read`, timers d'animation, `gold = 0` (or ramassé en mode zombie).
 
 `Player.update()` délègue à `character_manager.update_player_stats()` et `character_manager.animation.update()`.
 
@@ -103,7 +103,21 @@ Ennemi avec deux comportements :
 Transition errance → chasse à 220 px, retour à 450 px (hysteresis).
 `_WALK_SWITCH = 0.2` (plus lent que les autres personnages).
 
+Paramètres de mouvement surchargeables dans les sous-classes : `VITESSE_ERRANCE`, `VITESSE_CHASSE`, `ACCEL_CHASSE`, `RAYON_DETECTION`, `RAYON_FUITE`, `CHANGEMENT_DIR`.
+
+**Système de drops** :
+- `_DROPS: list | None = None` — attribut de classe, `None` = lazy-load par défaut, `[]` = aucun drop
+- `_get_drops_config()` (classmethod) — initialise `_DROPS` au premier appel avec `[(GoldDrop, 0.65), (HealthDrop, 0.20)]` (lazy import)
+- `loot(x, y)` (classmethod) — génère la liste de drops selon les probabilités de la classe ; utilisé par `ZombieMode` après chaque mort
+
+Les sous-classes (ex : `MercZombie`) peuvent surcharger `_DROPS` pour des probabilités différentes.
+
 ### zombie_manager.py — ZombieManager
 
 Gère le spawn, le mouvement, les balles joueur→zombie et les dégâts zombie→joueur.
 Normalement actif uniquement quand `quest_manager.get_kill_objective()` retourne un objectif — sauf si `is_active` est monkeypatché à `lambda: True` (cas MercScene via `ZombieMode(always_active=True)`).
+
+Attributs et paramètres notables :
+- `zombie_class` — sous-classe de `Zombie` à instancier (défaut : `Zombie`)
+- `spawn_enabled` — flag booléen pour activer/désactiver le spawn sans toucher à `is_active`
+- `morts_ce_frame: list[tuple[float, float]]` — positions des zombies morts dans la frame courante, lu par `ZombieMode` pour spawner les drops
