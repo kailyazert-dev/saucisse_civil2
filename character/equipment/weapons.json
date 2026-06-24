@@ -5,7 +5,7 @@
         "damage_min": 1.0,
         "damage_max": 1.5,
         "bullet_color": [255, 120, 0],
-        "sprite_size": 64,
+        "sprite_size": 32,
         "fire_interval": 0.3
     },
     "TaMere": {
@@ -14,7 +14,7 @@
         "damage_min": 2.0,
         "damage_max": 2.5,
         "bullet_color": [30, 110, 255],
-        "sprite_size": 64,
+        "sprite_size": 32,
         "fire_interval": 0.2
     },
     "Couteau": {
@@ -25,7 +25,7 @@
         "attack_radius": 80,
         "half_span": 45,
         "arc_color": [30, 110, 255],
-        "sprite_size": 64,
+        "sprite_size": 28,
         "fire_interval": 0.4
     }
 }

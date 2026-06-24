@@ -67,31 +67,13 @@ class PhlScene(BaseScene):
 
     # ---------------------------------------------------------------- draw
 
-    def on_draw(self) -> None:
-        """Efface l'écran puis enchaîne le rendu world-space et le rendu GUI."""
-        self.clear()
-        self._draw_world()
-        self.draw_stat_progress_bar()
-        self.camera_gui.use()
-        self._draw_hud()
-
-    _STAND_ATTITUDES = {"errance", "stand", "dialogue"}
-
     def _draw_world(self) -> None:
         """Rendu world-space avec tri de profondeur : layers bas → PNJs → zombies → layers hauts → joueur."""
         self.camera_sprites.use()
         for layer in ("Sol", "Mur", "Meuble_B"):
             self.scene[layer].draw()
 
-        before = arcade.SpriteList()
-        after  = arcade.SpriteList()
-        for pnj in self.pnj_sprite:
-            if pnj.visible:
-                if pnj.attitude in self._STAND_ATTITUDES:
-                    before.append(pnj)
-                else:
-                    after.append(pnj)
-
+        before, after = self._split_pnjs_by_depth()
         before.draw()
         self.zombie_mode.draw_world()
         for layer in ("Meuble_H", "Meuble_T", "Livre", "OrdiRPG", "PcTest", "Objets"):
@@ -145,14 +127,8 @@ class PhlScene(BaseScene):
 
     def on_update(self, delta_time: float) -> None:
         """Boucle logique : physique, stats, zombies, kills, mort et visibilité PNJs."""
-        if self.show_menu:
+        if not self._update_common(delta_time):
             return
-        self.update_auto_walk()
-        self.physics_engine.update()
-        self.scene.update(delta_time)
-        self.follow_player()
-        self.update_notif(delta_time)
-        self.character_manager.update_player_stats(delta_time)
 
         arc_id = self.quest_manager.arc.arc_id if self.quest_manager.arc else None
 
@@ -201,25 +177,9 @@ class PhlScene(BaseScene):
                 self.character_manager.save_player()
                 self.manager.switch_map("home")
 
-    def on_key_release(self, key, modifiers) -> None:
-        """Stoppe le déplacement du joueur à la relâche de la touche."""
-        self.input_handler.reset_movement_on_release(key, modifiers)
-
     def on_mouse_press(self, x, y, button, modifiers) -> None:
         """Mode zombie : tir ; sinon délègue à l'input_handler."""
         if self.zombie_mode.on_mouse_press(x, y, button):
             return
         self.input_handler.on_mouse_press(x, y, button, modifiers)
 
-    def on_mouse_release(self, x, y, button, modifiers) -> None:
-        """Désactive le tir continu au relâchement du bouton gauche."""
-        self.zombie_mode.on_mouse_release(button)
-
-    def on_mouse_motion(self, x, y, dx, dy) -> None:
-        """Mémorise la position de la souris pour le crosshair."""
-        self.zombie_mode.on_mouse_motion(x, y)
-
-    def on_resize(self, width: int, height: int) -> None:
-        """Recalibre la caméra world-space à la nouvelle taille de fenêtre."""
-        super().on_resize(width, height)
-        self.camera_sprites.match_window()

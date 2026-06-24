@@ -68,7 +68,8 @@ class Weapon:
             )
         raise ValueError(f"Type d'arme inconnu : '{wtype}'")
 
-    def use(self, player, zombie_manager, world_x: float, world_y: float) -> tuple[int, dict | None]:
+    def use(self, player, zombie_manager, world_x: float, world_y: float,
+            spawn_x: float | None = None, spawn_y: float | None = None) -> tuple[int, dict | None]:
         """Utilise l'arme. Retourne (kills, arc_dict | None)."""
         return 0, None
 
@@ -90,9 +91,11 @@ class FirearmWeapon(Weapon):
         super().__init__(name, damage_min, damage_max, fire_interval, sprite_size)
         self.bullet_color = bullet_color
 
-    def use(self, player, zombie_manager, world_x: float, world_y: float) -> tuple[int, dict | None]:
-        zombie_manager.fire(player.center_x, player.center_y,
-                            world_x, world_y, weapon=self)
+    def use(self, player, zombie_manager, world_x: float, world_y: float,
+            spawn_x: float | None = None, spawn_y: float | None = None) -> tuple[int, dict | None]:
+        bx = spawn_x if spawn_x is not None else player.center_x
+        by = spawn_y if spawn_y is not None else player.center_y
+        zombie_manager.fire(bx, by, world_x, world_y, weapon=self)
         return 0, None
 
 

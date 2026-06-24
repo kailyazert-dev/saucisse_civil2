@@ -40,7 +40,7 @@ Tout ce qui est rendu avec `camera_sprites`.
 | `world/loader/` | `MapLoader` — lit `world/configs/<NOM>.json` et instancie PNJs/objets |
 | `world/objects/` | `UpStat`, `UpStatCollection`, `MapActionObject`, `ObjetInteractif` |
 | `world/environment/` | `Environnement` — paramètres sociaux d'un lieu |
-| `world/zombie_mode.py` | `ZombieMode` — encapsule spawn, tir, dégâts, mort et HUD zombie (partagé par PhlScene et MercScene) |
+| `world/zombie_mode.py` | `ZombieMode` — encapsule spawn, tir, dégâts et mort (partagé par PhlScene et MercScene) ; délègue le rendu à `ZombieHUD` |
 | `world/pathfinding/` | Réservé — extraction A* prévue |
 
 ### `ui/` — interface (screen-space)
@@ -51,7 +51,7 @@ Tout ce qui est rendu avec `camera_gui`.
 | `ui/dialogue/` | `DialogueSystem` (API Replicate), `CutscenePopup` |
 | `ui/cutscene/` | `CutsceneManager`, `cutscene_data.py` (textes scriptés) |
 | `ui/menus/` | `StatsView`, `Menu` (pause), `DeathMenu` |
-| `ui/hud/` | `InteractUI` (popups proximité), `QuestNotif` (notifications) |
+| `ui/hud/` | `InteractUI` (popups proximité), `QuestNotif` (notifications), `ZombieHUD` (rendu mode zombie) |
 | `ui/effects/` | `ScreenFade` (fondu plein écran) |
 
 ### `input/` — saisie clavier/souris
@@ -87,10 +87,10 @@ Module autonome pour le mode survie zombie. Contrairement aux autres maps, tout 
 | Fichier / Sous-dossier | Contenu clé |
 |---|---|
 | `merc/merc_scene.py` | `MercScene(BaseScene)` — scène principale, gère rendu + logique + input |
-| `merc/configs/MERC.json` | Config map : spawn joueur `[574, 50]`, pas de PNJs ni d'objets |
-| `merc/map/PHL_MER.tmx` | Tilemap Tiled (tilesets dans `merc/map/tuile/`) |
-| `merc/quests/quests.json` | Arc « Mode Mercenaire » : 3 quêtes progressives (30 / 60 / 90 kills) |
-| `merc/quests/merc_quests_default.json` | État initial des quêtes merc (quête 1 uniquement) |
+| `merc/configs/MERC.json` | Config map : spawn joueur `[700, 325]`, pas de PNJs ni d'objets |
+| `merc/map/PHL_MER.tmx` | Tilemap Tiled chargée par le jeu (tilesets dans `merc/map/tuile/`) |
+| `merc/quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes progressives (30 / 60 / 90 / 110 kills) |
+| `merc/quests/merc_quests_default.json` | État initial des quêtes merc (quête 1 uniquement, utilisé à la réinitialisation) |
 
 `MercScene` crée son propre `QuestManager` local (sauvegarde désactivée) et instancie `ZombieMode(always_active=True)`.
 
@@ -104,18 +104,23 @@ Ils peuvent être supprimés après validation complète.
 ## Pipeline de rendu
 
 ```
-BaseScene.on_draw()
-  camera_sprites.use()          ← world-space
-    scene.draw()                  tilemap layers
-    interact_ui.interact_*()      popups proximité
-    draw_stat_progress_bar()      barre stat au-dessus du joueur
-  camera_gui.use()              ← screen-space
-    dialogue.draw_dialogue_box()
-    interact_ui.draw_side_bar()
-    get_quests()                  bouton Quêtes
-    quest_notif.draw()
-    menu.draw()
-    cutscene_manager.draw()
+BaseScene.on_draw()             ← défini dans BaseScene, hérité par toutes les scènes
+  _draw_world()                 ← world-space, surchargé par chaque scène
+    camera_sprites.use()
+      tilemap layers
+      interact_ui.interact_*()    popups proximité
+      zombie_mode.draw_world()    → ZombieHUD.draw_world() : arme + arcs mêlée
+      zombie_manager.draw()       sprites zombies + balles
+  draw_stat_progress_bar()      barre stat au-dessus du joueur
+  _draw_hud()                   ← screen-space, surchargé par chaque scène
+    camera_gui.use()
+      zombie_mode.draw_hud()    → ZombieHUD.draw_hud() : kills + vie + cartes + crosshair
+      dialogue.draw_dialogue_box()
+      interact_ui.draw_side_bar()
+      get_quests()                bouton Quêtes
+      quest_notif.draw()
+      menu.draw()
+      cutscene_manager.draw()
 ```
 
 ---
@@ -132,23 +137,27 @@ BaseScene.on_draw()
 `CutsceneManager.try_trigger(pnj)` vérifie arc + quête + objectif `"talk"`. Si conditions remplies, ouvre la `CutscenePopup` correspondante. À la fin, le callback `on_done` complète l'objectif et déclenche l'effet suivant (arme, marche Kyle…).
 
 ### Mode Mercenaire (arène zombie)
-Activé depuis PhlScene via un objet `ObjetInteractif`. `MercScene.setup()` instancie un `QuestManager` local (fichiers dans `merc/quests/`, **sauvegarde désactivée**) et appelle `_setup_zombie_mode()` qui :
-- Collecte les murs des layers : `Mur`, `Meuble_H`, `step_1_H`, `step_2`, `step_3_H`
-- Crée un `PhysicsEngineSimple` joueur ↔ obstacles
-- Instancie `ZombieMode` via `world/zombie_mode.py` avec `always_active=True`
+Activé depuis PhlScene via un objet `ObjetInteractif`. `MercScene.setup()` :
+- Instancie un `QuestManager` local (fichiers dans `merc/quests/`, **sauvegarde désactivée**)
+- Équipe le joueur avec `Pistolet` (feu) et `Couteau` (blanc)
+- Appelle `_setup_zombie_mode()` qui collecte les murs (`Mur`, `Meuble_H`, `step_1_H`, `step_2`, `step_3_H`, `hero_1/2/3`), crée un `PhysicsEngineSimple` et instancie `ZombieMode(always_active=True)`
 
-`on_update()` récupère les kills depuis `ZombieMode` et les pousse dans `quest_manager`. Progression en 3 quêtes avec changements de terrain à chaque passage :
+`on_update()` récupère les kills depuis `ZombieMode` et les pousse dans `quest_manager`. Progression en 4 quêtes avec changements de terrain à chaque passage :
 
-| Quête | Objectif | Effet au passage |
-|---|---|---|
-| 1 → 2 | 30 kills | Retire physiquement `step_1_H`, 3 points de spawn |
-| 2 → 3 | 60 kills | Retire physiquement `step_2`, 4 points de spawn |
-| 3 | 90 kills | — |
+| Quête | Objectif | Spawn zombies | Effet au passage |
+|---|---|---|---|
+| 1 | 30 kills | 2 points : `(570,80)`, `(575,547)` | Retire `step_1_H`, passe à 3 points |
+| 2 | 60 kills | 3 points : `(570,80)`, `(528,1123)`, `(1946,652)` | Retire `step_2`, passe à 3 points |
+| 3 | 90 kills | 3 points : `(570,80)`, `(528,1123)`, `(2686,1108)` | Retire `step_3_H`, passe à 4 points |
+| 4 | 110 kills | 4 points : `(570,80)`, `(528,1123)`, `(2686,1108)`, `(2517,1846)` | — |
 
 La sauvegarde runtime est dans `save/merc_quests_save.json` (séparé de `save/quests_save.json`).
 
 ### ZombieMode (`world/zombie_mode.py`)
-Classe partagée entre `PhlScene` et `MercScene`. Encapsule : spawn de zombies, tir joueur, dégâts, fondu de mort, `DeathMenu`, et HUD (compteur kills, barre vie, info arme, crosshair). Paramètre `always_active=True` désactive la vérification d'objectif — utile en MercScene où le combat est permanent.
+Classe partagée entre `PhlScene` et `MercScene`. Encapsule : spawn de zombies, tir joueur, dégâts, fondu de mort et `DeathMenu`. Délègue tout le rendu à `ZombieHUD` (`ui/hud/zombie_hud.py`) via `self._hud`. Paramètre `always_active=True` désactive la vérification d'objectif — utile en MercScene où le combat est permanent.
+
+### ZombieHUD (`ui/hud/zombie_hud.py`)
+Responsable unique du rendu visuel du mode zombie : sprite arme à feu (avec flip et rotation correcte), animation arc mêlée, compteur kills, barre vie, cartes armes et crosshair. Accède à `ZombieMode` via `self._zm`. Appelé depuis `ZombieMode.draw_world()` (world-space) et `ZombieMode.draw_hud()` (screen-space).
 
 ### Système de quêtes
 Objectifs de 4 types : `"stat"` (seuil), `"compteur"` (kills), `"talk"` (cutscène), `"map_action"` (objet ENTER).

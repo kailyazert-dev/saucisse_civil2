@@ -8,6 +8,23 @@
 |---|---|---|
 | `interact_ui.py` | `InteractUI` | Popups d'interaction (objets, PNJs) + sidebar quêtes |
 | `quest_notif.py` | `QuestNotif` | Notifications de quête (fade in/hold/fade out) |
+| `zombie_hud.py` | `ZombieHUD` | Rendu visuel du mode zombie : arme, arc mêlée, barre vie, kills, cartes armes, crosshair |
+
+## ZombieHUD
+
+Classe instanciée par `ZombieMode` (`self._hud = ZombieHUD(self)`). Contient tout le code de rendu extrait de `ZombieMode`.
+
+```python
+zombie_hud.draw_world()  # world-space : sprite arme à feu + animation arc mêlée
+zombie_hud.draw_hud()    # screen-space : kills, barre vie, cartes armes, crosshair
+```
+
+Méthodes internes :
+- `_draw_player_firearm()` — sprite arme à feu orienté vers le curseur, avec flip horizontal et rotation correcte
+- `_draw_melee_arcs()` — animation de frappe arc mêlée (sprite ou fallback géométrique)
+- `_draw_stats()` — compteur kills, barre vie, deux cartes armes
+- `_draw_weapon_card(w, cx, cy, label)` — carte arme avec nom, dégâts et info type (couleur balle / rayon)
+- `_draw_crosshair()` — viseur rouge (crosshair), appelé séparément pour éviter le double-rendu
 
 ## InteractUI
 

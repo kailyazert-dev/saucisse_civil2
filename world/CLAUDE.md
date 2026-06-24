@@ -11,7 +11,7 @@ world/
 ├── loader/         — chargement des configs JSON de map (world/configs/)
 ├── objects/        — objets interactifs placés dans le monde
 ├── environment/    — données d'environnement social d'un lieu
-├── zombie_mode.py  — ZombieMode : spawn, tir, dégâts, mort, HUD (partagé PHL/Merc)
+├── zombie_mode.py  — ZombieMode : spawn, tir, dégâts, mort (partagé PHL/Merc) ; rendu délégué à ZombieHUD
 └── pathfinding/    — algorithmes de navigation (A*)
 ```
 

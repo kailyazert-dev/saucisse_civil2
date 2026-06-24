@@ -51,6 +51,8 @@ class BaseScene(arcade.View):
 
         self.show_menu = False
 
+        self.zombie_mode        = None
+
         self.auto_walk_active   = False
         self.auto_walk_target   = (0.0, 0.0)
         self.auto_walk_path     = []
@@ -144,6 +146,65 @@ class BaseScene(arcade.View):
             player.direction = "right" if dx > 0 else "left"
         else:
             player.direction = "up" if dy > 0 else "down"
+
+    _STAND_ATTITUDES = {"errance", "stand", "dialogue"}
+
+    def on_draw(self) -> None:
+        self.clear()
+        self._draw_world()
+        self.draw_stat_progress_bar()
+        self.camera_gui.use()
+        self._draw_hud()
+
+    def _draw_world(self) -> None:
+        pass
+
+    def _draw_hud(self) -> None:
+        pass
+
+    def _split_pnjs_by_depth(self):
+        before = arcade.SpriteList()
+        after  = arcade.SpriteList()
+        for pnj in self.pnj_sprite:
+            if pnj.visible:
+                if pnj.attitude in self._STAND_ATTITUDES:
+                    before.append(pnj)
+                else:
+                    after.append(pnj)
+        return before, after
+
+    def _update_common(self, delta_time: float) -> bool:
+        """Physique + caméra + stats. Retourne False si le menu est ouvert."""
+        if self.show_menu:
+            return False
+        self.update_auto_walk()
+        self.physics_engine.update()
+        self.scene.update(delta_time)
+        self.follow_player()
+        self.update_notif(delta_time)
+        self.character_manager.update_player_stats(delta_time)
+        return True
+
+    def _collect_layer(self, layer_name: str) -> list:
+        try:
+            return list(self.scene[layer_name])
+        except Exception:
+            return []
+
+    def on_key_release(self, key, modifiers) -> None:
+        self.input_handler.reset_movement_on_release(key, modifiers)
+
+    def on_mouse_release(self, x, y, button, modifiers) -> None:
+        if self.zombie_mode:
+            self.zombie_mode.on_mouse_release(button)
+
+    def on_mouse_motion(self, x, y, dx, dy) -> None:
+        if self.zombie_mode:
+            self.zombie_mode.on_mouse_motion(x, y)
+
+    def on_resize(self, width: int, height: int) -> None:
+        super().on_resize(width, height)
+        self.camera_sprites.match_window()
 
     def draw_stat_progress_bar(self) -> None:
         cm = self.character_manager

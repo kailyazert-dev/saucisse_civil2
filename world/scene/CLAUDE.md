@@ -18,10 +18,28 @@ God-class allégée : elle fournit à toutes les scènes :
 - Listes de sprites : `pnj_sprite`, `strategique_sprite`, `objet_sprites`
 - État d'interaction : `current_pnj`, `current_objet`, `current_collection`, `current_map_action`
 - Sous-systèmes injectés dans `__init__` : `InputHandler`, `InteractUI`, `DialogueSystem`, `Menu`, `QuestNotif`, `CutsceneManager`
+- `self.zombie_mode = None` — référence optionnelle au `ZombieMode` actif (PhlScene, MercScene)
 - `start_auto_walk()` / `update_auto_walk()` — déplacement automatique avec chemin
 - `draw_stat_progress_bar()` — barre de progression stat au-dessus du joueur
 
-Les scènes concrètes (`HomeScene`, `PhlScene`, `TmaScene`) n'implémentent que `setup()`, `on_draw()`, `on_update()` et les handlers d'input.
+### Méthodes communes héritées
+
+| Méthode | Rôle |
+|---|---|
+| `on_draw()` | `clear → _draw_world → draw_stat_progress_bar → camera_gui → _draw_hud` |
+| `_draw_world()` | Stub — surchargé par chaque scène |
+| `_draw_hud()` | Stub — surchargé par chaque scène |
+| `_split_pnjs_by_depth()` | Retourne `(before, after)` SpriteList selon `attitude` ∈ `_STAND_ATTITUDES` |
+| `_update_common(dt)` | Physique + caméra + stats. Retourne `False` si menu ouvert |
+| `_collect_layer(name)` | `list(self.scene[name])` avec fallback `[]` si couche absente |
+| `on_key_release(key, mod)` | `input_handler.reset_movement_on_release` |
+| `on_mouse_release(x, y, btn, mod)` | Délègue à `zombie_mode` si présent |
+| `on_mouse_motion(x, y, dx, dy)` | Délègue à `zombie_mode` si présent |
+| `on_resize(w, h)` | `super + camera_sprites.match_window()` |
+
+`_STAND_ATTITUDES = {"errance", "stand", "dialogue"}` — attitudes qui placent un PNJ devant le joueur.
+
+Les scènes concrètes n'implémentent que `setup()`, `_draw_world()`, `_draw_hud()`, `on_update()` et `on_key_press()`.
 
 ## SceneManager
 

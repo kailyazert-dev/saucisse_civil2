@@ -55,6 +55,23 @@
                         "counter": 0
                     }
                 ]
+            },
+            {
+                "id": 4,
+                "title": "Survivre à la horde",
+                "description": "Élimine tous les zombies qui envahissent la zone.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Éliminer 90 zombies",
+                        "description": "Nettoie la zone de tous les zombies.",
+                        "status": "na",
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 110,
+                        "counter": 0
+                    }
+                ]
             }
         ]
     }
