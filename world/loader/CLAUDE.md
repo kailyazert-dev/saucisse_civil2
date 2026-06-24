@@ -11,7 +11,8 @@ Chargement des configurations JSON de map et instanciation des entités.
 ## MapLoader
 
 ```python
-loader = MapLoader("PHL")            # lit map/map_configs/PHL.json
+loader = MapLoader("PHL")                              # lit world/configs/PHL.json
+loader = MapLoader("MERC", config_path="merc/configs/MERC.json")  # chemin custom
 loader.get_tilemap_path()            # → chemin du .tmx
 loader.get_player_spawn(from_map)    # → (x, y) selon la map source
 loader.load_pnjs(game_view)          # crée les PNJ et les ajoute à game_view
@@ -29,11 +30,20 @@ loader.load_objets(game_view)        # crée les objets interactifs
     "tma": [2792, 1848],
     "home": [574, 50]
   },
-  "pnjs": [{ "nom": "Sylvain", "image": "...", "x": 0, "y": 0 }],
-  "strategiques": [{ "nom": "Hotesse", ... }],
-  "objets": [{ "type": "UpStat", "stat": "mathematique", ... }]
+  "base": {
+    "pnjs": [{ "nom": "Sylvain", "image": "...", "x": 0, "y": 0 }],
+    "strategiques": [{ "nom": "Hotesse", "image": "...", "x": 0, "y": 0 }],
+    "objets": [{ "type": "UpStat", "stat": "mathematique", ... }]
+  },
+  "arc_1": {
+    "pnjs": [...],
+    "objets": [...]
+  },
+  "arc_2": { ... }
 }
 ```
+
+`"base"` est toujours chargé. Les sections `arc_1` … `arc_N` sont chargées en remplacement de `base` selon l'arc actif (rétro-compatible : si `"base"` est absent, lit `pnjs`/`objets` à la racine).
 
 ## Types d'objets supportés
 
@@ -43,3 +53,17 @@ loader.load_objets(game_view)        # crée les objets interactifs
 | `"UpStatCollection"` | `world.objects.up_stat_collection.UpStatCollection` |
 | `"MapActionObject"` | `world.objects.map_action_object.MapActionObject` |
 | `"ObjetInteractif"` | `world.objects.interactable.ObjetInteractif` |
+
+## Propriétés PNJ supportées dans le JSON
+
+| Clé | Effet |
+|---|---|
+| `"walk_textures"` | Charge les textures de marche (préfixe, ex : `"assets/images/kyle"`) |
+| `"sitting_image"` | Remplace les 4 textures par une texture assise fixe |
+| `"hitbox": "upper_half"` | Réduit la hitbox à la moitié supérieure (PNJ derrière comptoir) |
+| `"speed"` | Vitesse de déplacement |
+| `"fire_interval"` | Intervalle de tir (secondes) |
+| `"weapon"` | Arme (`name`, `damage_min`, `damage_max`, `bullet_color`) |
+| `"behind_player"` | Ajoute à la liste `behind_player` pour le rendu en dessous du joueur |
+| `"scene_layer"` | Ajoute le sprite à ce layer de la scène Arcade |
+| `"interaction_distance"` | Distance d'interaction (px) — défaut 60 pour PNJ, 50 pour stratégiques |

@@ -16,6 +16,9 @@ def _img(filename: str) -> str:
 
 
 class Player(CharacterBase):
+    MAX_HEALTH     = 5
+    DAMAGE_COOLDOWN = 1     # Temps entre chaque coup pour que des damage soit effectif
+
     def __init__(self, humain: Humain, nom: str, image_file: str,
                  quest_manager: "QuestManager", character_manager: "CharacterManager",
                  scale: float = PLAYER_SCALING) -> None:
@@ -23,7 +26,9 @@ class Player(CharacterBase):
         self.reading           = False
         self.quest_manager     = quest_manager
         self.character_manager = character_manager
-        self.health            = 50
+        self.health            = self.MAX_HEALTH
+        self.weapon_feu:   Weapon | None = None
+        self.weapon_blanc: Weapon | None = None
 
         self.textures = {
             "up":    arcade.load_texture(_img("player_u.png")),

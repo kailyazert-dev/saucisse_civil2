@@ -90,7 +90,7 @@ PNJ avec machine à états (FSM) :
 ### pnj_loader.py — humain_from_data
 
 `humain_from_data(nom)` construit un `Humain` depuis `assets/param_humain.py`.
-Utilisé par `map/map_loader.py` et `map/map_classes/PHL.py`.
+Utilisé par `world/loader/map_loader.py`.
 
 ## enemies/
 
@@ -106,4 +106,4 @@ Transition errance → chasse à 220 px, retour à 450 px (hysteresis).
 ### zombie_manager.py — ZombieManager
 
 Gère le spawn, le mouvement, les balles joueur→zombie et les dégâts zombie→joueur.
-Actif uniquement quand `quest_manager.get_kill_objective()` retourne un objectif.
+Normalement actif uniquement quand `quest_manager.get_kill_objective()` retourne un objectif — sauf si `is_active` est monkeypatché à `lambda: True` (cas MercScene via `ZombieMode(always_active=True)`).

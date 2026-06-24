@@ -109,9 +109,7 @@ class CutsceneManager:
         gv = self._gv
         gv.quest_manager.complete_talk_objective("Kyle")
         if gv.player_sprite is not None:
-            gv.player_sprite.weapon = Weapon(
-                "Pistolet", damage_min=1.0, damage_max=1.5, bullet_color=(255, 120, 0)
-            )
+            gv.player_sprite.weapon_feu = Weapon.from_name("Pistolet")
         gv.start_auto_walk(755.0, 745.0)
         if hasattr(gv, "kyle_ai"):
             gv._on_auto_walk_done = lambda: gv.kyle_ai.start_walk()

@@ -40,8 +40,28 @@ class ZombieManager:
     def fire(self, fx: float, fy: float, tx: float, ty: float,
              weapon: Weapon | None = None) -> None:
         damage = weapon.get_damage() if weapon else 1.0
-        color  = weapon.bullet_color if weapon else (255, 210, 50)
+        color  = getattr(weapon, "bullet_color", (255, 210, 50))
         self.bullets.append(Bullet(fx, fy, tx, ty, damage, color))
+
+    def melee_attack(self, player: arcade.Sprite, radius: float, get_damage,
+                     attack_angle: float | None = None, half_span: float = 360.0) -> int:
+        """Inflige des dégâts aux zombies dans le secteur (rayon + angle). Retourne les kills."""
+        kills = 0
+        for z in list(self.zombies):
+            dist = math.hypot(z.center_x - player.center_x, z.center_y - player.center_y)
+            if dist > radius + z.width / 2:
+                continue
+            if attack_angle is not None and half_span < 180.0:
+                zombie_angle = math.degrees(math.atan2(
+                    z.center_y - player.center_y, z.center_x - player.center_x))
+                diff = abs((zombie_angle - attack_angle + 180) % 360 - 180)
+                if diff > half_span:
+                    continue
+            z.health -= get_damage()
+            if z.health <= 0:
+                z.remove_from_sprite_lists()
+                kills += 1
+        return kills
 
     def check_player_damage(self, player, delta_time: float) -> bool:
         """Gère dégâts + knockback. Retourne True si dégâts appliqués."""
@@ -64,8 +84,8 @@ class ZombieManager:
                 player.center_y  += ny * 18
                 zombie.center_x  -= nx * 12
                 zombie.center_y  -= ny * 12
-                player.health = max(0, player.health - 30)
-                player.damage_cooldown = 1.5
+                player.health = max(0, player.health - zombie.DAMAGE)
+                player.damage_cooldown = player.DAMAGE_COOLDOWN
                 took_damage = True
             else:
                 player.center_x  += nx * 2

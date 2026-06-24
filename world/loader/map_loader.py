@@ -36,9 +36,10 @@ class MapLoader:
     Rétro-compatible : si "base" est absent, lit pnjs/objets à la racine.
     """
 
-    def __init__(self, map_name: str, arc_id: int | None = None):
-        config_path = paths.asset(f"world/configs/{map_name}.json")
-        with open(config_path, encoding="utf-8") as f:
+    def __init__(self, map_name: str, arc_id: int | None = None,
+                 config_path: str | None = None):
+        resolved = paths.asset(config_path if config_path else f"world/configs/{map_name}.json")
+        with open(resolved, encoding="utf-8") as f:
             self._cfg = json.load(f)
         self._arc_id = arc_id
 
@@ -138,12 +139,15 @@ class MapLoader:
 
         # Arme
         weapon_data = data.get("weapon")
-        if weapon_data:
+        if isinstance(weapon_data, str):
+            pnj.weapon = Weapon.from_name(weapon_data)
+        elif isinstance(weapon_data, dict):
             color = tuple(weapon_data.get("bullet_color", [255, 210, 50]))
             pnj.weapon = Weapon(weapon_data["name"],
                                 weapon_data["damage_min"],
                                 weapon_data["damage_max"],
-                                bullet_color=color)
+                                bullet_color=color,
+                                fire_interval=weapon_data.get("fire_interval", 0.2))
 
         return pnj
 

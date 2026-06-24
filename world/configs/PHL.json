@@ -282,16 +282,7 @@
                 "interaction_distance": 65,
                 "speed": 2.2,
                 "fire_interval": 0.3,
-                "weapon": {
-                    "name": "TaMere",
-                    "damage_min": 2.0,
-                    "damage_max": 2.5,
-                    "bullet_color": [
-                        30,
-                        110,
-                        255
-                    ]
-                }
+                "weapon": "TaMere"
             }
         ],
         "strategiques": [],

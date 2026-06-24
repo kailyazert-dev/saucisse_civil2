@@ -19,10 +19,12 @@ def _img(filename: str) -> str:
 
 class Zombie(CharacterBase):
     MAX_HEALTH   = 3
+    DAMAGE       = 2
     _WALK_SWITCH = 0.2
 
     def __init__(self, x: float, y: float):
         super().__init__("Zombie", Humain(), _img("z_d.png"))
+        self.scale    = 1.2
         self.center_x = x
         self.center_y = y
         self.health   = self.MAX_HEALTH

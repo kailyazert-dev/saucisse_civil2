@@ -19,8 +19,8 @@ class QuestManager:
         self.quests_file_dir = os.path.join(paths.get_project_root(), "quests", "quests_file")
         self.quests_save_dir = os.path.join(paths.get_project_root(), "quests", "quests_save_file")
 
-        self.quest_file = os.path.join(self.quests_file_dir, quest_file)
-        self.quest_default_save_file = os.path.join(self.quests_save_dir, quests_default_file)
+        self.quest_file = quest_file if os.path.isabs(quest_file) else os.path.join(self.quests_file_dir, quest_file)
+        self.quest_default_save_file = quests_default_file if os.path.isabs(quests_default_file) else os.path.join(self.quests_save_dir, quests_default_file)
 
         # Fichier de sauvegarde dans AppData (avec migration depuis l'ancien emplacement)
         self.quest_save_file = self._resolve_save_file(quests_save_file)

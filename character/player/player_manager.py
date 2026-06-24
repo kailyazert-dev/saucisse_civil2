@@ -122,14 +122,10 @@ class CharacterManager:
                                   quest_manager, self, scale)
         player.center_x  = x
         player.center_y  = y
-        weapon_data = data.get("weapon")
-        if weapon_data:
-            player.weapon = Weapon(
-                weapon_data["name"],
-                weapon_data["damage_min"],
-                weapon_data["damage_max"],
-                tuple(weapon_data["bullet_color"]),
-            )
+        wf = data.get("weapon_feu") or data.get("weapon")
+        wb = data.get("weapon_blanc")
+        player.weapon_feu   = Weapon.from_name(wf["name"]) if wf else None
+        player.weapon_blanc = Weapon.from_name(wb["name"]) if wb else None
         self.player = player
 
     def reset(self) -> None:
@@ -155,7 +151,6 @@ class CharacterManager:
         if os.path.exists(self.character_file):
             shutil.copy(self.character_file, self.character_file + ".bak")
         p = self.player
-        w = p.weapon
         stats = {
             "nom":          p.nom,
             "force":        p.humain.force,
@@ -169,12 +164,8 @@ class CharacterManager:
             "sociabilite":  p.humain.sociabilite,
             "x":            p.humain.x,
             "y":            p.humain.y,
-            "weapon": {
-                "name":         w.name,
-                "damage_min":   w.damage_min,
-                "damage_max":   w.damage_max,
-                "bullet_color": list(w.bullet_color),
-            } if w is not None else None,
+            "weapon_feu":   {"name": p.weapon_feu.name}   if p.weapon_feu   else None,
+            "weapon_blanc": {"name": p.weapon_blanc.name} if p.weapon_blanc else None,
         }
         self._write_json(self.character_file, stats)
 
@@ -235,16 +226,10 @@ class CharacterManager:
             for key in ("force", "vitesse", "endurance", "mathematique",
                         "logique", "rpg", "music", "langue", "sociabilite"):
                 setattr(h, key, data[key])
-            weapon_data = char_data.get("weapon")
-            if weapon_data:
-                self.player.weapon = Weapon(
-                    weapon_data["name"],
-                    weapon_data["damage_min"],
-                    weapon_data["damage_max"],
-                    tuple(weapon_data["bullet_color"]),
-                )
-            else:
-                self.player.weapon = None
+            wf = char_data.get("weapon_feu") or char_data.get("weapon")
+            wb = char_data.get("weapon_blanc")
+            self.player.weapon_feu   = Weapon.from_name(wf["name"]) if wf else None
+            self.player.weapon_blanc = Weapon.from_name(wb["name"]) if wb else None
             self._pending_spawn = (char_data.get("x", 745.0), char_data.get("y", 970.0))
         return slot.get("map", "home")
 

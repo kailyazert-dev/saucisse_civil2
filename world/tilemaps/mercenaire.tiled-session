@@ -1,0 +1,68 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "PHL_MER.tmx",
+    "expandedProjectPaths": [
+        ".",
+        "tuile"
+    ],
+    "fileStates": {
+        "HOME.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 679,
+                "y": 431
+            }
+        },
+        "PHL_MER.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 1185,
+                "y": 1965
+            }
+        },
+        "tuile/base.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/bureau.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/chambre.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/cuisine.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/personnage.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/salle de bain.tsx": {
+            "scaleInDock": 1
+        },
+        "tuile/tuile_exterieur.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "tuile/tuile_interieur.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "tuile/ui2.tsx": {
+            "scaleInDock": 1
+        }
+    },
+    "openFiles": [
+        "PHL_MER.tmx"
+    ],
+    "project": "mercenaire.tiled-project",
+    "recentFiles": [
+        "PHL_MER.tmx",
+        "tuile/tuile_interieur.tsx",
+        "HOME.tmx",
+        "tuile/tuile_exterieur.tsx"
+    ]
+}

@@ -7,6 +7,7 @@ from world.scene.loading_view import LoadingView
 from world.maps.home_scene import HomeScene as homeview
 from world.maps.phl_scene import PhlScene as phlview
 from world.maps.tma_scene import TmaScene as tmaview
+from merc.merc_scene import MercScene as mercview
 
 load_dotenv()
 
@@ -14,6 +15,7 @@ _MAPS = {
     "home": homeview,
     "phl":  phlview,
     "tma":  tmaview,
+    "merc": mercview,
 }
 
 

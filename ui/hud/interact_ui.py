@@ -87,6 +87,7 @@ class InteractUI:
                 continue
             if arcade.get_distance_between_sprites(player, objet) >= 68:
                 continue
+            gv.current_objet = objet
             left, top = self.get_r_corner_cord()
             cx = left + box_width / 2
             self._draw_box_rect(cx, top, box_width, box_height)

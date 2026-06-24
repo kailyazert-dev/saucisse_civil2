@@ -1,0 +1,61 @@
+[
+    {
+        "arc": 1,
+        "name": "Mode Mercenaire",
+        "description": "Survie en zone zombie. Élimine la horde.",
+        "status": "ec",
+        "quests": [
+            {
+                "id": 1,
+                "title": "Survivre à la horde",
+                "description": "Élimine tous les zombies qui envahissent la zone.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Éliminer 30 zombies",
+                        "description": "Nettoie la zone de tous les zombies.",
+                        "status": "na",
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 30,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "title": "Survivre à la horde",
+                "description": "Élimine tous les zombies qui envahissent la zone.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Éliminer 60 zombies",
+                        "description": "Nettoie la zone de tous les zombies.",
+                        "status": "na",
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 60,
+                        "counter": 0
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Survivre à la horde",
+                "description": "Élimine tous les zombies qui envahissent la zone.",
+                "status": "ec",
+                "objectives": [
+                    {
+                        "name": "Éliminer 90 zombies",
+                        "description": "Nettoie la zone de tous les zombies.",
+                        "status": "na",
+                        "type": "compteur",
+                        "stat_key": "kill",
+                        "validator": 90,
+                        "counter": 0
+                    }
+                ]
+            }
+        ]
+    }
+]
