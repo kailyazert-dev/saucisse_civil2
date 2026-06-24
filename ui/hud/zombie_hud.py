@@ -129,7 +129,8 @@ class ZombieHUD:
                              arcade.color.RED, 20, anchor_x="center", bold=True, font_name=KENNY)
 
         # --- Barre de vie (même position qu'avant) ---
-        ratio = max(0.0, player.health / Player.MAX_HEALTH)
+        max_hp    = Player.MAX_HEALTH + getattr(player, "max_health_bonus", 0)
+        ratio     = max(0.0, player.health / max_hp)
         bar_color = (arcade.color.JADE   if ratio > 0.5
                      else arcade.color.ORANGE if ratio > 0.25
                      else arcade.color.RED)
@@ -142,7 +143,7 @@ class ZombieHUD:
                                               _BAR_Y, _BAR_Y + _BAR_H, bar_color)
         arcade.draw_lrbt_rectangle_outline(_BAR_X, _BAR_X + _BAR_W, _BAR_Y, _BAR_Y + _BAR_H,
                                            arcade.color.WHITE, 1)
-        arcade.draw_text(f"{player.health} / {Player.MAX_HEALTH}",
+        arcade.draw_text(f"{player.health} / {max_hp}",
                          _BAR_X + _BAR_W + 8, _BAR_Y + _BAR_H / 2,
                          arcade.color.WHITE, 12, anchor_y="center", font_name=KENNY)
 

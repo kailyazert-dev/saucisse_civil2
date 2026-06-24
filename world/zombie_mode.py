@@ -51,6 +51,7 @@ class ZombieMode:
         self._melee_arcs: list[dict] = []
         self.drops       = arcade.SpriteList()
         self._hud        = ZombieHUD(self)
+        self.on_reset    = None
 
     # ---------------------------------------------------------------- setup
 
@@ -204,12 +205,15 @@ class ZombieMode:
             scene.quest_manager.save_progress()
         player             = scene.player_sprite
         player.health          = Player.MAX_HEALTH
+        player.max_health_bonus = 0
         player.damage_cooldown = 0.0
         player.gold            = 0
         player.center_x, player.center_y = self._zombie_spawn
         self.zombie_manager.reset()
         for drop in list(self.drops):
             drop.remove_from_sprite_lists()
+        if self.on_reset is not None:
+            self.on_reset()
 
     # ---------------------------------------------------------------- draw
 

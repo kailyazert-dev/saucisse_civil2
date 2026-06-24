@@ -1,16 +1,21 @@
 from __future__ import annotations
 import json
+import math
 import os
 import arcade
+from assets.param_map import WINDOW_WIDTH, KENNY
 from world.scene.base_scene import BaseScene
 from world.loader.map_loader import MapLoader
 from world.zombie_mode import ZombieMode
+from world.objects.interactables.coffre import Coffre
 from quests.quest_manager import QuestManager
 from character.equipment.weapon import Weapon
 from character.enemies.zombie import Zombie
+from ui.menus.shop_menu import ShopMenu
 import utils.paths as paths
 
 _ZOMBIE_CONFIG_PATH = os.path.join(paths.get_project_root(), "merc", "configs", "zombie.json")
+_SHOP_CONFIG_PATH   = os.path.join(paths.get_project_root(), "merc", "configs", "shop.json")
 
 _MERC_QUESTS_DIR = os.path.join(paths.get_project_root(), "merc", "quests")
 _QUEST1_SPAWNS   = [(570, 80), (575, 547)]
@@ -61,7 +66,21 @@ class MercScene(BaseScene):
         self._hide_step2 = False
         self._hide_step3 = False
         self._active_quest_id = None
+
+        self._coffres    = [o for o in self.objet_sprites if isinstance(o, Coffre)]
+        self._coffres_sl = arcade.SpriteList()
+        for c in self._coffres:
+            self._coffres_sl.append(c)
+        self._shop_data  = self._load_shop_data()
+        self._shop_menu  = ShopMenu()
+        self._near_coffre = None
+
         self._setup_zombie_mode()
+
+    @staticmethod
+    def _load_shop_data() -> dict:
+        with open(_SHOP_CONFIG_PATH, encoding="utf-8") as f:
+            return json.load(f)
 
     @staticmethod
     def _load_zombie_classes() -> list[type]:
@@ -98,29 +117,71 @@ class MercScene(BaseScene):
 
     def _setup_zombie_mode(self) -> None:
         """Construit les murs de combat, la physique et initialise ZombieMode (toujours actif)."""
-        walls = arcade.SpriteList()
+        self._walls = arcade.SpriteList()
         for layer in ("Mur", "Meuble_H", "step_1_H", "step_2", "step_3_H",
                       "hero_1", "hero_2", "hero_3"):
-            walls.extend(self._collect_layer(layer))
-        self._step1_sprites = self._collect_layer("step_1_H")
-        self._step2_sprites = self._collect_layer("step_2")
-        self._step3_sprites = self._collect_layer("step_3_B") + self._collect_layer("step_3_H")
+            self._walls.extend(self._collect_layer(layer))
+        self._step1_sprites   = self._collect_layer("step_1_H")
+        self._step2_sprites   = self._collect_layer("step_2")
+        self._step3_B_sprites = self._collect_layer("step_3_B")
+        self._step3_H_sprites = self._collect_layer("step_3_H")
+        self._step3_sprites   = self._step3_B_sprites + self._step3_H_sprites
 
-        obstacles = arcade.SpriteList()
-        obstacles.extend(self.pnj_sprite)
-        obstacles.extend(self.strategique_sprite)
-        obstacles.extend(self.objet_sprites)
-        obstacles.extend(walls)
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
+        self._obstacles = arcade.SpriteList()
+        self._obstacles.extend(self.pnj_sprite)
+        self._obstacles.extend(self.strategique_sprite)
+        self._obstacles.extend(self.objet_sprites)
+        self._obstacles.extend(self._walls)
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self._obstacles)
 
         self._zombie_classes = self._load_zombie_classes()
         self.zombie_mode = ZombieMode(self)
-        self.zombie_mode.setup(walls, _QUEST1_SPAWNS, always_active=True,
+        self.zombie_mode.setup(self._walls, _QUEST1_SPAWNS, always_active=True,
                                zombie_class=self._zombie_classes[0],
                                player_spawn=self._player_spawn)
+        self.zombie_mode.on_reset  = self._merc_reset
         self.zombie_mode.set_spawn_enabled(False)
         self._notif_was_active = False
         self._spawn_unlocked   = False
+
+    def _merc_reset(self) -> None:
+        """Réinitialisation complète après mort : terrain, quêtes, spawn et boutique."""
+        if self._hide_steps:
+            for sprite in self._step1_sprites:
+                self._walls.append(sprite)
+                self._obstacles.append(sprite)
+                try: self.scene["step_1_H"].append(sprite)
+                except Exception: pass
+            self._hide_steps = False
+
+        if self._hide_step2:
+            for sprite in self._step2_sprites:
+                self._walls.append(sprite)
+                self._obstacles.append(sprite)
+                try: self.scene["step_2"].append(sprite)
+                except Exception: pass
+            self._hide_step2 = False
+
+        if self._hide_step3:
+            for sprite in self._step3_B_sprites:
+                try: self.scene["step_3_B"].append(sprite)
+                except Exception: pass
+            for sprite in self._step3_H_sprites:
+                self._walls.append(sprite)
+                self._obstacles.append(sprite)
+                try: self.scene["step_3_H"].append(sprite)
+                except Exception: pass
+            self._hide_step3 = False
+
+        self.quest_manager.reset()
+        self.zombie_mode.set_spawn_points(_QUEST1_SPAWNS)
+        self.zombie_mode.set_zombie_class(self._zombie_classes[0])
+        self.zombie_mode.set_spawn_enabled(False)
+        self._active_quest_id  = None
+        self._spawn_unlocked   = False
+        self._notif_was_active = False
+        self._shop_menu.close()
+        self._near_coffre = None
 
     def _get_active_quest_id(self) -> int | None:
         if self.quest_manager.arc is None:
@@ -157,6 +218,7 @@ class MercScene(BaseScene):
             except Exception:
                 pass
 
+        self._coffres_sl.draw()
         self.scene["Player"].draw()
         after.draw()
 
@@ -170,6 +232,12 @@ class MercScene(BaseScene):
         self.draw_notif()
         self.menu.draw()
         self.cutscene_manager.draw()
+        if self._near_coffre and not self._shop_menu.active:
+            arcade.draw_text("[ E ]  Ouvrir le distributeur",
+                             WINDOW_WIDTH / 2, 55,
+                             arcade.color.YELLOW, 14,
+                             anchor_x="center", bold=True, font_name=KENNY)
+        self._shop_menu.draw(self.player_sprite)
 
     # ---------------------------------------------------------------- update
 
@@ -184,6 +252,17 @@ class MercScene(BaseScene):
             elif self._notif_was_active:
                 self.zombie_mode.set_spawn_enabled(True)
                 self._spawn_unlocked = True
+
+        if self._shop_menu.active:
+            self._shop_menu.update(delta_time)
+
+        self._near_coffre = None
+        if not self._shop_menu.active:
+            px, py = self.player_sprite.center_x, self.player_sprite.center_y
+            for coffre in self._coffres:
+                if math.hypot(coffre.center_x - px, coffre.center_y - py) <= Coffre.INTERACTION_DISTANCE:
+                    self._near_coffre = coffre
+                    break
 
         kills = self.zombie_mode.update(delta_time)
         for _ in range(kills):
@@ -223,7 +302,13 @@ class MercScene(BaseScene):
             self.menu.on_text(text)
 
     def on_key_press(self, key, modifiers) -> None:
-        """Délègue entièrement au mode zombie (toujours actif)."""
+        if self._shop_menu.active:
+            self._shop_menu.handle_key(key, self.player_sprite)
+            return
+        if self._near_coffre and key in (arcade.key.E, arcade.key.RETURN):
+            items = self._shop_data.get(self._near_coffre.catalogue, [])
+            self._shop_menu.open(items)
+            return
         self.zombie_mode.on_key_press(key)
 
     def on_mouse_press(self, x, y, button, modifiers) -> None:

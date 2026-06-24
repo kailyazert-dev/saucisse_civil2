@@ -7,6 +7,34 @@
     "base": {
         "pnjs": [],
         "strategiques": [],
-        "objets": []
+        "objets": [
+            {
+                "type": "Coffre",
+                "name": "distributeur",
+                "catalogue": "soins",
+                "image": "assets/images/interactions/distributeur.png",
+                "scale": 1,
+                "x": 1202,
+                "y": 741
+            },
+            {
+                "type": "Coffre",
+                "name": "distributeur",
+                "catalogue": "armes",
+                "image": "assets/images/interactions/distributeur.png",
+                "scale": 1,
+                "x": 2906,
+                "y": 1114
+            },
+            {
+                "type": "Coffre",
+                "name": "distributeur",
+                "catalogue": "general",
+                "image": "assets/images/interactions/distributeur.png",
+                "scale": 1,
+                "x": 2834,
+                "y": 1700
+            }
+        ]
     }
 }

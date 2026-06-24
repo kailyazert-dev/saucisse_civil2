@@ -179,5 +179,10 @@ class MapLoader:
         if kind == "ObjetInteractif":
             return ObjetInteractif(image, scale, data["name"], x=x, y=y)
 
+        if kind == "Coffre":
+            from world.objects.interactables.coffre import Coffre
+            return Coffre(image, scale, data.get("name", "coffre"),
+                          data.get("catalogue", "general"), x=x, y=y)
+
         print(f"[MapLoader] Type d'objet inconnu : '{kind}'")
         return None

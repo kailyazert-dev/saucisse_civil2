@@ -28,6 +28,7 @@ class Player(CharacterBase):
         self.character_manager = character_manager
         self.health            = self.MAX_HEALTH
         self.gold              = 0
+        self.max_health_bonus  = 0
         self.weapon_feu:   Weapon | None = None
         self.weapon_blanc: Weapon | None = None
 

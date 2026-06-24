@@ -27,5 +27,16 @@
         "arc_color": [30, 110, 255],
         "sprite_size": 28,
         "fire_interval": 0.4
+    },
+    "Machette": {
+        "name": "Machette",
+        "type": "blanc",
+        "damage_min": 5.0,
+        "damage_max": 8.0,
+        "attack_radius": 95,
+        "half_span": 60,
+        "arc_color": [200, 80, 40],
+        "sprite_size": 38,
+        "fire_interval": 0.5
     }
 }
