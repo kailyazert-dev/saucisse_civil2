@@ -9,6 +9,7 @@ Mode mercenaire — zone de jeu dédiée, accessible depuis l'objet « Mode merc
 | `merc_scene.py` | `MercScene(BaseScene)` — scène principale |
 | `configs/MERC.json` | Config map : spawn joueur `[700, 325]`, pas de PNJs ni d'objets |
 | `configs/zombie.json` | Stats, mouvement et drops des `MercZombie` |
+| `configs/shop.json` | Catalogue des distributeurs : 3 sections (`soins`, `armes`, `general`) |
 | `map/PHL_MER.tmx` | Tilemap Tiled chargée par le jeu |
 | `map/tuile/` | Tilesets PNG |
 | `quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes (30 / 60 / 90 / 110 kills) — sert aussi de fichier de réinitialisation par défaut |

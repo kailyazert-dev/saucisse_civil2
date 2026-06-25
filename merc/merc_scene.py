@@ -11,6 +11,7 @@ from world.objects.interactables.coffre import Coffre
 from quests.quest_manager import QuestManager
 from character.equipment.weapon import Weapon
 from character.enemies.zombie import Zombie
+from character.enemies.zombie_augmente import ZombieAugmente
 from ui.menus.shop_menu import ShopMenu
 import utils.paths as paths
 
@@ -83,6 +84,46 @@ class MercScene(BaseScene):
             return json.load(f)
 
     @staticmethod
+    def _load_boss_classes() -> list[tuple[type, tuple[float, float]]]:
+        """Lit merc/configs/zombie.json["boss"] et retourne une liste (classe, spawn) par quête."""
+        with open(_ZOMBIE_CONFIG_PATH, encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        from world.objects.drops.gold_drop import GoldDrop
+        from world.objects.drops.health_drop import HealthDrop
+        drop_map = {"GoldDrop": GoldDrop, "HealthDrop": HealthDrop}
+
+        result = []
+        for i, boss_cfg in enumerate(cfg.get("boss", []), start=1):
+            stats = boss_cfg.get("stats", {})
+            mouv  = boss_cfg.get("mouvement", {})
+            proj  = boss_cfg.get("projectile", {})
+            drops = [
+                (drop_map[d["type"]], d["chance"])
+                for d in boss_cfg.get("drops", [])
+                if d["type"] in drop_map
+            ]
+            spawn = tuple(boss_cfg.get("spawn", [570, 80]))
+            BossClass = type(f"BossZombie{i}", (ZombieAugmente,), {
+                "MAX_HEALTH":            stats.get("max_sante",          ZombieAugmente.MAX_HEALTH),
+                "DAMAGE":                stats.get("degats",             ZombieAugmente.DAMAGE),
+                "VITESSE_ERRANCE":       mouv.get("vitesse_errance",     ZombieAugmente.VITESSE_ERRANCE),
+                "VITESSE_CHASSE":        mouv.get("vitesse_chasse_max",  ZombieAugmente.VITESSE_CHASSE),
+                "ACCEL_CHASSE":          mouv.get("acceleration_chasse", ZombieAugmente.ACCEL_CHASSE),
+                "RAYON_DETECTION":       mouv.get("rayon_detection",     ZombieAugmente.RAYON_DETECTION),
+                "RAYON_FUITE":           mouv.get("rayon_fuite",         ZombieAugmente.RAYON_FUITE),
+                "CHANGEMENT_DIR":        tuple(mouv.get("changement_direction", list(ZombieAugmente.CHANGEMENT_DIR))),
+                "PROJECTILE_DEGATS":     proj.get("degats",     ZombieAugmente.PROJECTILE_DEGATS),
+                "PROJECTILE_VITESSE":    proj.get("vitesse",    ZombieAugmente.PROJECTILE_VITESSE),
+                "PROJECTILE_INTERVALLE": proj.get("intervalle", ZombieAugmente.PROJECTILE_INTERVALLE),
+                "PROJECTILE_RAYON_TIR":  proj.get("rayon_tir",  ZombieAugmente.PROJECTILE_RAYON_TIR),
+                "PROJECTILE_COULEUR":    tuple(proj.get("couleur", list(ZombieAugmente.PROJECTILE_COULEUR))),
+                "_DROPS":                drops or None,
+            })
+            result.append((BossClass, spawn))
+        return result
+
+    @staticmethod
     def _load_zombie_classes() -> list[type]:
         """Lit merc/configs/zombie.json et retourne une sous-classe de Zombie par quête."""
         with open(_ZOMBIE_CONFIG_PATH, encoding="utf-8") as f:
@@ -117,7 +158,7 @@ class MercScene(BaseScene):
 
     def _setup_zombie_mode(self) -> None:
         """Construit les murs de combat, la physique et initialise ZombieMode (toujours actif)."""
-        self._walls = arcade.SpriteList()
+        self._walls = arcade.SpriteList(use_spatial_hash=True)
         for layer in ("Mur", "Meuble_H", "step_1_H", "step_2", "step_3_H",
                       "hero_1", "hero_2", "hero_3"):
             self._walls.extend(self._collect_layer(layer))
@@ -135,6 +176,7 @@ class MercScene(BaseScene):
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self._obstacles)
 
         self._zombie_classes = self._load_zombie_classes()
+        self._boss_configs   = self._load_boss_classes()
         self.zombie_mode = ZombieMode(self)
         self.zombie_mode.setup(self._walls, _QUEST1_SPAWNS, always_active=True,
                                zombie_class=self._zombie_classes[0],
@@ -143,6 +185,9 @@ class MercScene(BaseScene):
         self.zombie_mode.set_spawn_enabled(False)
         self._notif_was_active = False
         self._spawn_unlocked   = False
+        self._boss_phase       = False
+        self._boss_sprite: ZombieAugmente | None = None
+        self._current_spawns   = _QUEST1_SPAWNS
 
     def _merc_reset(self) -> None:
         """Réinitialisation complète après mort : terrain, quêtes, spawn et boutique."""
@@ -183,8 +228,24 @@ class MercScene(BaseScene):
         self._active_quest_id  = None
         self._spawn_unlocked   = False
         self._notif_was_active = False
+        self._boss_phase       = False
+        self._boss_sprite      = None
+        self._current_spawns   = _QUEST1_SPAWNS
         self._shop_menu.close()
         self._near_coffre = None
+
+    def _trigger_boss_phase(self) -> None:
+        """Bloque le spawn normal et fait apparaître le boss de fin de quête (configuré via zombie.json)."""
+        quest_idx = (self._active_quest_id or 1) - 1
+        if quest_idx < len(self._boss_configs):
+            boss_class, boss_spawn = self._boss_configs[quest_idx]
+        else:
+            boss_class, boss_spawn = ZombieAugmente, self._current_spawns[0]
+        self._boss_phase = True
+        self.zombie_mode.set_spawn_enabled(False)
+        boss = boss_class(*boss_spawn)
+        self.zombie_mode.zombie_manager.zombies.append(boss)
+        self._boss_sprite = boss
 
     def _get_active_quest_id(self) -> int | None:
         if self.quest_manager.arc is None:
@@ -268,8 +329,20 @@ class MercScene(BaseScene):
                     break
 
         kills = self.zombie_mode.update(delta_time)
-        for _ in range(kills):
-            self.quest_manager.register_kill()
+        if self._boss_phase:
+            if (self._boss_sprite is not None and
+                    self._boss_sprite not in self.zombie_mode.zombie_manager.zombies):
+                self._boss_sprite = None
+                self._boss_phase  = False
+                self.quest_manager.register_kill()
+                self.zombie_mode.set_spawn_enabled(True)
+        else:
+            for _ in range(kills):
+                obj = self.quest_manager.get_kill_objective()
+                if obj and obj.counter >= int(obj.validator) - 1:
+                    self._trigger_boss_phase()
+                    break
+                self.quest_manager.register_kill()
 
         quest_id = self._get_active_quest_id()
         if quest_id != self._active_quest_id:
@@ -277,18 +350,21 @@ class MercScene(BaseScene):
             if quest_id is not None and 1 <= quest_id <= len(self._zombie_classes):
                 self.zombie_mode.set_zombie_class(self._zombie_classes[quest_id - 1])
             if quest_id == 2:
+                self._current_spawns = _QUEST2_SPAWNS
                 self.zombie_mode.set_spawn_points(_QUEST2_SPAWNS)
                 if not self._hide_steps:
                     self._hide_steps = True
                     for sprite in self._step1_sprites:
                         sprite.remove_from_sprite_lists()
             elif quest_id == 3:
+                self._current_spawns = _QUEST3_SPAWNS
                 self.zombie_mode.set_spawn_points(_QUEST3_SPAWNS)
                 if not self._hide_step2:
                     self._hide_step2 = True
                     for sprite in self._step2_sprites:
                         sprite.remove_from_sprite_lists()
             elif quest_id == 4:
+                self._current_spawns = _QUEST4_SPAWNS
                 self.zombie_mode.set_spawn_points(_QUEST4_SPAWNS)
                 if not self._hide_step3:
                     self._hide_step3 = True

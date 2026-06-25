@@ -9,6 +9,7 @@ from ui.menus.death_menu import DeathMenu
 from ui.hud.zombie_hud import ZombieHUD
 from ui.menus.stats_view import StatsView
 from character.enemies.zombie import Zombie
+from character.equipment.bullet import Bullet
 from typing import TYPE_CHECKING
 import utils.paths as paths
 
@@ -50,6 +51,7 @@ class ZombieMode:
         self._pending_melee_kills = 0
         self._melee_arcs: list[dict] = []
         self.drops       = arcade.SpriteList()
+        self.rocks       = arcade.SpriteList()
         self._hud        = ZombieHUD(self)
         self.on_reset    = None
 
@@ -170,6 +172,9 @@ class ZombieMode:
         kills = self.zombie_manager.update(delta_time) + self._pending_melee_kills
         self._pending_melee_kills = 0
 
+        self._collect_rocks()
+        self._update_rocks()
+
         for pos in self.zombie_manager.morts_ce_frame:
             self.drops.extend(Zombie.loot(*pos))
 
@@ -212,16 +217,50 @@ class ZombieMode:
         self.zombie_manager.reset()
         for drop in list(self.drops):
             drop.remove_from_sprite_lists()
+        for rock in list(self.rocks):
+            rock.remove_from_sprite_lists()
         if self.on_reset is not None:
             self.on_reset()
 
     # ---------------------------------------------------------------- draw
 
+    def _collect_rocks(self) -> None:
+        """Transforme les pending_projectiles des ZombieAugmente en pierres."""
+        for z in self.zombie_manager.zombies:
+            if not getattr(z, "pending_projectiles", None):
+                continue
+            for (fx, fy, tx, ty) in z.pending_projectiles:
+                self.rocks.append(Bullet(
+                    fx, fy, tx, ty,
+                    damage=z.PROJECTILE_DEGATS,
+                    color=z.PROJECTILE_COULEUR,
+                    speed=z.PROJECTILE_VITESSE,
+                    size=10,
+                ))
+            z.pending_projectiles.clear()
+
+    def _update_rocks(self) -> None:
+        """Déplace les pierres, détruit celles qui touchent un mur ou le joueur."""
+        for r in [r for r in self.rocks if r.life <= 0]:
+            r.remove_from_sprite_lists()
+        for r in list(self.rocks):
+            r.step()
+            if (self._combat_walls and
+                    arcade.check_for_collision_with_list(r, self._combat_walls)):
+                r.remove_from_sprite_lists()
+        player = self._scene.player_sprite
+        for r in arcade.check_for_collision_with_list(player, self.rocks):
+            if player.damage_cooldown <= 0:
+                player.health      = max(0, player.health - r.damage)
+                player.damage_cooldown = player.DAMAGE_COOLDOWN
+            r.remove_from_sprite_lists()
+
     def draw_world(self) -> None:
-        """Dessine arme, animation de frappe, zombies et drops (world-space, caméra déjà activée)."""
+        """Dessine arme, animation de frappe, zombies, drops et pierres (world-space, caméra déjà activée)."""
         self._hud.draw_world()
         self.zombie_manager.draw()
         self.drops.draw()
+        self.rocks.draw()
 
     def draw_hud(self) -> None:
         """HUD zombie complet : indicateurs, overlay de mort et menu de mort."""

@@ -15,8 +15,8 @@
     "TaMere": {
         "name": "TaMere",
         "type": "feu",
-        "damage_min": 2.0,
-        "damage_max": 2.5,
+        "damage_min": 5.0,
+        "damage_max": 7.5,
         "bullet_color": [
             30,
             110,

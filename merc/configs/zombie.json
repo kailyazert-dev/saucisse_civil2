@@ -7,24 +7,15 @@
                 "acceleration_chasse": 30.0,
                 "rayon_detection": 220,
                 "rayon_fuite": 450,
-                "changement_direction": [
-                    2.5,
-                    4.5
-                ]
+                "changement_direction": [2.5, 4.5]
             },
             "stats": {
                 "max_sante": 3,
                 "degats": 2
             },
             "drops": [
-                {
-                    "type": "GoldDrop",
-                    "chance": 0.55
-                },
-                {
-                    "type": "HealthDrop",
-                    "chance": 0.1
-                }
+                {"type": "GoldDrop",   "chance": 0.55},
+                {"type": "HealthDrop", "chance": 0.10}
             ]
         },
         {
@@ -34,24 +25,15 @@
                 "acceleration_chasse": 30.0,
                 "rayon_detection": 220,
                 "rayon_fuite": 450,
-                "changement_direction": [
-                    2.5,
-                    4.5
-                ]
+                "changement_direction": [2.5, 4.5]
             },
             "stats": {
                 "max_sante": 5,
                 "degats": 3
             },
             "drops": [
-                {
-                    "type": "GoldDrop",
-                    "chance": 0.6
-                },
-                {
-                    "type": "HealthDrop",
-                    "chance": 0.12
-                }
+                {"type": "GoldDrop",   "chance": 0.60},
+                {"type": "HealthDrop", "chance": 0.12}
             ]
         },
         {
@@ -61,24 +43,15 @@
                 "acceleration_chasse": 40.0,
                 "rayon_detection": 240,
                 "rayon_fuite": 450,
-                "changement_direction": [
-                    2.5,
-                    4.5
-                ]
+                "changement_direction": [2.5, 4.5]
             },
             "stats": {
                 "max_sante": 7,
                 "degats": 4
             },
             "drops": [
-                {
-                    "type": "GoldDrop",
-                    "chance": 0.65
-                },
-                {
-                    "type": "HealthDrop",
-                    "chance": 0.15
-                }
+                {"type": "GoldDrop",   "chance": 0.65},
+                {"type": "HealthDrop", "chance": 0.15}
             ]
         },
         {
@@ -88,24 +61,121 @@
                 "acceleration_chasse": 40.0,
                 "rayon_detection": 250,
                 "rayon_fuite": 450,
-                "changement_direction": [
-                    2.5,
-                    4.5
-                ]
+                "changement_direction": [2.5, 4.5]
             },
             "stats": {
                 "max_sante": 10,
                 "degats": 5
             },
             "drops": [
-                {
-                    "type": "GoldDrop",
-                    "chance": 0.7
-                },
-                {
-                    "type": "HealthDrop",
-                    "chance": 0.18
-                }
+                {"type": "GoldDrop",   "chance": 0.70},
+                {"type": "HealthDrop", "chance": 0.18}
+            ]
+        }
+    ],
+    "boss": [
+        {
+            "spawn": [575, 547],
+            "mouvement": {
+                "vitesse_errance": 100.0,
+                "vitesse_chasse_max": 140.0,
+                "acceleration_chasse": 60.0,
+                "rayon_detection": 400,
+                "rayon_fuite": 600,
+                "changement_direction": [2.0, 4.0]
+            },
+            "stats": {
+                "max_sante": 40,
+                "degats": 5
+            },
+            "projectile": {
+                "degats": 1,
+                "vitesse": 5.0,
+                "intervalle": 1.0,
+                "rayon_tir": 350,
+                "couleur": [140, 90, 50]
+            },
+            "drops": [
+                {"type": "GoldDrop",   "chance": 1.0},
+                {"type": "HealthDrop", "chance": 0.4}
+            ]
+        },
+        {
+            "spawn": [1946, 652],
+            "mouvement": {
+                "vitesse_errance": 105.0,
+                "vitesse_chasse_max": 155.0,
+                "acceleration_chasse": 70.0,
+                "rayon_detection": 430,
+                "rayon_fuite": 620,
+                "changement_direction": [2.0, 4.0]
+            },
+            "stats": {
+                "max_sante": 50,
+                "degats": 6
+            },
+            "projectile": {
+                "degats": 2,
+                "vitesse": 6.0,
+                "intervalle": 0.9,
+                "rayon_tir": 380,
+                "couleur": [130, 80, 40]
+            },
+            "drops": [
+                {"type": "GoldDrop",   "chance": 1.0},
+                {"type": "HealthDrop", "chance": 0.5}
+            ]
+        },
+        {
+            "spawn": [2686, 1108],
+            "mouvement": {
+                "vitesse_errance": 110.0,
+                "vitesse_chasse_max": 165.0,
+                "acceleration_chasse": 80.0,
+                "rayon_detection": 460,
+                "rayon_fuite": 650,
+                "changement_direction": [1.5, 3.5]
+            },
+            "stats": {
+                "max_sante": 60,
+                "degats": 7
+            },
+            "projectile": {
+                "degats": 2,
+                "vitesse": 7.0,
+                "intervalle": 0.8,
+                "rayon_tir": 420,
+                "couleur": [120, 70, 35]
+            },
+            "drops": [
+                {"type": "GoldDrop",   "chance": 1.0},
+                {"type": "HealthDrop", "chance": 0.6}
+            ]
+        },
+        {
+            "spawn": [2517, 1846],
+            "mouvement": {
+                "vitesse_errance": 120.0,
+                "vitesse_chasse_max": 180.0,
+                "acceleration_chasse": 90.0,
+                "rayon_detection": 500,
+                "rayon_fuite": 700,
+                "changement_direction": [1.5, 3.0]
+            },
+            "stats": {
+                "max_sante": 70,
+                "degats": 8
+            },
+            "projectile": {
+                "degats": 3,
+                "vitesse": 8.0,
+                "intervalle": 0.7,
+                "rayon_tir": 460,
+                "couleur": [110, 60, 25]
+            },
+            "drops": [
+                {"type": "GoldDrop",   "chance": 1.0},
+                {"type": "HealthDrop", "chance": 0.8}
             ]
         }
     ]

@@ -63,7 +63,7 @@
                 "status": "ec",
                 "objectives": [
                     {
-                        "name": "Éliminer 90 zombies",
+                        "name": "Éliminer 110 zombies",
                         "description": "Nettoie la zone de tous les zombies.",
                         "status": "na",
                         "type": "compteur",

@@ -64,7 +64,7 @@ Voir `character/CLAUDE.md` pour le détail complet.
 |---|---|
 | `character/player/` | `Player`, `CharacterManager`, `AnimationManager` |
 | `character/pnj/` | `PNJ` (FSM), `PNJState`, `pnj_loader` |
-| `character/enemies/` | `Zombie`, `ZombieManager` |
+| `character/enemies/` | `Zombie`, `ZombieAugmente`, `ZombieManager` |
 | `character/equipment/` | `Weapon`, `Bullet` |
 | `character/ai/` | `KyleAI` (FSM + A* pour Kyle dans PHL) |
 
@@ -79,7 +79,7 @@ Sauvegarde runtime : `save/quests_save.json`.
 ### `assets/` — ressources statiques
 - `assets/param_map.py` — taille fenêtre, vitesse, tile size, police
 - `assets/param_humain.py` — profils stat PNJs, system prompts dialogue IA
-- `assets/images/` — sprites (joueur, PNJs, zombies, objets, armes)
+- `assets/images/` — sprites (joueur, PNJs, objets, armes) ; zombies dans `assets/images/enemies/zombies/`
 
 ### `merc/` — mode arène mercenaire (auto-contenu)
 Module autonome pour le mode survie zombie. Contrairement aux autres maps, tout est local au dossier.
@@ -91,6 +91,7 @@ Module autonome pour le mode survie zombie. Contrairement aux autres maps, tout 
 | `merc/map/PHL_MER.tmx` | Tilemap Tiled chargée par le jeu (tilesets dans `merc/map/tuile/`) |
 | `merc/quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes progressives (30 / 60 / 90 / 110 kills) — sert aussi de fichier de réinitialisation par défaut |
 | `merc/configs/zombie.json` | Config des zombies mercenaires : stats, mouvement, drops |
+| `merc/configs/shop.json` | Catalogue des distributeurs : sections `soins`, `armes`, `general` |
 
 `MercScene` crée son propre `QuestManager` local (sauvegarde désactivée) et instancie `ZombieMode(always_active=True)`.
 

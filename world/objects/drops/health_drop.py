@@ -14,4 +14,5 @@ class HealthDrop(BaseDrop):
         super().__init__(_IMAGE, x, y)
 
     def ramasser(self, player) -> None:
-        player.health = min(Player.MAX_HEALTH, player.health + self.SOIN)
+        max_hp = Player.MAX_HEALTH + getattr(player, "max_health_bonus", 0)
+        player.health = min(max_hp, player.health + self.SOIN)

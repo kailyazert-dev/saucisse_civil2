@@ -49,7 +49,7 @@ class PhlScene(BaseScene):
 
     def _setup_zombie_mode(self) -> None:
         """Construit les murs de combat et initialise ZombieMode et KyleAI."""
-        walls = arcade.SpriteList()
+        walls = arcade.SpriteList(use_spatial_hash=True)
         walls.extend(self.scene["Mur"])
         walls.extend(self.scene["Meuble_H"])
 

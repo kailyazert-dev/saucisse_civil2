@@ -14,7 +14,8 @@ character/
 │   ├── pnj.py              — classe PNJ + PNJState
 │   └── pnj_loader.py       — humain_from_data()
 ├── enemies/
-│   ├── zombie.py            — classe Zombie
+│   ├── zombie.py            — classe Zombie (base)
+│   ├── zombie_augmente.py   — classe ZombieAugmente (sous-classe)
 │   └── zombie_manager.py    — ZombieManager
 └── equipment/
     ├── weapon.py            — Weapon (arme équipable)
@@ -29,6 +30,7 @@ arcade.Sprite
     ├── Player             (player/player.py)
     ├── PNJ                (pnj/pnj.py)
     └── Zombie             (enemies/zombie.py)
+        └── ZombieAugmente (enemies/zombie_augmente.py)
 ```
 
 ## character_base.py
@@ -40,7 +42,7 @@ Définit `Humain` et `CharacterBase`. Ré-exporte `Weapon` et `Bullet` depuis `e
   - `nom`, `humain`, `direction`, `health`, `damage_cooldown`, `weapon`
   - `textures` (dict idle), `textures_walk` (dict listes frames)
   - `face(dx, dy)` — oriente le sprite
-  - `load_walk_textures(prefix)` — charge les textures depuis `assets/images/<prefix>_<d>.png`
+  - `load_walk_textures(prefix)` — charge les textures depuis `assets/images/<prefix>_<dir>.png` (le préfixe peut inclure un sous-dossier, ex. `enemies/zombies/z_1`)
   - `_animate(direction, dt)` — alterne les frames de marche
 
 ## equipment/
@@ -103,14 +105,38 @@ Ennemi avec deux comportements :
 Transition errance → chasse à 220 px, retour à 450 px (hysteresis).
 `_WALK_SWITCH = 0.2` (plus lent que les autres personnages).
 
-Paramètres de mouvement surchargeables dans les sous-classes : `VITESSE_ERRANCE`, `VITESSE_CHASSE`, `ACCEL_CHASSE`, `RAYON_DETECTION`, `RAYON_FUITE`, `CHANGEMENT_DIR`.
+**Attributs de classe surchargeables dans les sous-classes** :
+
+| Attribut | Valeur défaut | Rôle |
+|---|---|---|
+| `_SPRITE_PREFIX` | `"enemies/zombies/z_1"` | Chemin relatif à `assets/images/` pour les sprites |
+| `VITESSE_ERRANCE` | `90.0` | Vitesse en errance |
+| `VITESSE_CHASSE` | `125.0` | Vitesse max en chasse |
+| `ACCEL_CHASSE` | `30.0` | Accélération en chasse |
+| `RAYON_DETECTION` | `220` | Distance déclenchant la chasse |
+| `RAYON_FUITE` | `450` | Distance déclenchant le retour à l'errance |
+| `CHANGEMENT_DIR` | `(2.5, 4.5)` | Intervalle aléatoire de changement de direction |
+
+Les sprites sont dans `assets/images/enemies/zombies/`. Nommage attendu : `<prefix>_d.png`, `<prefix>_l.png`, `<prefix>_r.png`, `<prefix>_u.png` (idle) + `_d1/d2`, `_l1/l2`, `_r1/r2`, `_u1/u2` (marche).
 
 **Système de drops** :
 - `_DROPS: list | None = None` — attribut de classe, `None` = lazy-load par défaut, `[]` = aucun drop
 - `_get_drops_config()` (classmethod) — initialise `_DROPS` au premier appel avec `[(GoldDrop, 0.65), (HealthDrop, 0.20)]` (lazy import)
 - `loot(x, y)` (classmethod) — génère la liste de drops selon les probabilités de la classe ; utilisé par `ZombieMode` après chaque mort
 
-Les sous-classes (ex : `MercZombie`) peuvent surcharger `_DROPS` pour des probabilités différentes.
+### zombie_augmente.py — ZombieAugmente
+
+Sous-classe de `Zombie` avec des stats renforcées et un sprite distinct.
+
+| Attribut | Valeur |
+|---|---|
+| `_SPRITE_PREFIX` | `"enemies/zombies/z_aug"` |
+| `MAX_HEALTH` | `6` |
+| `DAMAGE` | `4` |
+| `VITESSE_CHASSE` | `160.0` |
+| `RAYON_DETECTION` | `280` |
+
+Sprites attendus dans `assets/images/enemies/zombies/z_aug_*.png`.
 
 ### zombie_manager.py — ZombieManager
 

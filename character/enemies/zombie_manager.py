@@ -11,6 +11,7 @@ _SPAWN_POINTS = [(574, 50)]
 
 class ZombieManager:
     SPAWN_INTERVAL = 0.8
+    MAX_ZOMBIES    = 70
 
     def __init__(self, quest_manager, player_sprite: arcade.Sprite,
                  zombie_class: type | None = None):
@@ -18,7 +19,7 @@ class ZombieManager:
         self._player         = player_sprite
         self._zombie_class   = zombie_class or Zombie
         self.spawn_enabled   = True
-        self.zombies         = arcade.SpriteList()
+        self.zombies         = arcade.SpriteList(use_spatial_hash=True)
         self.bullets         = arcade.SpriteList()
         self._timer          = 0.0
         self._walls: arcade.SpriteList | None = None
@@ -109,7 +110,7 @@ class ZombieManager:
         self._timer += delta_time
         obj = self._qm.get_kill_objective()
         remaining = max(0, int(obj.validator) - obj.counter) if obj else 0
-        if self.spawn_enabled and self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < remaining:
+        if self.spawn_enabled and self._timer >= self.SPAWN_INTERVAL and len(self.zombies) < remaining and len(self.zombies) < self.MAX_ZOMBIES:
             self.zombies.append(self._zombie_class(*random.choice(self._spawn_points)))
             self._timer = 0.0
 

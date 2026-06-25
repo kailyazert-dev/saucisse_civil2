@@ -9,6 +9,7 @@ Menus plein écran du jeu : statistiques, pause et mort.
 | `stats_view.py` | `StatsView(arcade.View)` | P | Écran stats/quêtes/équipement |
 | `menu.py` | `Menu` | ESCAPE | Menu pause (overlay) |
 | `death_menu.py` | `DeathMenu` | — | Menu mort (overlay) |
+| `shop_menu.py` | `ShopMenu` | E / RETURN | Overlay distributeur (mode mercenaire) |
 
 ## StatsView
 
@@ -33,6 +34,22 @@ gv.menu.draw()
 gv.menu.handle_key(key)
 gv.menu.on_text(char)   # pour la saisie du nom de sauvegarde
 ```
+
+## ShopMenu
+
+Overlay distributeur utilisé exclusivement en `MercScene`. Ouvert via la touche E près d'un `Coffre`, fermé par ECHAP.
+
+```python
+shop_menu = ShopMenu()
+shop_menu.open(items)          # items : list[dict] depuis merc/configs/shop.json
+shop_menu.draw(player)
+shop_menu.handle_key(key, player)
+shop_menu.update(delta_time)   # gère l'expiration du message de feedback
+```
+
+**Types d'items supportés** (champ `"type"`) : `"soin"`, `"arme"`, `"upgrade_arme"`, `"upgrade_perso"`.
+
+**Armes déjà équipées** : `_is_owned(item, player)` détecte si une arme (`type == "arme"`) est déjà dans le slot correspondant (`player.weapon_feu` ou `player.weapon_blanc`). Si c'est le cas, l'entrée est grisée visuellement (nom, description, prix en gris) avec le label `(Équipé)`, et l'achat est bloqué avec le message "Déjà équipé !". Les consommables (`soin`, `upgrade_*`) restent toujours disponibles.
 
 ## DeathMenu
 
