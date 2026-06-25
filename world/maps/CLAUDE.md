@@ -27,12 +27,14 @@ class XxxScene(BaseScene):
 
 ## PhlScene — spécificités
 
-- `ZombieManager` : spawn de zombies, tirs, dégâts joueur
+- `ZombieMode` (`self.zombie_mode`) : spawn de zombies, tirs, dégâts joueur — fondu et overlay de mort gérés en interne par `ZombieMode`
 - `KyleAI` : FSM de Kyle (sit → stand → walk → chasse → dialogue) — instancié uniquement en arc 3
-- `DeathMenu` : menu de mort avec fondu rouge
 - Rendu en deux passes : `_draw_world()` puis `_draw_hud()` (caméras différentes)
-- Curseur de visée (crosshair) affiché en mode zombie
+- Curseur de visée (crosshair) affiché en mode zombie via `ZombieHUD`
 - Balles de Kyle dessinées via `kyle_ai.sprite.draw_bullets()` dans `_draw_world()`
+- Transition vers le mode mercenaire via l'objet `'Mode mercenaire'` dans `on_key_press()` → `switch_map('merc')`
+- Visibilité des PNJs en arc 3 : seul Kyle reste visible (`pnj.visible = arc_id != 3 or pnj.nom == "Kyle"`)
+- Pointeur souris masqué en mode zombie actif : `self.window.set_mouse_visible(not self.zombie_mode.is_active())`
 
 ### Branchement KyleAI dans setup()
 
@@ -43,15 +45,29 @@ if kyle_sprite is not None and arc_id == 3:
     self.kyle_ai = KyleAI(kyle_sprite, self.quest_manager, self.tile_map)
 
 # 2. Dans _setup_zombie_mode() — après construction des murs :
-self._combat_walls = walls          # conservé pour on_update
-self.kyle_ai.init_path(walls)       # pré-calcul A*
-if self.zombie_manager.is_active(): # rechargement en mode zombie
-    self.kyle_ai.start_walk()       # relance la marche avant chasse
+self.kyle_ai.init_path(walls)        # pré-calcul A* (murs stockés en interne par ZombieMode)
+if self.zombie_mode.is_active():     # rechargement en mode zombie
+    self.kyle_ai.start_walk()        # relance la marche avant chasse
 
 # 3. Dans on_update() :
-kyle_kills = self.kyle_ai.update(dt, self._combat_walls, self.zombie_manager.zombies, arc_id == 3)
+if self.zombie_mode.dying:
+    return                           # court-circuite si le joueur est en train de mourir
+kyle_kills = self.kyle_ai.update(delta_time, self.zombie_mode.combat_walls, self.zombie_mode.zombies, arc_id == 3)
 for _ in range(kyle_kills):
     self.quest_manager.register_kill()
+```
+
+### Rendu _draw_world() — tri de profondeur
+
+```
+Sol / Mur / Meuble_B
+PNJs derrière le joueur (split par profondeur)
+zombie_mode.draw_world()          # arme, arcs mêlée, zombies, drops
+Meuble_H / Meuble_T / Livre / OrdiRPG / PcTest / Objets
+PNJs stratégiques visibles
+joueur
+balles de Kyle (kyle_ai.sprite.draw_bullets())
+PNJs devant le joueur
 ```
 
 ## HomeScene — spécificités

@@ -12,6 +12,7 @@ world/objects/
     up_stat_collection.py — UpStatCollection(Objet)
     map_action_object.py  — MapActionObject(Objet)
     interactable.py    — ObjetInteractif(Objet)
+    coffre.py          — Coffre(arcade.Sprite)
   drops/               — objets lâchés par les ennemis, ramassage automatique au contact
     base_drop.py       — BaseDrop (classe mère)
     gold_drop.py       — GoldDrop(BaseDrop)
@@ -27,6 +28,7 @@ arcade.Sprite
 │   ├── UpStatCollection     (interactables/up_stat_collection.py)
 │   ├── MapActionObject      (interactables/map_action_object.py)
 │   └── ObjetInteractif      (interactables/interactable.py)
+├── Coffre                   (interactables/coffre.py)
 └── BaseDrop                 (drops/base_drop.py)
     ├── GoldDrop             (drops/gold_drop.py)
     └── HealthDrop           (drops/health_drop.py)
@@ -60,19 +62,24 @@ quest_manager.complete_map_action_objective(obj.objective_name)
 ### ObjetInteractif
 Popup avec nom uniquement. Aucune mécanique de progression.
 
+### Coffre
+Distributeur/boutique. Hérite directement de `arcade.Sprite` (pas de `Objet`). Ouvre un `ShopMenu` au contact du joueur.
+- `INTERACTION_DISTANCE = 80` — rayon de détection
+- Attributs : `nom` (affiché dans l'UI), `catalogue` (section du shop à afficher)
+
 ## Famille drops
 
 Objets spawnés à la mort d'un zombie, ramassés automatiquement au contact joueur.
 Gérés par `ZombieMode` (`world/zombie_mode.py`) : spawn dans `update()`, rendu dans `draw_world()`.
 
 ### BaseDrop
-Classe mère. Expose `ramasser(player)` (abstraite) et les constantes `CHANCE_DROP` et `ECHELLE`.
+Classe mère. Expose `ramasser(player)` (abstraite) et la constante `ECHELLE`.
 
 ### GoldDrop
-Drop d'or. `CHANCE_DROP = 0.65`. Valeur aléatoire 1–3. Incrémente `player.gold`.
+Drop d'or. Valeur aléatoire 1–3 (`VALEUR_MIN = 1`, `VALEUR_MAX = 3`). Incrémente `player.gold`.
 
 ### HealthDrop
-Drop de vie. `CHANCE_DROP = 0.20`. Restaure 2 PV, plafonné à `Player.MAX_HEALTH`.
+Drop de vie. Restaure 2 PV (`SOIN = 2`), plafonné à `Player.MAX_HEALTH + getattr(player, 'max_health_bonus', 0)` (prend en compte le bonus de vie du joueur).
 
 ## Ajouter un objet interactif
 
@@ -83,5 +90,5 @@ Drop de vie. `CHANCE_DROP = 0.20`. Restaure 2 PV, plafonné à `Player.MAX_HEALT
 ## Ajouter un drop
 
 1. Créer `world/objects/drops/mon_drop.py` héritant de `BaseDrop`
-2. Définir `CHANCE_DROP` et implémenter `ramasser(player)`
+2. Implémenter `ramasser(player)`
 3. Ajouter un tirage dans `world/zombie_mode.py` (boucle `morts_ce_frame`)

@@ -64,7 +64,7 @@ Voir `character/CLAUDE.md` pour le détail complet.
 |---|---|
 | `character/player/` | `Player`, `CharacterManager`, `AnimationManager` |
 | `character/pnj/` | `PNJ` (FSM), `PNJState`, `pnj_loader` |
-| `character/enemies/` | `Zombie`, `ZombieAugmente`, `ZombieManager` |
+| `character/enemies/` | `Zombie`, `ZombieAugmente`, `ZombieManager` (SPAWN_INTERVAL=0.8, MAX_ZOMBIES=70) |
 | `character/equipment/` | `Weapon`, `Bullet` |
 | `character/ai/` | `KyleAI` (FSM + A* pour Kyle dans PHL) |
 
@@ -79,7 +79,7 @@ Sauvegarde runtime : `save/quests_save.json`.
 ### `assets/` — ressources statiques
 - `assets/param_map.py` — taille fenêtre, vitesse, tile size, police
 - `assets/param_humain.py` — profils stat PNJs, system prompts dialogue IA
-- `assets/images/` — sprites (joueur, PNJs, objets, armes) ; zombies dans `assets/images/enemies/zombies/`
+- `assets/images/` — sprites (joueur, PNJs, objets, armes) ; zombies dans `assets/images/enemies/zombies/` (préfixe `z_aug_` pour `ZombieAugmente`, préfixe `z_1_` pour `Zombie` de base)
 
 ### `merc/` — mode arène mercenaire (auto-contenu)
 Module autonome pour le mode survie zombie. Contrairement aux autres maps, tout est local au dossier.
@@ -113,9 +113,10 @@ BaseScene.on_draw()             ← défini dans BaseScene, hérité par toutes 
       zombie_mode.draw_world()    → ZombieHUD.draw_world() : arme + arcs mêlée
                                   → zombie_manager.draw() : sprites zombies + balles
                                   → drops.draw() : objets lâchés à la mort
+                                  → rocks.draw() : pierres lancées par ZombieAugmente
   draw_stat_progress_bar()      barre stat au-dessus du joueur
+  camera_gui.use()              ← activé dans on_draw() avant _draw_hud()
   _draw_hud()                   ← screen-space, surchargé par chaque scène
-    camera_gui.use()
       zombie_mode.draw_hud()    → ZombieHUD.draw_hud() : kills + vie + or + armes + crosshair
       dialogue.draw_dialogue_box()
       interact_ui.draw_side_bar()
@@ -144,7 +145,7 @@ Activé depuis PhlScene via un objet `ObjetInteractif`. `MercScene.setup()` :
 - Équipe le joueur avec `Pistolet` (feu) et `Couteau` (blanc)
 - Appelle `_setup_zombie_mode()` qui collecte les murs (`Mur`, `Meuble_H`, `step_1_H`, `step_2`, `step_3_H`, `hero_1/2/3`), crée un `PhysicsEngineSimple` et instancie `ZombieMode(always_active=True)`
 - `_load_zombie_class()` (méthode statique) lit `merc/configs/zombie.json` et crée dynamiquement `MercZombie(Zombie)` avec les stats/mouvement/drops configurés
-- Le spawn est retardé jusqu'à la fin de l'animation `QuestNotif` (flag `_spawn_unlocked`)
+- Le spawn est retardé jusqu'à la fin de l'animation `QuestNotif` via deux flags : `_notif_was_active` (détecte le début de la notif) et `_spawn_unlocked` (activé quand `quest_notif.is_idle` redevient vrai)
 
 `on_update()` récupère les kills depuis `ZombieMode` et les pousse dans `quest_manager`. Progression en 4 quêtes avec changements de terrain à chaque passage :
 
@@ -160,11 +161,32 @@ La sauvegarde runtime est dans `save/merc_quests_save.json` (séparé de `save/q
 ### ZombieMode (`world/zombie_mode.py`)
 Classe partagée entre `PhlScene` et `MercScene`. Encapsule : spawn de zombies, tir joueur, dégâts, fondu de mort et `DeathMenu`. Délègue tout le rendu à `ZombieHUD` (`ui/hud/zombie_hud.py`) via `self._hud`. Paramètre `always_active=True` désactive la vérification d'objectif — utile en MercScene où le combat est permanent.
 
-Attributs et méthodes notables :
+Attributs notables :
 - `self.drops` — `SpriteList` des drops spawmés à la mort de zombies
+- `self.rocks` — `SpriteList` des pierres lancées par les `ZombieAugmente` ; géré par `_collect_rocks()` et `_update_rocks()`
+- `self.on_reset` — callback optionnel (défaut `None`) appelé dans `_do_death_reset()` ; permet à `MercScene` d'être notifiée d'un reset
+
+Méthodes notables :
 - `set_spawn_enabled(bool)` — active/désactive le spawn de zombies
 - `set_spawn_points(list)` — change les points de spawn dynamiquement
+- `set_zombie_class(zombie_class)` — change la classe de zombie après setup (modifie `zombie_manager._zombie_class`)
+- `draw_death_overlay()` — dessine le fondu de mort et le menu de mort, appelable indépendamment de `is_active()`
 - `setup(walls, spawn_points, always_active, zombie_class, player_spawn)` — signature étendue : accepte une sous-classe de `Zombie` et la position de respawn joueur
+
+### ZombieAugmente (`character/enemies/zombie_augmente.py`)
+Sous-classe de `Zombie` avec sprites préfixés `z_aug_`. Stats renforcées par rapport au zombie de base :
+
+| Attribut | ZombieAugmente | Zombie (défaut) |
+|---|---|---|
+| `MAX_HEALTH` | 30 | — |
+| `DAMAGE` | 7 | — |
+| `VITESSE_ERRANCE` | 100.0 | 90 |
+| `VITESSE_CHASSE` | 160.0 | — |
+| `ACCEL_CHASSE` | 80.0 | 30 |
+| `RAYON_DETECTION` | 480 | 220 |
+| `RAYON_FUITE` | 550 | 450 |
+
+Tir périodique (surcharge de `move()`) : lance un projectile (`Bullet` avec `size=10`, couleur `(150,100,60)`, dégâts 2, vitesse 6.0) si en mode chasse et dans `RAYON_TIR=400`, toutes les `PROJECTILE_INTERVALLE=2.5` secondes. Les projectiles sont collectés dans `ZombieMode.rocks`.
 
 ### ZombieHUD (`ui/hud/zombie_hud.py`)
 Responsable unique du rendu visuel du mode zombie. Interface en colonne verticale côté droit : kills → barre vie → or (avec icône pièce) → arme feu → arme blanche. Accède à `ZombieMode` via `self._zm`.
