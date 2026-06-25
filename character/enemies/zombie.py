@@ -6,10 +6,6 @@ import utils.paths as paths
 from character.character_base import CharacterBase, Humain
 
 
-def _img(filename: str) -> str:
-    return paths.asset(f"assets/images/{filename}")
-
-
 class Zombie(CharacterBase):
     MAX_HEALTH      = 3
     DAMAGE          = 2
@@ -22,6 +18,9 @@ class Zombie(CharacterBase):
     RAYON_DETECTION = 220
     RAYON_FUITE     = 450
     CHANGEMENT_DIR  = (2.5, 4.5)
+
+    # Préfixe des sprites (chemin relatif à assets/images/) — surcharger dans les sous-classes
+    _SPRITE_PREFIX = "enemies/zombies/z_1"
 
     # None = lazy-load par défaut, [] = aucun drop, [...] = drops explicites
     _DROPS: list | None = None
@@ -48,7 +47,7 @@ class Zombie(CharacterBase):
     # ---------------------------------------------------------------- init
 
     def __init__(self, x: float, y: float):
-        super().__init__("Zombie", Humain(), _img("z_d.png"))
+        super().__init__("Zombie", Humain(), paths.asset(f"assets/images/{self._SPRITE_PREFIX}_d.png"))
         self.scale    = 1.2
         self.center_x = x
         self.center_y = y
@@ -59,7 +58,7 @@ class Zombie(CharacterBase):
         self._wander_timer = 0.0
         self._wander_next  = random.uniform(*self.CHANGEMENT_DIR)
 
-        self.load_walk_textures("z")
+        self.load_walk_textures(self._SPRITE_PREFIX)
 
     # ---------------------------------------------------------------- mouvement
 

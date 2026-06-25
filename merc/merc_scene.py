@@ -173,6 +173,9 @@ class MercScene(BaseScene):
                 except Exception: pass
             self._hide_step3 = False
 
+        self.player_sprite.weapon_feu   = Weapon.from_name("Pistolet")
+        self.player_sprite.weapon_blanc = Weapon.from_name("Couteau")
+
         self.quest_manager.reset()
         self.zombie_mode.set_spawn_points(_QUEST1_SPAWNS)
         self.zombie_mode.set_zombie_class(self._zombie_classes[0])

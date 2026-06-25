@@ -3,6 +3,8 @@ paths:
   - "*.json"
 ---
 
+Lorsque tu traites un fichier JSON, l'indentation doit être de 4 espaces.
+
 ## Fichiers JSON du projet
 
 Le projet utilise plusieurs fichiers JSON avec des rôles distincts :
@@ -18,20 +20,22 @@ Le projet utilise plusieurs fichiers JSON avec des rôles distincts :
 ### Format quests.json
 
 ```json
-[{
-  "arc_id": 1,
-  "name": "...",
-  "quests": [{
-    "id": 1,
-    "title": "...",
-    "objectives": [{
-      "name": "...",
-      "type": "stat|compteur|talk|map_action",
-      "stat_key": "...",
-      "validator": 0.5
-    }]
-  }]
-}]
+[
+    {
+        "arc_id": 1,
+        "name": "...",
+        "quests": [{
+            "id": 1,
+            "title": "...",
+            "objectives": [{
+            "name": "...",
+            "type": "stat|compteur|talk|map_action",
+            "stat_key": "...",
+            "validator": 0.5
+            }]
+        }]
+    }
+]
 ```
 
 Types d'objectif : `"stat"` (seuil de stat), `"compteur"` (kills), `"talk"` (cutscène PNJ), `"map_action"` (objet ENTER).
@@ -40,10 +44,10 @@ Types d'objectif : `"stat"` (seuil de stat), `"compteur"` (kills), `"talk"` (cut
 
 ```json
 {
-  "tilemap": "world/tilemaps/NOM.tmx",
-  "player_spawn": { "default": [x, y], "home": [x, y] },
-  "pnjs": [{ "nom": "...", "image": "assets/images/...", "x": 0, "y": 0 }],
-  "strategiques": [...],
-  "objets": [{ "type": "UpStat", "stat": "mathematique", "stat_min": 0, "stat_max": 0.5, ... }]
+    "tilemap": "world/tilemaps/NOM.tmx",
+    "player_spawn": { "default": [x, y], "home": [x, y] },
+    "pnjs": [{ "nom": "...", "image": "assets/images/...", "x": 0, "y": 0 }],
+    "strategiques": [...],
+    "objets": [{ "type": "UpStat", "stat": "mathematique", "stat_min": 0, "stat_max": 0.5, ... }]
 }
 ```

@@ -4,7 +4,11 @@
         "type": "feu",
         "damage_min": 1.0,
         "damage_max": 1.5,
-        "bullet_color": [255, 120, 0],
+        "bullet_color": [
+            255,
+            120,
+            0
+        ],
         "sprite_size": 32,
         "fire_interval": 0.3
     },
@@ -13,7 +17,11 @@
         "type": "feu",
         "damage_min": 2.0,
         "damage_max": 2.5,
-        "bullet_color": [30, 110, 255],
+        "bullet_color": [
+            30,
+            110,
+            255
+        ],
         "sprite_size": 32,
         "fire_interval": 0.2
     },
@@ -24,7 +32,11 @@
         "damage_max": 5.0,
         "attack_radius": 80,
         "half_span": 45,
-        "arc_color": [30, 110, 255],
+        "arc_color": [
+            30,
+            110,
+            255
+        ],
         "sprite_size": 28,
         "fire_interval": 0.4
     },
@@ -35,7 +47,11 @@
         "damage_max": 8.0,
         "attack_radius": 95,
         "half_span": 60,
-        "arc_color": [200, 80, 40],
+        "arc_color": [
+            200,
+            80,
+            40
+        ],
         "sprite_size": 38,
         "fire_interval": 0.5
     }

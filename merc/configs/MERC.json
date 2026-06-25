@@ -1,8 +1,14 @@
 {
     "tilemap": "merc/map/PHL_MER.tmx",
     "player_spawn": {
-        "default": [700, 325],
-        "phl": [700, 325]
+        "default": [
+            700,
+            325
+        ],
+        "phl": [
+            700,
+            325
+        ]
     },
     "base": {
         "pnjs": [],

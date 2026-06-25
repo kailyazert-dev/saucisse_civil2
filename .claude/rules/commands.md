@@ -57,6 +57,12 @@ pyinstaller saucisse.spec
 # Résultat : dist/SaucisseCivilisation.exe
 ```
 
+### Slash command Claude Code
+
+`/build` — vérifie PyInstaller, lance `pyinstaller saucisse.spec` et confirme la création de l'exe.
+
+> Défini dans `.claude/commands/build.md`.
+
 Le `.spec` inclut les dossiers de données — **à mettre à jour** pour inclure la nouvelle structure :
 - `assets/`
 - `world/tilemaps/`      ← tilemaps

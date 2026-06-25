@@ -1,74 +1,74 @@
 {
-  "soins": [
-    {
-      "type": "soin",
-      "nom": "Soin",
-      "description": "Restaure 5 points de vie",
-      "valeur": 5,
-      "prix": 10
-    },
-    {
-      "type": "upgrade_arme",
-      "nom": "Amélioration arme",
-      "description": "Augmente les dégâts de l'arme à feu (+0.5)",
-      "slot": "feu",
-      "valeur": 0.5,
-      "prix": 20
-    },
-    {
-      "type": "upgrade_perso",
-      "nom": "Endurance",
-      "description": "Augmente la vie maximum (+3)",
-      "valeur": 3,
-      "prix": 25
-    }
-  ],
-  "armes": [
-    {
-      "type": "arme",
-      "nom": "Machette",
-      "description": "Arme blanche puissante [5.0 – 8.0 dégâts]",
-      "arme_id": "Machette",
-      "slot": "blanc",
-      "prix": 35
-    },
-    {
-      "type": "soin",
-      "nom": "Soin",
-      "description": "Restaure 5 points de vie",
-      "valeur": 5,
-      "prix": 10
-    },
-    {
-      "type": "upgrade_perso",
-      "nom": "Endurance",
-      "description": "Augmente la vie maximum (+3)",
-      "valeur": 3,
-      "prix": 25
-    }
-  ],
-  "general": [
-    {
-      "type": "arme",
-      "nom": "TaMere",
-      "description": "Pistolet amélioré [2.0 – 2.5 dégâts]",
-      "arme_id": "TaMere",
-      "slot": "feu",
-      "prix": 40
-    },
-    {
-      "type": "upgrade_perso",
-      "nom": "Endurance",
-      "description": "Augmente la vie maximum (+3)",
-      "valeur": 3,
-      "prix": 25
-    },
-    {
-      "type": "soin",
-      "nom": "Soin",
-      "description": "Restaure 5 points de vie",
-      "valeur": 5,
-      "prix": 10
-    }
-  ]
+    "soins": [
+        {
+            "type": "soin",
+            "nom": "Soin",
+            "description": "Restaure 5 points de vie",
+            "valeur": 5,
+            "prix": 10
+        },
+        {
+            "type": "upgrade_arme",
+            "nom": "Amélioration arme",
+            "description": "Augmente les dégâts de l'arme à feu (+0.5)",
+            "slot": "feu",
+            "valeur": 0.5,
+            "prix": 20
+        },
+        {
+            "type": "upgrade_perso",
+            "nom": "Endurance",
+            "description": "Augmente la vie maximum (+3)",
+            "valeur": 3,
+            "prix": 25
+        }
+    ],
+    "armes": [
+        {
+            "type": "arme",
+            "nom": "Machette",
+            "description": "Arme blanche puissante [5.0 – 8.0 dégâts]",
+            "arme_id": "Machette",
+            "slot": "blanc",
+            "prix": 35
+        },
+        {
+            "type": "soin",
+            "nom": "Soin",
+            "description": "Restaure 5 points de vie",
+            "valeur": 5,
+            "prix": 10
+        },
+        {
+            "type": "upgrade_perso",
+            "nom": "Endurance",
+            "description": "Augmente la vie maximum (+3)",
+            "valeur": 3,
+            "prix": 25
+        }
+    ],
+    "general": [
+        {
+            "type": "arme",
+            "nom": "TaMere",
+            "description": "Pistolet amélioré [2.0 – 2.5 dégâts]",
+            "arme_id": "TaMere",
+            "slot": "feu",
+            "prix": 40
+        },
+        {
+            "type": "upgrade_perso",
+            "nom": "Endurance",
+            "description": "Augmente la vie maximum (+3)",
+            "valeur": 3,
+            "prix": 25
+        },
+        {
+            "type": "soin",
+            "nom": "Soin",
+            "description": "Restaure 5 points de vie",
+            "valeur": 5,
+            "prix": 10
+        }
+    ]
 }

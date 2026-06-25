@@ -84,22 +84,35 @@ class ShopMenu:
         for i, item in enumerate(self._items):
             iy       = py + total_h - self._HEADER_H - (i + 0.5) * self._ITEM_H
             selected = i == self._selected
+            owned    = self._is_owned(item, player)
 
-            if selected:
+            if selected and not owned:
                 arcade.draw_lrbt_rectangle_filled(
                     px + 4, px + self._W - 4,
                     iy - self._ITEM_H / 2 + 2, iy + self._ITEM_H / 2 - 2,
                     (50, 50, 110, 180))
+            elif selected and owned:
+                arcade.draw_lrbt_rectangle_filled(
+                    px + 4, px + self._W - 4,
+                    iy - self._ITEM_H / 2 + 2, iy + self._ITEM_H / 2 - 2,
+                    (40, 40, 40, 120))
 
-            can_afford  = player.gold >= item["prix"]
-            name_color  = arcade.color.YELLOW if selected else arcade.color.WHITE
-            price_color = (80, 220, 80) if can_afford else (220, 80, 80)
+            if owned:
+                name_color  = (90, 90, 90)
+                desc_color  = (70, 70, 70)
+                price_color = (90, 90, 90)
+            else:
+                can_afford  = player.gold >= item["prix"]
+                name_color  = arcade.color.YELLOW if selected else arcade.color.WHITE
+                desc_color  = arcade.color.LIGHT_GRAY
+                price_color = (80, 220, 80) if can_afford else (220, 80, 80)
 
-            arcade.draw_text(item["nom"], px + 16, iy + 10,
-                             name_color, 13, bold=selected,
+            nom = item["nom"] + ("  (Équipé)" if owned else "")
+            arcade.draw_text(nom, px + 16, iy + 10,
+                             name_color, 13, bold=(selected and not owned),
                              anchor_y="center", font_name=KENNY)
             arcade.draw_text(item.get("description", ""), px + 16, iy - 10,
-                             arcade.color.LIGHT_GRAY, 10,
+                             desc_color, 10,
                              anchor_y="center", font_name=KENNY)
             arcade.draw_text(f"{item['prix']} or", px + self._W - 16, iy,
                              price_color, 13,
@@ -125,6 +138,11 @@ class ShopMenu:
 
     def _buy(self, player) -> None:
         item = self._items[self._selected]
+        if self._is_owned(item, player):
+            self._message       = "Déjà équipé !"
+            self._message_ok    = False
+            self._message_timer = 2.0
+            return
         if player.gold < item["prix"]:
             self._message       = "Pas assez d'or !"
             self._message_ok    = False
@@ -135,6 +153,13 @@ class ShopMenu:
         self._message       = f"{item['nom']} acheté !"
         self._message_ok    = True
         self._message_timer = 2.0
+
+    def _is_owned(self, item: dict, player) -> bool:
+        if item.get("type") != "arme":
+            return False
+        slot   = item.get("slot", "feu")
+        weapon = player.weapon_feu if slot == "feu" else player.weapon_blanc
+        return weapon is not None and weapon.name == item["arme_id"]
 
     def _apply(self, item: dict, player) -> None:
         kind = item["type"]
