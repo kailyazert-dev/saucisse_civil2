@@ -1,7 +1,7 @@
 import arcade
 
 # Taille de la map
-MAP_WIDTH = 2976
+MAP_WIDTH = 3408
 MAP_HEIGHT = 2400 
 
 # Taille de la fenêtre

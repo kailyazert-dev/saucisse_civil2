@@ -18,7 +18,7 @@ character/
 │   ├── zombie_augmente.py   — classe ZombieAugmente (sous-classe)
 │   └── zombie_manager.py    — ZombieManager
 └── equipment/
-    ├── weapon.py            — Weapon (arme équipable)
+    ├── weapon.py            — Weapon, FirearmWeapon, MeleeWeapon
     └── bullet.py            — Bullet (projectile)
 ```
 
@@ -50,8 +50,24 @@ Définit `Humain` et `CharacterBase`. Ré-exporte `Weapon` et `Bullet` depuis `e
 Objets équipables par n'importe quel personnage (Player, PNJ, Zombie).
 Pour ajouter un nouveau type d'équipement, créer un fichier dans ce dossier.
 
-- **`weapon.py` — `Weapon`** : arme avec `damage_min`, `damage_max`, `bullet_color`, `get_damage()`
-- **`bullet.py` — `Bullet`** : projectile `arcade.SpriteSolidColor` avec `vel_x/y`, `damage`, `life`, `step()`
+### weapon.py
+
+Trois classes dans ce fichier :
+
+- **`Weapon`** — classe mère : `damage_min`, `damage_max`, `fire_interval`, `sprite_size`, `image_path`
+  - `get_damage()` — retourne un dégât aléatoire dans `[damage_min, damage_max]`
+  - `get_texture()` — chargement lazy du sprite de l'arme
+  - `use()` — déclenche l'arme (à surcharger)
+  - `from_name(name)` (classmethod factory) — instancie l'arme correspondante depuis `weapons.json`
+
+- **`FirearmWeapon(Weapon)`** — arme à feu : ajoute `bullet_color` ; tire des `Bullet` via `zombie_manager.fire()`
+
+- **`MeleeWeapon(Weapon)`** — arme blanche : ajoute `attack_radius`, `half_span`, `arc_color` ; `use()` retourne un dict arc pour l'animation de frappe
+
+### bullet.py — Bullet
+
+Projectile `arcade.SpriteSolidColor` avec `vel_x/y`, `damage`, `life`, `step()`.
+Paramètres optionnels : `speed` (défaut `SPEED=10`) et `size` (taille du sprite).
 
 ## player/
 
@@ -59,7 +75,7 @@ Pour ajouter un nouveau type d'équipement, créer un fichier dans ce dossier.
 
 Joueur contrôlé par le clavier (AZERTY : Z/Q/S/D).
 
-Propriétés spécifiques : `reading`, `quest_manager`, `character_manager`, `textures_read`, timers d'animation, `gold = 0` (or ramassé en mode zombie).
+Propriétés spécifiques : `reading`, `quest_manager`, `character_manager`, `textures_read`, timers d'animation, `gold = 0` (or ramassé en mode zombie), `max_health_bonus`, `weapon_feu: Weapon | None`, `weapon_blanc: Weapon | None`.
 
 `Player.update()` délègue à `character_manager.update_player_stats()` et `character_manager.animation.update()`.
 
@@ -67,9 +83,11 @@ Propriétés spécifiques : `reading`, `quest_manager`, `character_manager`, `te
 
 Propriétaire du sprite joueur. Responsabilités :
 - Chargement et sauvegarde JSON (`save/character_save.json`)
-- Slots de sauvegarde nommés (`save/saves.json`)
+- Slots de sauvegarde nommés (`save/saves.json`) : `save_slot()`, `load_slot()` (retourne le nom de la map sous forme de `str`), `delete_slot()`
 - Incrémentation de stats via `start_up(progresseur)` / `stop_up()`
 - Auto-save toutes les 30 s pendant la progression active
+- `reset()` — réinitialise les stats et repositionne le joueur
+- `_pending_spawn` / `consume_pending_spawn()` — position de respawn différée après chargement de slot
 
 **AnimationManager** — gère l'animation du joueur (marche, lecture) et les limites de la map.
 
@@ -126,15 +144,30 @@ Les sprites sont dans `assets/images/enemies/zombies/`. Nommage attendu : `<pref
 
 ### zombie_augmente.py — ZombieAugmente
 
-Sous-classe de `Zombie` avec des stats renforcées et un sprite distinct.
+Sous-classe de `Zombie` avec des stats renforcées, un sprite distinct et une attaque à distance (jet de pierre).
 
 | Attribut | Valeur |
 |---|---|
 | `_SPRITE_PREFIX` | `"enemies/zombies/z_aug"` |
-| `MAX_HEALTH` | `6` |
-| `DAMAGE` | `4` |
+| `MAX_HEALTH` | `30` |
+| `DAMAGE` | `7` |
+| `VITESSE_ERRANCE` | `100.0` |
 | `VITESSE_CHASSE` | `160.0` |
-| `RAYON_DETECTION` | `280` |
+| `ACCEL_CHASSE` | `80.0` |
+| `RAYON_DETECTION` | `480` |
+| `RAYON_FUITE` | `550` |
+
+**Système de projectile (jet de pierre)** — attributs surchargeables :
+
+| Attribut | Valeur défaut | Rôle |
+|---|---|---|
+| `PROJECTILE_DEGATS` | `2` | Dégâts par projectile |
+| `PROJECTILE_VITESSE` | `6.0` | Vitesse du projectile |
+| `PROJECTILE_INTERVALLE` | `2.5` | Intervalle entre tirs (s) |
+| `PROJECTILE_RAYON_TIR` | `400` | Distance maximale de tir |
+| `PROJECTILE_COULEUR` | `(150, 100, 60)` | Couleur du projectile |
+
+`pending_projectiles: list[tuple[float, float, float, float]]` — liste des projectiles à spawner (remplie dans `move()`, consommée par `ZombieMode`). Tir uniquement en mode chasse si le joueur est dans `PROJECTILE_RAYON_TIR`.
 
 Sprites attendus dans `assets/images/enemies/zombies/z_aug_*.png`.
 

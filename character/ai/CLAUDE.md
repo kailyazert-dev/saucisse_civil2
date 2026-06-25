@@ -25,17 +25,23 @@ kills = kyle_ai.update(dt, walls, zombies, pnjs_active)  # retourne kills ce tic
 |---|---|---|
 | `"sit"` | PNJs cachés (avant quête) | Texture assise, immobile |
 | `"stand"` | Quête active, avant cutscène | Debout à sa position initiale |
-| `"walk"` | Après cutscène Kyle | Suit le chemin A* vers la zone de combat |
-| `"chasse"` | `walk_done` + zombies actifs | `PNJ.update_ai()` — poursuite + tir |
-| `"dialogue"` | `walk_done` + zombies inactifs + non `end_talked` | Debout, attend l'interaction |
+| `"walk"` | `walk_active` vrai | Suit le chemin A* vers la zone de combat |
+| `"chasse"` | `walk_done` + `get_kill_objective()` non nul | `PNJ.update_ai()` — poursuite + tir |
+| `"dialogue"` | `walk_done` + `get_kill_objective()` nul | Debout, attend l'interaction |
+
+Note : en état `"walk"`, l'attribut `k.attitude` est également mis à `'chasse'` pour que l'animation du sprite PNJ reflète l'action en cours. L'attribut FSM (`"walk"`) et l'attitude sprite (`'chasse'`) sont deux concepts distincts.
 
 ### Pathfinding
 
 Utilise `arcade.AStarBarrierList` + `arcade.astar_calculate_path` avec `grid_size=16`.
 
-Le chemin calculé est mis en cache dans `_path_cache` (variable de module) pour être réutilisé si la map est rechargée. Le cache est invalidé dès que `start_walk()` est appelé.
+Le chemin calculé est stocké à deux niveaux :
+- **Variable de module** `_path_cache` — partagée entre sessions, survivant au rechargement de la scène
+- **Attribut d'instance** `self._path_cache` — copie locale initialisée dans `__init__` depuis la variable de module si elle est déjà remplie
 
-`_quest_active()` retourne `True` si arc 3 ET (quest 1 **ou** quest 2) est en cours. Cela couvre deux cas :
+`init_path()` alimente les deux niveaux si le cache est vide. `start_walk()` recopie `self._path_cache` dans `_walk_path` puis invalide la variable de module (`_path_cache = None`) pour forcer un recalcul à la prochaine instanciation.
+
+`_quest_active()` retourne `True` si arc 3 ET (quest 1 **ou** quest 2) a le statut `"ec"` (en cours). Cela couvre deux cas :
 - **Flux normal** : quest 1 active → chemin calculé avant la cutscène
 - **Rechargement en mode zombie** : quest 1 terminée, quest 2 active → chemin recalculé pour que Kyle refasse sa marche avant de passer en chasse
 
