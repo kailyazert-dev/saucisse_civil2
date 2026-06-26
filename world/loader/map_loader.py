@@ -102,8 +102,9 @@ class MapLoader:
 
     def _make_pnj(self, data: dict) -> PNJ:
         nom = data["nom"]
+        scale = data.get("scale", PLAYER_SCALING)
         pnj = PNJ(nom, humain_from_data(nom), data.get("genre", "Male"),
-                  paths.asset(data["image"]), PLAYER_SCALING,
+                  paths.asset(data["image"]), scale,
                   attitude=data.get("attitude", "errance"))
         pnj.center_x = data["x"]
         pnj.center_y = data["y"]

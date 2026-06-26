@@ -49,13 +49,13 @@ Classe partagée entre `PhlScene` et `MercScene`. Encapsule : spawn de zombies, 
 
 | Méthode | Rôle |
 |---|---|
-| `setup(walls, spawn_points, always_active, zombie_class, player_spawn)` | Initialise le mode : physique, zombies, musique |
+| `setup(walls, spawn_points, always_active, zombie_class, player_spawn)` | Initialise le mode : physique, zombies, précharge la musique dans le cache global (démarre immédiatement si `always_active=True`) |
 | `set_spawn_points(points)` | Change les points de spawn dynamiquement |
 | `set_spawn_enabled(enabled)` | Active/désactive le spawn de zombies |
 | `set_zombie_class(zombie_class)` | Change dynamiquement la classe de zombie du `ZombieManager` |
 | `is_active()` | `True` si le mode zombie est actif (objectif actuel ou `always_active`) |
 | `stop_music()` | Arrête la musique zombie (p. ex. au retour à `HomeScene`) |
-| `draw_world()` | Rendu world-space (délégué à `ZombieHUD` + `zombie_manager` + `drops`) |
+| `draw_world()` | Rendu world-space (délégué à `ZombieHUD` + `zombie_manager` + `drops` + `rocks`) |
 | `draw_hud()` | Rendu HUD screen-space (délégué à `ZombieHUD`) |
 | `draw_death_overlay()` | Affiche le fondu/menu de mort indépendamment du mode actif |
 | `update(delta_time)` | Mise à jour complète : zombies, tir, projectiles, mort |
@@ -69,7 +69,11 @@ Les `ZombieAugmente` accumulent des `pending_projectiles` lors de leurs attaques
 
 ### Musique zombie
 
-Fichier : `assets/song/zombie.mp3`. Cache global `_music_cache` partagé entre toutes les instances. Démarrée automatiquement par `_start_music()` à l'activation du mode, arrêtée via `stop_music()`.
+Fichier : `assets/song/zombie.mp3`. Cache global `_music_cache` partagé entre toutes les instances. Le fichier est **préchargé** lors de `setup()` (quelle que soit la valeur de `always_active`) pour éviter un freeze au premier démarrage. La lecture démarre via `_start_music()` : immédiatement dans `setup()` si `always_active=True`, sinon à la première activation détectée dans `update()`. Arrêtée via `stop_music()`.
+
+### Gestion des touches (`on_key_press`)
+
+Retourne `True` si la touche est consommée par le mode zombie (priorité : `DeathMenu` actif → mode actif). Lorsque le mode est actif, le mouvement du joueur n'est traité que si `scene.auto_walk_active` est `False`, pour éviter les conflits avec la marche automatique de `KyleAI`.
 
 ## Ajouter une nouvelle map
 

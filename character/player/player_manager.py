@@ -26,6 +26,8 @@ _CHARACTER_DEFAULTS: dict[str, object] = {
     "x": 0,
     "y": 0,
     "weapon": None,
+    "weapon_feu": None,
+    "weapon_blanc": None,
 }
 
 _AUTO_SAVE_INTERVAL: float = 30.0
@@ -61,6 +63,9 @@ class CharacterManager:
         self.character_file = self._resolve_save_file()
         self.load_player(self.x, self.y, self.quest_manager)
         self.animation = AnimationManager(self)
+
+    def set_map_bounds(self, width: int, height: int) -> None:
+        self.animation.set_map_bounds(width, height)
 
     # ------------------------------------------------------------------ save
 
@@ -285,6 +290,12 @@ class CharacterManager:
 class AnimationManager:
     def __init__(self, character_manager: CharacterManager) -> None:
         self.manager = character_manager
+        self._map_width = MAP_WIDTH
+        self._map_height = MAP_HEIGHT
+
+    def set_map_bounds(self, width: int, height: int) -> None:
+        self._map_width = width
+        self._map_height = height
 
     def update(self, delta_time: float = 1 / 60) -> None:
         player = self.manager.player
@@ -297,12 +308,12 @@ class AnimationManager:
 
         if player.left < 0:
             player.left = 0
-        elif player.right > MAP_WIDTH - 1:
-            player.right = MAP_WIDTH - 1
+        elif player.right > self._map_width - 1:
+            player.right = self._map_width - 1
         if player.bottom < 0:
             player.bottom = 0
-        elif player.top > MAP_HEIGHT - 1:
-            player.top = MAP_HEIGHT - 1
+        elif player.top > self._map_height - 1:
+            player.top = self._map_height - 1
 
         if player.reading:
             player.time_since_last_texture_change += delta_time

@@ -132,28 +132,36 @@ class StatsView(arcade.View):
         cx  = WINDOW_WIDTH / 2
         w   = WINDOW_WIDTH - 2 * pad - 40
 
-        weapon = getattr(player, "weapon", None)
+        weapon_feu   = getattr(player, "weapon_feu",   None)
+        weapon_blanc = getattr(player, "weapon_blanc", None)
+        if weapon_feu is None and weapon_blanc is None:
+            weapon_feu = getattr(player, "weapon", None)
 
-        arcade.draw_text("Arme équipée", pad + 20, top_y,
+        arcade.draw_text("Équipement", pad + 20, top_y,
                          arcade.color.ORANGE, 16, bold=True, font_name=KENNY)
         arcade.draw_line(pad + 20, top_y - 10, pad + 20 + w, top_y - 10, (80, 80, 120), 1)
 
-        if weapon is None:
+        if weapon_feu is None and weapon_blanc is None:
             arcade.draw_text("Aucune arme équipée", cx, top_y - 50,
                              arcade.color.GRAY, 14, anchor_x="center", font_name=KENNY)
             return
 
-        card_x = pad + 20
-        card_y = top_y - 28
         card_w = min(w, 400)
-        card_h = 130
+        y = top_y - 28
+        if weapon_feu is not None:
+            self._draw_weapon_card(weapon_feu, pad + 20, y, card_w, label="Clic gauche")
+            y -= 148
+        if weapon_blanc is not None:
+            self._draw_weapon_card(weapon_blanc, pad + 20, y, card_w, label="Clic droit", show_projectile=False)
 
+    def _draw_weapon_card(self, weapon, card_x: float, card_y: float, card_w: float,
+                          label: str = "", show_projectile: bool = True) -> None:
+        card_h = 130
         arcade.draw_lrbt_rectangle_filled(
             card_x, card_x + card_w, card_y - card_h, card_y, (35, 35, 65, 220))
         arcade.draw_lrbt_rectangle_outline(
             card_x, card_x + card_w, card_y - card_h, card_y, arcade.color.WHITE, 1)
 
-        # ---- Image de l'arme (slot carré à gauche) ----
         img_margin = 10
         img_size   = card_h - 2 * img_margin
         img_x      = card_x + img_margin
@@ -163,25 +171,22 @@ class StatsView(arcade.View):
 
         if os.path.exists(weapon.image_path):
             tex = arcade.load_texture(weapon.image_path)
-            arcade.draw_texture_rect(
-                tex,
-                arcade.LRBT(img_x, img_x + img_size, img_y, img_y + img_size),
-            )
+            arcade.draw_texture_rect(tex, arcade.LRBT(img_x, img_x + img_size, img_y, img_y + img_size))
         else:
             arcade.draw_lrbt_rectangle_filled(img_x, img_x + img_size, img_y, img_y + img_size, (50, 50, 80))
             arcade.draw_lrbt_rectangle_outline(img_x, img_x + img_size, img_y, img_y + img_size, arcade.color.GRAY, 1)
             arcade.draw_text("?", img_cx, img_cy, arcade.color.GRAY, 28,
                              anchor_x="center", anchor_y="center", font_name=KENNY)
 
-        # ---- Texte décalé à droite de l'image ----
         text_x = img_x + img_size + 12
 
-        # Nom
         arcade.draw_text(weapon.name, text_x, card_y - 22,
-                         arcade.color.WHITE, 18, bold=True,
-                         anchor_y="center", font_name=KENNY)
+                         arcade.color.WHITE, 18, bold=True, anchor_y="center", font_name=KENNY)
+        if label:
+            arcade.draw_text(f"[{label}]", card_x + card_w - 10, card_y - 22,
+                             arcade.color.LIGHT_GRAY, 10,
+                             anchor_x="right", anchor_y="center", font_name=KENNY)
 
-        # Dégâts
         dmg_label_y = card_y - 52
         arcade.draw_text("Dégâts :", text_x, dmg_label_y,
                          arcade.color.GRAY, 12, anchor_y="center", font_name=KENNY)
@@ -189,7 +194,6 @@ class StatsView(arcade.View):
                          text_x + 84, dmg_label_y,
                          arcade.color.YELLOW, 14, anchor_y="center", font_name=KENNY)
 
-        # Barre de dégâts
         bar_x = text_x
         bar_y = card_y - 72
         bar_w = card_w - (text_x - card_x) - 16
@@ -201,21 +205,21 @@ class StatsView(arcade.View):
         arcade.draw_lrbt_rectangle_filled(bar_x, bar_x + bar_w * fill_min, bar_y, bar_y + bar_h, (220, 100, 60))
         arcade.draw_lrbt_rectangle_outline(bar_x, bar_x + bar_w, bar_y, bar_y + bar_h, arcade.color.WHITE, 1)
 
-        # Couleur du projectile
-        proj_label_y = card_y - 100
-        arcade.draw_text("Projectile :", text_x, proj_label_y,
-                         arcade.color.GRAY, 12, anchor_y="center", font_name=KENNY)
-        swatch_x    = text_x + 92
-        swatch_size = 16
-        r, g, b = weapon.bullet_color
-        arcade.draw_lrbt_rectangle_filled(
-            swatch_x, swatch_x + swatch_size,
-            proj_label_y - swatch_size / 2, proj_label_y + swatch_size / 2,
-            (r, g, b, 255))
-        arcade.draw_lrbt_rectangle_outline(
-            swatch_x, swatch_x + swatch_size,
-            proj_label_y - swatch_size / 2, proj_label_y + swatch_size / 2,
-            arcade.color.WHITE, 1)
+        if show_projectile and hasattr(weapon, "bullet_color"):
+            proj_label_y = card_y - 100
+            arcade.draw_text("Projectile :", text_x, proj_label_y,
+                             arcade.color.GRAY, 12, anchor_y="center", font_name=KENNY)
+            swatch_x    = text_x + 92
+            swatch_size = 16
+            r, g, b = weapon.bullet_color
+            arcade.draw_lrbt_rectangle_filled(
+                swatch_x, swatch_x + swatch_size,
+                proj_label_y - swatch_size / 2, proj_label_y + swatch_size / 2,
+                (r, g, b, 255))
+            arcade.draw_lrbt_rectangle_outline(
+                swatch_x, swatch_x + swatch_size,
+                proj_label_y - swatch_size / 2, proj_label_y + swatch_size / 2,
+                arcade.color.WHITE, 1)
 
     def on_key_press(self, key, modifiers) -> None:
         if key in (arcade.key.P, arcade.key.ESCAPE):

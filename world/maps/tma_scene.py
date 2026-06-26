@@ -20,6 +20,10 @@ class TmaScene(BaseScene):
             raise RuntimeError(f"Impossible de charger la carte TMA : {e}") from e
 
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.character_manager.set_map_bounds(
+            self.tile_map.width * self.tile_map.tile_width,
+            self.tile_map.height * self.tile_map.tile_height,
+        )
 
         self.player_sprite = self.character_manager.player
         spawn = self.character_manager.consume_pending_spawn()

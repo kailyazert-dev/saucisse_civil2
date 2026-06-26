@@ -90,7 +90,7 @@ Module autonome pour le mode survie zombie. Contrairement aux autres maps, tout 
 | `merc/configs/MERC.json` | Config map : spawn joueur `[700, 325]`, pas de PNJs ni d'objets |
 | `merc/map/PHL_MER.tmx` | Tilemap Tiled chargée par le jeu (tilesets dans `merc/map/tuile/`) |
 | `merc/quests/quests.json` | Arc « Mode Mercenaire » : 4 quêtes progressives (30 / 60 / 90 / 110 kills) — sert aussi de fichier de réinitialisation par défaut |
-| `merc/configs/zombie.json` | Config des zombies mercenaires : stats, mouvement, drops |
+| `merc/configs/zombie.json` | Config des zombies mercenaires : clé `quetes` (stats/mouvement/drops par quête) + clé `boss` (boss de fin de quête) |
 | `merc/configs/shop.json` | Catalogue des distributeurs : sections `soins`, `armes`, `general` |
 
 `MercScene` crée son propre `QuestManager` local (sauvegarde désactivée) et instancie `ZombieMode(always_active=True)`.
@@ -137,14 +137,23 @@ BaseScene.on_draw()             ← défini dans BaseScene, hérité par toutes 
 `DialogueSystem` appelle Replicate (gpt-4o-mini) dans un thread daemon. Rate-limit : 3 appels / 30 s. Personnalités dans `assets/param_humain.IbmI_personnage`.
 
 ### Cutscènes narratives
-`CutsceneManager.try_trigger(pnj)` vérifie arc + quête + objectif `"talk"`. Si conditions remplies, ouvre la `CutscenePopup` correspondante. À la fin, le callback `on_done` complète l'objectif et déclenche l'effet suivant (arme, marche Kyle…).
+`CutsceneManager.try_trigger(pnj)` vérifie arc + quête + objectif `"talk"`. Si conditions remplies, ouvre la `CutscenePopup` correspondante. À la fin, le callback `on_done` complète l'objectif et déclenche l'effet suivant.
+
+Callback `_on_kyle_done()` : donne `Pistolet` (feu) et `Couteau` (blanc) au joueur, appelle `character_manager.save_player()`, puis déclenche immédiatement `kyle_ai.start_walk()`.
+
+### CharacterManager — sauvegarde des armes
+`_CHARACTER_DEFAULTS` contient `weapon_feu: None` et `weapon_blanc: None` (plus de champ `weapon` générique). `save_player()` sérialise `{"name": ...}` pour chaque slot. `load_player()` et `load_slot()` tentent `weapon_feu` en priorité puis `weapon` (rétrocompatibilité).
+
+### StatsView — onglet Équipement
+`_draw_equipment()` lit `player.weapon_feu` et `player.weapon_blanc` (repli sur `player.weapon` uniquement si les deux sont `None`). Chaque arme est rendue via `_draw_weapon_card(weapon, card_x, card_y, card_w, label, show_projectile)` — carte avec image, nom, plage de dégâts (barre), et échantillon de couleur projectile si `show_projectile=True`.
 
 ### Mode Mercenaire (arène zombie)
 Activé depuis PhlScene via un objet `ObjetInteractif`. `MercScene.setup()` :
 - Instancie un `QuestManager` local (fichiers dans `merc/quests/`, **sauvegarde désactivée**, `quests.json` sert aussi de fichier de réinitialisation par défaut)
 - Équipe le joueur avec `Pistolet` (feu) et `Couteau` (blanc)
 - Appelle `_setup_zombie_mode()` qui collecte les murs (`Mur`, `Meuble_H`, `step_1_H`, `step_2`, `step_3_H`, `hero_1/2/3`), crée un `PhysicsEngineSimple` et instancie `ZombieMode(always_active=True)`
-- `_load_zombie_class()` (méthode statique) lit `merc/configs/zombie.json` et crée dynamiquement `MercZombie(Zombie)` avec les stats/mouvement/drops configurés
+- `_load_zombie_classes()` (méthode statique) lit la clé `quetes` de `merc/configs/zombie.json` et crée dynamiquement une sous-classe `MercZombie{n}(Zombie)` par quête
+- `_load_boss_classes()` (méthode statique) lit la clé `boss` et crée une sous-classe `BossZombie{n}(ZombieAugmente)` par quête, avec position de spawn configurée
 - Le spawn est retardé jusqu'à la fin de l'animation `QuestNotif` via deux flags : `_notif_was_active` (détecte le début de la notif) et `_spawn_unlocked` (activé quand `quest_notif.is_idle` redevient vrai)
 
 `on_update()` récupère les kills depuis `ZombieMode` et les pousse dans `quest_manager`. Progression en 4 quêtes avec changements de terrain à chaque passage :
@@ -153,10 +162,13 @@ Activé depuis PhlScene via un objet `ObjetInteractif`. `MercScene.setup()` :
 |---|---|---|---|
 | 1 | 30 kills | 2 points : `(570,80)`, `(575,547)` | Retire `step_1_H`, passe à 3 points |
 | 2 | 60 kills | 3 points : `(570,80)`, `(528,1123)`, `(1946,652)` | Retire `step_2`, passe à 3 points |
-| 3 | 90 kills | 3 points : `(570,80)`, `(528,1123)`, `(2686,1108)` | Retire `step_3_H`, passe à 4 points |
+| 3 | 90 kills | 3 points : `(570,80)`, `(528,1123)`, `(2686,1108)` | Retire `step_3_H` et `step_3_B`, passe à 4 points |
 | 4 | 110 kills | 4 points : `(570,80)`, `(528,1123)`, `(2686,1108)`, `(2517,1846)` | — |
 
 La sauvegarde runtime est dans `save/merc_quests_save.json` (séparé de `save/quests_save.json`).
+
+### PhlScene — gestion des obstacles Kyle
+`PhlScene.setup()` stocke les obstacles physique dans `_physics_obstacles` (retourné par `interact_ui.create_obstacles()`). En `on_update()`, quand le mode zombie s'active, Kyle est retiré de `_physics_obstacles` (flag `_kyle_removed_from_obstacles`) pour ne pas bloquer les zombies ; il y est réinséré quand le mode zombie redevient inactif.
 
 ### ZombieMode (`world/zombie_mode.py`)
 Classe partagée entre `PhlScene` et `MercScene`. Encapsule : spawn de zombies, tir joueur, dégâts, fondu de mort et `DeathMenu`. Délègue tout le rendu à `ZombieHUD` (`ui/hud/zombie_hud.py`) via `self._hud`. Paramètre `always_active=True` désactive la vérification d'objectif — utile en MercScene où le combat est permanent.
@@ -171,7 +183,9 @@ Méthodes notables :
 - `set_spawn_points(list)` — change les points de spawn dynamiquement
 - `set_zombie_class(zombie_class)` — change la classe de zombie après setup (modifie `zombie_manager._zombie_class`)
 - `draw_death_overlay()` — dessine le fondu de mort et le menu de mort, appelable indépendamment de `is_active()`
-- `setup(walls, spawn_points, always_active, zombie_class, player_spawn)` — signature étendue : accepte une sous-classe de `Zombie` et la position de respawn joueur
+- `setup(walls, spawn_points, always_active, zombie_class, player_spawn)` — signature étendue : accepte une sous-classe de `Zombie` et la position de respawn joueur ; précharge la musique dans le cache global `_music_cache` lors du setup
+
+`on_key_press()` vérifie `not scene.auto_walk_active` avant de transmettre les touches de mouvement, pour ne pas interférer avec la marche automatique de Kyle.
 
 ### ZombieAugmente (`character/enemies/zombie_augmente.py`)
 Sous-classe de `Zombie` avec sprites préfixés `z_aug_`. Stats renforcées par rapport au zombie de base :

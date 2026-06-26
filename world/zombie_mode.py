@@ -85,20 +85,23 @@ class ZombieMode:
         self.zombie_manager.setup_walls(walls)
         self.zombie_manager.set_spawn_points(spawn_points)
 
+        global _music_cache
+        if _music_cache is None:
+            try:
+                _music_cache = arcade.load_sound(paths.asset(_ZOMBIE_MUSIC_PATH))
+            except Exception:
+                pass
+
         if always_active:
             self._start_music()
 
     # ---------------------------------------------------------------- music
 
     def _start_music(self) -> None:
-        global _music_cache
         if self._music_player is not None:
             return
         if _music_cache is None:
-            try:
-                _music_cache = arcade.load_sound(paths.asset(_ZOMBIE_MUSIC_PATH))
-            except Exception:
-                return
+            return
         try:
             self._music_player = _music_cache.play(loop=True)
         except Exception:
@@ -298,7 +301,8 @@ class ZombieMode:
             return True
 
         if self.is_active():
-            scene.input_handler._handle_movement_keys(key)
+            if not scene.auto_walk_active:
+                scene.input_handler._handle_movement_keys(key)
             if key == arcade.key.P and not scene.show_menu:
                 scene.window.show_view(StatsView(scene))
             elif key == arcade.key.ESCAPE:

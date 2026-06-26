@@ -54,15 +54,15 @@ Pour ajouter un nouveau type d'équipement, créer un fichier dans ce dossier.
 
 Trois classes dans ce fichier :
 
-- **`Weapon`** — classe mère : `damage_min`, `damage_max`, `fire_interval`, `sprite_size`, `image_path`
+- **`Weapon`** — classe mère : `name`, `damage_min`, `damage_max`, `fire_interval`, `sprite_size`, `image_path`, `weapon_type = "base"`
   - `get_damage()` — retourne un dégât aléatoire dans `[damage_min, damage_max]`
-  - `get_texture()` — chargement lazy du sprite de l'arme
-  - `use()` — déclenche l'arme (à surcharger)
-  - `from_name(name)` (classmethod factory) — instancie l'arme correspondante depuis `weapons.json`
+  - `get_texture()` — chargement lazy du sprite de l'arme (retourne `None` si le PNG est absent)
+  - `use(player, zombie_manager, world_x, world_y, ...)` — déclenche l'arme (à surcharger) ; retourne `(kills, arc_dict | None)`
+  - `from_name(name)` (classmethod factory) — instancie l'arme correspondante depuis `character/equipment/weapons.json` (registre chargé en lazy dans `_registry`)
 
-- **`FirearmWeapon(Weapon)`** — arme à feu : ajoute `bullet_color` ; tire des `Bullet` via `zombie_manager.fire()`
+- **`FirearmWeapon(Weapon)`** — arme à feu (`weapon_type = "feu"`) : ajoute `bullet_color` ; `use()` accepte `spawn_x/spawn_y` optionnels et tire des `Bullet` via `zombie_manager.fire()`
 
-- **`MeleeWeapon(Weapon)`** — arme blanche : ajoute `attack_radius`, `half_span`, `arc_color` ; `use()` retourne un dict arc pour l'animation de frappe
+- **`MeleeWeapon(Weapon)`** — arme blanche (`weapon_type = "blanc"`) : ajoute `attack_radius`, `half_span`, `arc_color`, `_ARC_DURATION = 0.20` ; `use()` retourne un dict arc pour l'animation de frappe
 
 ### bullet.py — Bullet
 
@@ -88,6 +88,21 @@ Propriétaire du sprite joueur. Responsabilités :
 - Auto-save toutes les 30 s pendant la progression active
 - `reset()` — réinitialise les stats et repositionne le joueur
 - `_pending_spawn` / `consume_pending_spawn()` — position de respawn différée après chargement de slot
+
+**`_CHARACTER_DEFAULTS`** — valeurs par défaut utilisées à la création et à la validation de la sauvegarde :
+
+| Clé | Valeur par défaut |
+|---|---|
+| `nom` | `"Joueur"` |
+| `force` … `sociabilite` | stats initiales (0.1 à 0.14) |
+| `x`, `y` | `0` |
+| `weapon` | `None` (champ legacy, toujours `None` à la création) |
+| `weapon_feu` | `None` |
+| `weapon_blanc` | `None` |
+
+`load_player()` et `load_slot()` gèrent la migration depuis l'ancien champ `weapon` vers `weapon_feu` (`wf = data.get("weapon_feu") or data.get("weapon")`).
+
+`save_player()` sérialise `weapon_feu` et `weapon_blanc` (chacun comme `{"name": ...}` ou `None`) — le champ legacy `weapon` n'est plus écrit.
 
 **AnimationManager** — gère l'animation du joueur (marche, lecture) et les limites de la map.
 
@@ -180,3 +195,9 @@ Attributs et paramètres notables :
 - `zombie_class` — sous-classe de `Zombie` à instancier (défaut : `Zombie`)
 - `spawn_enabled` — flag booléen pour activer/désactiver le spawn sans toucher à `is_active`
 - `morts_ce_frame: list[tuple[float, float]]` — positions des zombies morts dans la frame courante, lu par `ZombieMode` pour spawner les drops
+
+Méthodes notables :
+- `fire(fx, fy, tx, ty, weapon)` — crée un `Bullet` orienté vers la cible
+- `melee_attack(player, radius, get_damage, attack_angle, half_span)` — inflige des dégâts aux zombies dans le secteur (rayon + angle) ; retourne le nombre de kills
+- `check_player_damage(player, delta_time)` — gère dégâts + knockback zombie→joueur ; retourne `True` si dégâts appliqués
+- `draw()` — dessine zombies, balles et barres de vie

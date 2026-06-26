@@ -99,7 +99,7 @@ class CutsceneManager:
         gv = self._gv
         if not hasattr(gv, "kyle_ai") or not gv.kyle_ai.walk_done:
             return False
-        if not hasattr(gv, "zombie_manager") or gv.zombie_manager.is_active():
+        if not hasattr(gv, "zombie_mode") or gv.zombie_mode.is_active():
             return False
         return not gv.kyle_ai.end_talked
 
@@ -109,10 +109,11 @@ class CutsceneManager:
         gv = self._gv
         gv.quest_manager.complete_talk_objective("Kyle")
         if gv.player_sprite is not None:
-            gv.player_sprite.weapon_feu = Weapon.from_name("Pistolet")
-        gv.start_auto_walk(755.0, 745.0)
+            gv.player_sprite.weapon_feu   = Weapon.from_name("Pistolet")
+            gv.player_sprite.weapon_blanc = Weapon.from_name("Couteau")
+            gv.character_manager.save_player()
         if hasattr(gv, "kyle_ai"):
-            gv._on_auto_walk_done = lambda: gv.kyle_ai.start_walk()
+            gv.kyle_ai.start_walk()
 
     def _on_kyle_end_done(self) -> None:
         gv = self._gv

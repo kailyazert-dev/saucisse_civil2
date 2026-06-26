@@ -63,7 +63,7 @@ Met à jour `game_view.current_objet`, `current_collection`, `current_map_action
 Navigation dans une collection de stats : ouverture via `gv.open_collection`, déplacement ↑↓ avec `gv.current_index_upstat`. Le menu déroulant est affiché dans la popup principale.
 
 ### draw_side_bar()
-Lit `quest_manager.arc.quests` et filtre les quêtes au statut `'ec'` (en cours). Affiche les objectifs en colorant selon leur statut : vert si `'t'` (terminé), gris sinon.
+Lit `quest_manager.arc.quests` et prend la **première** quête au statut `'ec'` (en cours) via `next()`. Affiche le titre de la quête puis ses objectifs en colorant selon leur statut : vert (`JADE`) si `'t'` (terminé), blanc sinon.
 
 ### Méthodes de rendu internes
 - `get_r_corner_cord()` — calcule les coordonnées du coin supérieur droit de la zone popup

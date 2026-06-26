@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "PHL_MER.tmx",
+    "activeFile": "PHL.tmx",
     "expandedProjectPaths": [
         ".",
         "tuile"
@@ -17,12 +17,20 @@
                 "y": 431
             }
         },
-        "PHL_MER.tmx": {
-            "scale": 0.5,
+        "PHL.tmx": {
+            "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1185,
-                "y": 1965
+                "x": 870.5,
+                "y": 1440.5
+            }
+        },
+        "PHL_MER.tmx": {
+            "scale": 1,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 1704.5,
+                "y": 1199.5
             }
         },
         "tuile/base.tsx": {
@@ -41,7 +49,7 @@
             "scaleInDock": 1
         },
         "tuile/salle de bain.tsx": {
-            "scaleInDock": 1
+            "scaleInDock": 0.75
         },
         "tuile/tuile_exterieur.tsx": {
             "scaleInDock": 1,
@@ -56,11 +64,13 @@
         }
     },
     "openFiles": [
-        "PHL_MER.tmx"
+        "PHL_MER.tmx",
+        "PHL.tmx"
     ],
     "project": "mercenaire.tiled-project",
     "recentFiles": [
         "PHL_MER.tmx",
+        "PHL.tmx",
         "tuile/tuile_interieur.tsx",
         "HOME.tmx",
         "tuile/tuile_exterieur.tsx"

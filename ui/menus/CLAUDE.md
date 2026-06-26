@@ -17,9 +17,18 @@ Vue Arcade complète (remplace temporairement la scène).
 3 onglets navigables avec les flèches directionnelles LEFT/RIGHT (pas AZERTY) :
 - **Stats** : barres de progression pour les 9 stats en 3 colonnes (Physique / Intellect / Sociale)
 - **Quêtes** : quête en cours, objectifs avec statut [x]/[ ]
-- **Équipement** : carte arme unique via `player.weapon` — affiche image, dégâts min/max, barre et couleur projectile. Ne supporte pas `weapon_feu`/`weapon_blanc`.
+- **Équipement** : deux cartes armes possibles via `player.weapon_feu` et `player.weapon_blanc` — chacune affiche image, dégâts min/max, barre et couleur projectile. Si les deux attributs sont absents ou `None`, fallback sur `player.weapon`. La carte `weapon_blanc` n'affiche pas le swatch projectile (`show_projectile=False`).
 
 Retour à la scène : P ou ESCAPE.
+
+### Méthodes internes StatsView
+
+| Méthode | Rôle |
+|---|---|
+| `_draw_stats(player, top_y)` | Colonnes Physique / Intellect / Sociale |
+| `_draw_quests(top_y)` | Quête en cours + objectifs |
+| `_draw_equipment(player, top_y)` | Lit `weapon_feu`/`weapon_blanc` (fallback `weapon`), appelle `_draw_weapon_card()` pour chaque slot |
+| `_draw_weapon_card(weapon, card_x, card_y, card_w, label, show_projectile)` | Carte individuelle : image, nom, dégâts min/max, barre, swatch projectile optionnel, label slot |
 
 ## Menu
 

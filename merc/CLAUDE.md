@@ -65,12 +65,12 @@ Trois sections (`soins`, `armes`, `general`), chacune étant un tableau d'items.
 |---|---|---|---|---|
 | 1 | 30 kills | 2 points : `(570,80)`, `(575,547)` | `MercZombie1` | Retire physiquement `step_1_H`, passe à 3 points |
 | 2 | 60 kills | 3 points : `(570,80)`, `(528,1123)`, `(1946,652)` | `MercZombie2` | Retire physiquement `step_2`, passe à 3 points |
-| 3 | 90 kills | 3 points : `(570,80)`, `(528,1123)`, `(2686,1108)` | `MercZombie3` | Retire physiquement `step_3_H` et `step_3_B`, passe à 4 points |
-| 4 | 110 kills | 4 points : `(570,80)`, `(528,1123)`, `(2686,1108)`, `(2517,1846)` | `MercZombie4` | Fin de l'arc |
+| 3 | 90 kills | 3 points : `(570,80)`, `(528,1123)`, `(2686,1108)` | `MercZombie3` | Retire physiquement `step_3_B` et `step_3_H`, passe à 3 points |
+| 4 | 110 kills | 3 points : `(570,80)`, `(528,1123)`, `(2517,1846)` | `MercZombie4` | Fin de l'arc |
 
 La classe zombie active est mise à jour dynamiquement à chaque transition via `zombie_mode.set_zombie_class(self._zombie_classes[quest_id - 1])`.
 
-Les sprites `step_1_H` et `step_2` sont retirés via `sprite.remove_from_sprite_lists()` (pas seulement masqués) pour éviter les collisions résiduelles. Pour `step_3`, `step_3_B` est retiré de la scene uniquement, tandis que `step_3_H` est retiré de la scene, de `_walls` **et** de `_obstacles`.
+Les sprites `step_1_H`, `step_2`, `step_3_B` et `step_3_H` sont tous retirés via `sprite.remove_from_sprite_lists()` (pas seulement masqués) — ce qui les retire de toutes leurs listes (scene, `_walls`, `_obstacles`) pour éviter les collisions résiduelles.
 
 ## Système de boss
 

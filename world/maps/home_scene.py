@@ -17,6 +17,10 @@ class HomeScene(BaseScene):
 
         self.tile_map = arcade.load_tilemap(paths.asset(loader.get_tilemap_path()), scaling=1.0)
         self.scene    = arcade.Scene.from_tilemap(self.tile_map)
+        self.character_manager.set_map_bounds(
+            self.tile_map.width * self.tile_map.tile_width,
+            self.tile_map.height * self.tile_map.tile_height,
+        )
 
         self.player_sprite = self.character_manager.player
         spawn = self.character_manager.consume_pending_spawn()

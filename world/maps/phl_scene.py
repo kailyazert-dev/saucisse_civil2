@@ -2,6 +2,7 @@ from __future__ import annotations
 import arcade
 from assets.param_map import KENNY, WINDOW_WIDTH, WINDOW_HEIGHT
 from character.ai.kyle_ai import KyleAI
+from character.equipment.weapon import Weapon
 from world.scene.base_scene import BaseScene
 from world.loader.map_loader import MapLoader
 from world.zombie_mode import ZombieMode
@@ -27,6 +28,10 @@ class PhlScene(BaseScene):
             raise RuntimeError(f"Impossible de charger la carte PHL : {e}") from e
 
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.character_manager.set_map_bounds(
+            self.tile_map.width * self.tile_map.tile_width,
+            self.tile_map.height * self.tile_map.tile_height,
+        )
 
         self.player_sprite = self.character_manager.player
         spawn = self.character_manager.consume_pending_spawn()
@@ -42,8 +47,8 @@ class PhlScene(BaseScene):
         if kyle_sprite is not None and arc_id == 3:
             self.kyle_ai = KyleAI(kyle_sprite, self.quest_manager, self.tile_map)
 
-        obstacles = self.interact_ui.create_obstacles()
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, obstacles)
+        self._physics_obstacles = self.interact_ui.create_obstacles()
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self._physics_obstacles)
 
         self._setup_zombie_mode()
 
@@ -138,6 +143,21 @@ class PhlScene(BaseScene):
 
         if self.zombie_mode.dying:
             return
+
+        if self.zombie_mode.is_active() and not getattr(self, "_kyle_removed_from_obstacles", False):
+            self._kyle_removed_from_obstacles = True
+            if hasattr(self, "kyle_ai"):
+                try:
+                    self._physics_obstacles.remove(self.kyle_ai.sprite)
+                except Exception:
+                    pass
+        elif getattr(self, "_kyle_removed_from_obstacles", False) and not self.zombie_mode.is_active():
+            self._kyle_removed_from_obstacles = False
+            if hasattr(self, "kyle_ai"):
+                try:
+                    self._physics_obstacles.append(self.kyle_ai.sprite)
+                except Exception:
+                    pass
 
         if hasattr(self, "kyle_ai"):
             kyle_kills = self.kyle_ai.update(
